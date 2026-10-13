@@ -44,6 +44,7 @@
             body { background: white !important; color: black !important; }
         }
     </style>
+    @stack('styles')
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
 

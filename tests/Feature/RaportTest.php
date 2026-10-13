@@ -142,4 +142,34 @@ class RaportTest extends TestCase
         $pdfResponse = $this->actingAs($admin)->get("/raport/download-pdf/{$ks->id}?periode=sts");
         $pdfResponse->assertStatus(200);
     }
+
+    public function test_update_sekolah_kop_with_cropped_base64_logos(): void
+    {
+        Storage::fake('public');
+        $admin = User::where('role', 'admin')->first();
+
+        // 1x1 transparent PNG base64
+        $base64Logo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        $updatePost = $this->actingAs($admin)->post(route('sekolah.update'), [
+            'nama' => 'SD NEGERI 2 KARANGSARI CROPPED',
+            'pemda' => 'PEMERINTAH KABUPATEN BANYUWANGI',
+            'dinas' => 'DINAS PENDIDIKAN',
+            'kota' => 'Banyuwangi',
+            'cropped_logo' => $base64Logo,
+            'cropped_logo_kanan' => $base64Logo,
+        ]);
+
+        $updatePost->assertRedirect(route('sekolah.edit'));
+        $updatePost->assertSessionHas('success');
+
+        $sekolah = \App\Models\Sekolah::first();
+        $this->assertEquals('SD NEGERI 2 KARANGSARI CROPPED', $sekolah->nama);
+        $this->assertNotNull($sekolah->logo);
+        $this->assertNotNull($sekolah->logo_kanan);
+        $this->assertStringEndsWith('.png', $sekolah->logo);
+        $this->assertStringEndsWith('.png', $sekolah->logo_kanan);
+        Storage::disk('public')->assertExists($sekolah->logo);
+        Storage::disk('public')->assertExists($sekolah->logo_kanan);
+    }
 }

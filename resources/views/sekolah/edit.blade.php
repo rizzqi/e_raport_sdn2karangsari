@@ -2,6 +2,21 @@
 
 @section('title', 'Identitas & Kop Raport Sekolah')
 
+@push('styles')
+<!-- Cropper.js CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+<style>
+    .cropper-view-box,
+    .cropper-face {
+        border-radius: 0;
+    }
+    .preview-box {
+        overflow: hidden;
+        background-color: #f8fafc;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
 
@@ -10,7 +25,7 @@
             <h1 class="text-xl font-bold text-slate-900 flex items-center">
                 <i class="fa-solid fa-school text-emerald-600 mr-2"></i> Identitas & Kop Surat Raport
             </h1>
-            <p class="text-xs text-slate-500">Sesuaikan data identitas, teks kop, dan logo untuk lembar raport resmi standar kertas F4 / Folio</p>
+            <p class="text-xs text-slate-500">Sesuaikan data identitas, teks kop, dan logo (dengan fitur crop interaktif) untuk lembar raport F4 / Folio</p>
         </div>
         <div class="inline-flex items-center px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
             <i class="fa-solid fa-file-lines text-amber-600 mr-2"></i> Kertas Raport: F4 / Folio (215 × 330 mm)
@@ -29,11 +44,11 @@
         <div class="p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
             <div class="flex items-center justify-between gap-4">
                 <!-- Logo Kiri -->
-                <div class="w-20 h-20 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <div id="kop_container_logo_kiri" class="w-20 h-20 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-slate-200 overflow-hidden">
                     @if($sekolah->logo && file_exists(public_path('storage/' . $sekolah->logo)))
-                        <img src="{{ asset('storage/' . $sekolah->logo) }}" alt="Logo Kiri" class="max-h-16 max-w-16 object-contain">
+                        <img id="kop_img_logo_kiri" src="{{ asset('storage/' . $sekolah->logo) }}" alt="Logo Kiri" class="max-h-16 max-w-16 object-contain">
                     @else
-                        <div class="text-center text-slate-400 text-[10px] leading-tight p-1">
+                        <div id="kop_placeholder_logo_kiri" class="text-center text-slate-400 text-[10px] leading-tight p-1">
                             <i class="fa-solid fa-landmark text-lg block mb-0.5 text-slate-300"></i>
                             Logo Pemda
                         </div>
@@ -62,11 +77,11 @@
                 </div>
 
                 <!-- Logo Kanan -->
-                <div class="w-20 h-20 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <div id="kop_container_logo_kanan" class="w-20 h-20 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-slate-200 overflow-hidden">
                     @if($sekolah->logo_kanan && file_exists(public_path('storage/' . $sekolah->logo_kanan)))
-                        <img src="{{ asset('storage/' . $sekolah->logo_kanan) }}" alt="Logo Kanan" class="max-h-16 max-w-16 object-contain">
+                        <img id="kop_img_logo_kanan" src="{{ asset('storage/' . $sekolah->logo_kanan) }}" alt="Logo Kanan" class="max-h-16 max-w-16 object-contain">
                     @else
-                        <div class="text-center text-slate-400 text-[10px] leading-tight p-1">
+                        <div id="kop_placeholder_logo_kanan" class="text-center text-slate-400 text-[10px] leading-tight p-1">
                             <i class="fa-solid fa-graduation-cap text-lg block mb-0.5 text-slate-300"></i>
                             Logo Sekolah
                         </div>
@@ -80,8 +95,12 @@
 
     <!-- Form Edit Identitas & Kop -->
     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-        <form action="{{ route('sekolah.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <form action="{{ route('sekolah.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6" id="formSekolah">
             @csrf
+
+            <!-- Hidden inputs untuk menyimpan base64 hasil crop -->
+            <input type="hidden" name="cropped_logo" id="cropped_logo" value="">
+            <input type="hidden" name="cropped_logo_kanan" id="cropped_logo_kanan" value="">
 
             <!-- Bagian 1: Teks Kop Surat -->
             <div>
@@ -146,54 +165,112 @@
                 </div>
             </div>
 
-            <!-- Bagian 2: Logo Kop Surat (Kiri & Kanan) -->
+            <!-- Bagian 2: Logo Kop Surat (Kiri & Kanan dengan Fitur Crop) -->
             <div class="pt-4 border-t border-slate-100">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-3 flex items-center">
-                    <i class="fa-solid fa-image mr-1.5"></i> 2. Logo Kop Surat
-                </h3>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-700 flex items-center">
+                        <i class="fa-solid fa-crop-simple mr-1.5"></i> 2. Logo Kop Surat (Upload & Crop Otomatis)
+                    </h3>
+                    <span class="text-[11px] text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full font-medium">
+                        <i class="fa-solid fa-scissors mr-1"></i> Mode Crop Aktif
+                    </span>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Logo Kiri -->
-                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                            Logo Kiri (Pemda / Daerah)
-                        </label>
-                        <p class="text-[11px] text-slate-500 mb-2">Format PNG/JPG transparan direkomendasikan, maks 2MB.</p>
-                        @if($sekolah->logo && file_exists(public_path('storage/' . $sekolah->logo)))
-                            <div class="flex items-center space-x-3 mb-3 bg-white p-2 rounded-lg border border-slate-200">
-                                <img src="{{ asset('storage/' . $sekolah->logo) }}" alt="Logo Kiri" class="h-12 w-12 object-contain">
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Logo Kiri (Pemda / Daerah)
+                                </label>
+                                <span id="badge_status_logo" class="hidden text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                    <i class="fa-solid fa-circle-check mr-0.5"></i> Tercrop
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mb-2">Pilih gambar lalu sesuaikan area crop agar pas di kop surat.</p>
+
+                            <!-- Area Card Thumbnail Preview -->
+                            <div id="card_preview_logo" class="flex items-center space-x-3 mb-3 bg-white p-2.5 rounded-xl border border-slate-200">
+                                <div class="w-14 h-14 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 flex-shrink-0">
+                                    @if($sekolah->logo && file_exists(public_path('storage/' . $sekolah->logo)))
+                                        <img id="thumb_logo" src="{{ asset('storage/' . $sekolah->logo) }}" alt="Logo Kiri" class="max-h-12 max-w-12 object-contain">
+                                    @else
+                                        <img id="thumb_logo" src="" alt="Logo Kiri" class="hidden max-h-12 max-w-12 object-contain">
+                                        <i id="thumb_icon_logo" class="fa-solid fa-landmark text-slate-300 text-xl"></i>
+                                    @endif
+                                </div>
                                 <div class="text-xs flex-1">
-                                    <span class="font-medium text-slate-700">Logo saat ini terpasang</span>
-                                    <label class="block text-[11px] text-rose-600 mt-0.5 cursor-pointer">
-                                        <input type="checkbox" name="hapus_logo" value="1" class="rounded text-rose-600 mr-1">
-                                        Hapus logo kiri
-                                    </label>
+                                    <div class="flex items-center justify-between">
+                                        <span id="label_logo" class="font-medium text-slate-700">
+                                            {{ $sekolah->logo ? 'Logo saat ini' : 'Belum ada logo' }}
+                                        </span>
+                                        <button type="button" id="btn_recrop_logo" onclick="reCropExisting('logo')"
+                                            class="{{ $sekolah->logo ? '' : 'hidden' }} px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold transition">
+                                            <i class="fa-solid fa-crop mr-1"></i> Sesuaikan
+                                        </button>
+                                    </div>
+                                    @if($sekolah->logo)
+                                        <label class="block text-[11px] text-rose-600 mt-1 cursor-pointer">
+                                            <input type="checkbox" name="hapus_logo" value="1" class="rounded text-rose-600 mr-1">
+                                            Hapus logo kiri
+                                        </label>
+                                    @endif
                                 </div>
                             </div>
-                        @endif
-                        <input type="file" name="logo" accept="image/*"
-                            class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+
+                            <!-- Input File -->
+                            <input type="file" id="file_logo" name="logo" accept="image/*"
+                                class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                        </div>
                     </div>
 
                     <!-- Logo Kanan -->
-                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                            Logo Kanan (Tut Wuri / Sekolah)
-                        </label>
-                        <p class="text-[11px] text-slate-500 mb-2">Format PNG/JPG transparan direkomendasikan, maks 2MB.</p>
-                        @if($sekolah->logo_kanan && file_exists(public_path('storage/' . $sekolah->logo_kanan)))
-                            <div class="flex items-center space-x-3 mb-3 bg-white p-2 rounded-lg border border-slate-200">
-                                <img src="{{ asset('storage/' . $sekolah->logo_kanan) }}" alt="Logo Kanan" class="h-12 w-12 object-contain">
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                    Logo Kanan (Tut Wuri / Sekolah)
+                                </label>
+                                <span id="badge_status_logo_kanan" class="hidden text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                    <i class="fa-solid fa-circle-check mr-0.5"></i> Tercrop
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mb-2">Pilih gambar lalu sesuaikan area crop agar pas di kop surat.</p>
+
+                            <!-- Area Card Thumbnail Preview -->
+                            <div id="card_preview_logo_kanan" class="flex items-center space-x-3 mb-3 bg-white p-2.5 rounded-xl border border-slate-200">
+                                <div class="w-14 h-14 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 flex-shrink-0">
+                                    @if($sekolah->logo_kanan && file_exists(public_path('storage/' . $sekolah->logo_kanan)))
+                                        <img id="thumb_logo_kanan" src="{{ asset('storage/' . $sekolah->logo_kanan) }}" alt="Logo Kanan" class="max-h-12 max-w-12 object-contain">
+                                    @else
+                                        <img id="thumb_logo_kanan" src="" alt="Logo Kanan" class="hidden max-h-12 max-w-12 object-contain">
+                                        <i id="thumb_icon_logo_kanan" class="fa-solid fa-graduation-cap text-slate-300 text-xl"></i>
+                                    @endif
+                                </div>
                                 <div class="text-xs flex-1">
-                                    <span class="font-medium text-slate-700">Logo saat ini terpasang</span>
-                                    <label class="block text-[11px] text-rose-600 mt-0.5 cursor-pointer">
-                                        <input type="checkbox" name="hapus_logo_kanan" value="1" class="rounded text-rose-600 mr-1">
-                                        Hapus logo kanan
-                                    </label>
+                                    <div class="flex items-center justify-between">
+                                        <span id="label_logo_kanan" class="font-medium text-slate-700">
+                                            {{ $sekolah->logo_kanan ? 'Logo saat ini' : 'Belum ada logo' }}
+                                        </span>
+                                        <button type="button" id="btn_recrop_logo_kanan" onclick="reCropExisting('logo_kanan')"
+                                            class="{{ $sekolah->logo_kanan ? '' : 'hidden' }} px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold transition">
+                                            <i class="fa-solid fa-crop mr-1"></i> Sesuaikan
+                                        </button>
+                                    </div>
+                                    @if($sekolah->logo_kanan)
+                                        <label class="block text-[11px] text-rose-600 mt-1 cursor-pointer">
+                                            <input type="checkbox" name="hapus_logo_kanan" value="1" class="rounded text-rose-600 mr-1">
+                                            Hapus logo kanan
+                                        </label>
+                                    @endif
                                 </div>
                             </div>
-                        @endif
-                        <input type="file" name="logo_kanan" accept="image/*"
-                            class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+
+                            <!-- Input File -->
+                            <input type="file" id="file_logo_kanan" name="logo_kanan" accept="image/*"
+                                class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -233,4 +310,292 @@
     </div>
 
 </div>
+
+<!-- Modal Dialog Crop Image -->
+<div id="cropModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[92vh]">
+        <!-- Header Modal -->
+        <div class="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+            <div>
+                <h3 id="cropModalTitle" class="text-sm font-bold text-slate-900 flex items-center">
+                    <i class="fa-solid fa-crop-simple text-emerald-600 mr-2"></i> Crop Logo Kop Raport
+                </h3>
+                <p class="text-[11px] text-slate-500">Sesuaikan ukuran dan orientasi agar logo proporsional di kop surat resmi</p>
+            </div>
+            <button type="button" onclick="closeCropModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200/60 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Body Modal -->
+        <div class="p-4 sm:p-5 flex flex-col md:flex-row gap-4 sm:gap-5 items-center justify-center overflow-y-auto">
+            <!-- Box Canvas Cropper -->
+            <div class="w-full md:w-3/5 h-64 sm:h-80 bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center relative">
+                <img id="cropperImage" src="" alt="Gambar Crop" class="max-w-full max-h-full block">
+            </div>
+
+            <!-- Panel Kontrol & Mini Preview -->
+            <div class="w-full md:w-2/5 flex flex-col space-y-3.5">
+                <!-- Mini Preview Box -->
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                    <span class="text-[10px] font-bold uppercase text-slate-500 tracking-wider block mb-1.5">Pratinjau Hasil Crop</span>
+                    <div class="w-24 h-24 mx-auto rounded-xl border-2 border-dashed border-emerald-500 bg-white overflow-hidden flex items-center justify-center shadow-sm preview-box">
+                        <div id="cropperPreview" class="w-full h-full overflow-hidden"></div>
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-1 block">Ukuran di Kop: proporsional</span>
+                </div>
+
+                <!-- Aspect Ratio Selector -->
+                <div>
+                    <span class="text-[10px] font-bold uppercase text-slate-600 tracking-wider block mb-1.5">Bentuk Area Crop</span>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <button type="button" onclick="setCropRatio(1)" id="btnRatioSquare"
+                            class="px-2.5 py-1.5 rounded-lg font-bold border border-emerald-600 bg-emerald-50 text-emerald-800 transition text-center">
+                            1:1 Persegi
+                        </button>
+                        <button type="button" onclick="setCropRatio(NaN)" id="btnRatioFree"
+                            class="px-2.5 py-1.5 rounded-lg font-medium border border-slate-200 hover:bg-slate-50 text-slate-700 transition text-center">
+                            Bebas
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Transform Controls -->
+                <div>
+                    <span class="text-[10px] font-bold uppercase text-slate-600 tracking-wider block mb-1.5">Alat Bantu</span>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button type="button" onclick="cropperZoom(0.1)" title="Perbesar" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i>
+                        </button>
+                        <button type="button" onclick="cropperZoom(-0.1)" title="Perkecil" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+                            <i class="fa-solid fa-magnifying-glass-minus"></i>
+                        </button>
+                        <button type="button" onclick="cropperRotate(-90)" title="Putar Kiri 90°" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> -90°
+                        </button>
+                        <button type="button" onclick="cropperRotate(90)" title="Putar Kanan 90°" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+                            <i class="fa-solid fa-rotate-right mr-1"></i> +90°
+                        </button>
+                        <button type="button" onclick="cropperReset()" title="Reset" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+                            <i class="fa-solid fa-arrows-rotate mr-1"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Modal -->
+        <div class="px-5 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+            <button type="button" onclick="closeCropModal()" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition">
+                Batal
+            </button>
+            <button type="button" onclick="applyCroppedImage()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center">
+                <i class="fa-solid fa-check mr-1.5"></i> Terapkan Hasil Crop
+            </button>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<!-- Cropper.js JavaScript CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+
+<script>
+    let cropper = null;
+    let currentTarget = null; // 'logo' atau 'logo_kanan'
+    let lastLoadedImageSource = {
+        logo: document.getElementById('thumb_logo') ? document.getElementById('thumb_logo').src : '',
+        logo_kanan: document.getElementById('thumb_logo_kanan') ? document.getElementById('thumb_logo_kanan').src : ''
+    };
+
+    const modal = document.getElementById('cropModal');
+    const cropperImage = document.getElementById('cropperImage');
+    const modalTitle = document.getElementById('cropModalTitle');
+    const btnSquare = document.getElementById('btnRatioSquare');
+    const btnFree = document.getElementById('btnRatioFree');
+
+    // Hubungkan input file ke fungsi crop
+    document.getElementById('file_logo').addEventListener('change', function(e) {
+        handleFileSelect(e, 'logo');
+    });
+
+    document.getElementById('file_logo_kanan').addEventListener('change', function(e) {
+        handleFileSelect(e, 'logo_kanan');
+    });
+
+    function handleFileSelect(e, targetType) {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (!file.type.startsWith('image/')) {
+                alert('Silakan pilih file gambar yang valid (PNG, JPG, JPEG).');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                lastLoadedImageSource[targetType] = evt.target.result;
+                openCropModal(evt.target.result, targetType);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function reCropExisting(targetType) {
+        let src = lastLoadedImageSource[targetType];
+        if (!src) {
+            const thumb = document.getElementById(targetType === 'logo' ? 'thumb_logo' : 'thumb_logo_kanan');
+            if (thumb && thumb.src) {
+                src = thumb.src;
+            }
+        }
+        if (src) {
+            openCropModal(src, targetType);
+        }
+    }
+
+    function openCropModal(imageSrc, targetType) {
+        currentTarget = targetType;
+        modalTitle.innerHTML = targetType === 'logo'
+            ? '<i class="fa-solid fa-landmark text-emerald-600 mr-2"></i> Crop Logo Kiri (Pemda / Daerah)'
+            : '<i class="fa-solid fa-graduation-cap text-emerald-600 mr-2"></i> Crop Logo Kanan (Sekolah / Tut Wuri)';
+
+        // Tampilkan modal
+        modal.classList.remove('hidden');
+
+        // Reset Cropper sebelumnya jika ada
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+
+        cropperImage.src = imageSrc;
+
+        // Inisialisasi Cropper.js
+        cropper = new Cropper(cropperImage, {
+            aspectRatio: 1, // Default 1:1 persegi
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.85,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            preview: '#cropperPreview',
+            ready: function () {
+                setCropRatio(1);
+            }
+        });
+    }
+
+    function closeCropModal() {
+        modal.classList.add('hidden');
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    }
+
+    function setCropRatio(ratio) {
+        if (!cropper) return;
+        cropper.setAspectRatio(ratio);
+        if (isNaN(ratio)) {
+            btnFree.className = 'px-2.5 py-1.5 rounded-lg font-bold border border-emerald-600 bg-emerald-50 text-emerald-800 transition text-center';
+            btnSquare.className = 'px-2.5 py-1.5 rounded-lg font-medium border border-slate-200 hover:bg-slate-50 text-slate-700 transition text-center';
+        } else {
+            btnSquare.className = 'px-2.5 py-1.5 rounded-lg font-bold border border-emerald-600 bg-emerald-50 text-emerald-800 transition text-center';
+            btnFree.className = 'px-2.5 py-1.5 rounded-lg font-medium border border-slate-200 hover:bg-slate-50 text-slate-700 transition text-center';
+        }
+    }
+
+    function cropperZoom(val) {
+        if (cropper) cropper.zoom(val);
+    }
+
+    function cropperRotate(deg) {
+        if (cropper) cropper.rotate(deg);
+    }
+
+    function cropperReset() {
+        if (cropper) cropper.reset();
+    }
+
+    function applyCroppedImage() {
+        if (!cropper || !currentTarget) return;
+
+        // Dapatkan gambar hasil crop dalam resolusi yang jernih
+        const canvas = cropper.getCroppedCanvas({
+            width: 320,
+            height: 320,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+
+        const croppedBase64 = canvas.toDataURL('image/png');
+
+        if (currentTarget === 'logo') {
+            // 1. Simpan ke hidden input
+            document.getElementById('cropped_logo').value = croppedBase64;
+
+            // 2. Update thumbnail pada form
+            const thumb = document.getElementById('thumb_logo');
+            thumb.src = croppedBase64;
+            thumb.classList.remove('hidden');
+            const icon = document.getElementById('thumb_icon_logo');
+            if (icon) icon.classList.add('hidden');
+
+            document.getElementById('badge_status_logo').classList.remove('hidden');
+            document.getElementById('label_logo').textContent = 'Hasil crop siap disimpan';
+            document.getElementById('btn_recrop_logo').classList.remove('hidden');
+
+            // 3. Update pratinjau Kop Surat di atas secara live
+            const kopContainer = document.getElementById('kop_container_logo_kiri');
+            let kopImg = document.getElementById('kop_img_logo_kiri');
+            if (!kopImg) {
+                const placeholder = document.getElementById('kop_placeholder_logo_kiri');
+                if (placeholder) placeholder.remove();
+                kopImg = document.createElement('img');
+                kopImg.id = 'kop_img_logo_kiri';
+                kopImg.alt = 'Logo Kiri';
+                kopImg.className = 'max-h-16 max-w-16 object-contain';
+                kopContainer.appendChild(kopImg);
+            }
+            kopImg.src = croppedBase64;
+
+        } else if (currentTarget === 'logo_kanan') {
+            // 1. Simpan ke hidden input
+            document.getElementById('cropped_logo_kanan').value = croppedBase64;
+
+            // 2. Update thumbnail pada form
+            const thumb = document.getElementById('thumb_logo_kanan');
+            thumb.src = croppedBase64;
+            thumb.classList.remove('hidden');
+            const icon = document.getElementById('thumb_icon_logo_kanan');
+            if (icon) icon.classList.add('hidden');
+
+            document.getElementById('badge_status_logo_kanan').classList.remove('hidden');
+            document.getElementById('label_logo_kanan').textContent = 'Hasil crop siap disimpan';
+            document.getElementById('btn_recrop_logo_kanan').classList.remove('hidden');
+
+            // 3. Update pratinjau Kop Surat di atas secara live
+            const kopContainer = document.getElementById('kop_container_logo_kanan');
+            let kopImg = document.getElementById('kop_img_logo_kanan');
+            if (!kopImg) {
+                const placeholder = document.getElementById('kop_placeholder_logo_kanan');
+                if (placeholder) placeholder.remove();
+                kopImg = document.createElement('img');
+                kopImg.id = 'kop_img_logo_kanan';
+                kopImg.alt = 'Logo Kanan';
+                kopImg.className = 'max-h-16 max-w-16 object-contain';
+                kopContainer.appendChild(kopImg);
+            }
+            kopImg.src = croppedBase64;
+        }
+
+        closeCropModal();
+    }
+</script>
+@endpush

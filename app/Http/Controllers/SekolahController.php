@@ -34,8 +34,10 @@ class SekolahController extends Controller
             'kontak' => 'nullable|string|max:255',
             'kepsek' => 'nullable|string|max:255',
             'nip' => 'nullable|string|max:100',
-            'logo' => 'nullable|image|max:2048',
-            'logo_kanan' => 'nullable|image|max:2048',
+            'logo' => 'nullable|image|max:3072',
+            'logo_kanan' => 'nullable|image|max:3072',
+            'cropped_logo' => 'nullable|string',
+            'cropped_logo_kanan' => 'nullable|string',
             'ttd' => 'nullable|image|max:2048',
         ]);
 
@@ -61,16 +63,46 @@ class SekolahController extends Controller
             $data['logo_kanan'] = null;
         }
 
-        // Upload Logo Kiri (Pemda / Tut Wuri Handayani)
-        if ($request->hasFile('logo')) {
+        // Upload / Crop Logo Kiri (Pemda / Daerah)
+        if ($request->filled('cropped_logo')) {
+            $cropData = $request->input('cropped_logo');
+            if (str_starts_with($cropData, 'data:image')) {
+                @list($type, $cropData) = explode(';', $cropData);
+                @list(, $cropData) = explode(',', $cropData);
+                $decoded = base64_decode($cropData);
+                if ($decoded !== false) {
+                    if ($sekolah->logo && Storage::disk('public')->exists($sekolah->logo)) {
+                        Storage::disk('public')->delete($sekolah->logo);
+                    }
+                    $filename = 'sekolah/logo_' . uniqid() . '.png';
+                    Storage::disk('public')->put($filename, $decoded);
+                    $data['logo'] = $filename;
+                }
+            }
+        } elseif ($request->hasFile('logo')) {
             if ($sekolah->logo && Storage::disk('public')->exists($sekolah->logo)) {
                 Storage::disk('public')->delete($sekolah->logo);
             }
             $data['logo'] = $request->file('logo')->store('sekolah', 'public');
         }
 
-        // Upload Logo Kanan (Sekolah / Tut Wuri)
-        if ($request->hasFile('logo_kanan')) {
+        // Upload / Crop Logo Kanan (Sekolah / Tut Wuri)
+        if ($request->filled('cropped_logo_kanan')) {
+            $cropData = $request->input('cropped_logo_kanan');
+            if (str_starts_with($cropData, 'data:image')) {
+                @list($type, $cropData) = explode(';', $cropData);
+                @list(, $cropData) = explode(',', $cropData);
+                $decoded = base64_decode($cropData);
+                if ($decoded !== false) {
+                    if ($sekolah->logo_kanan && Storage::disk('public')->exists($sekolah->logo_kanan)) {
+                        Storage::disk('public')->delete($sekolah->logo_kanan);
+                    }
+                    $filename = 'sekolah/logo_kanan_' . uniqid() . '.png';
+                    Storage::disk('public')->put($filename, $decoded);
+                    $data['logo_kanan'] = $filename;
+                }
+            }
+        } elseif ($request->hasFile('logo_kanan')) {
             if ($sekolah->logo_kanan && Storage::disk('public')->exists($sekolah->logo_kanan)) {
                 Storage::disk('public')->delete($sekolah->logo_kanan);
             }
