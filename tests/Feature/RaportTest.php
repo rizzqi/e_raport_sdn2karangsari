@@ -24,6 +24,13 @@ class RaportTest extends TestCase
         $admin = User::where('role', 'admin')->first();
         $this->assertNotNull($admin);
 
+        // Test login POST with email validation
+        $loginPost = $this->post('/login', [
+            'email' => 'admin@sdn2karangsari.sch.id',
+            'password' => 'password',
+        ]);
+        $loginPost->assertRedirect('/dashboard');
+
         $response = $this->actingAs($admin)->get('/dashboard');
         $response->assertStatus(200);
         $response->assertSee('SDN 2 KARANGSARI');
