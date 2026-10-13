@@ -1,0 +1,196 @@
+PRD dan ERD Aplikasi Raport SD (Laravel)
+Per 13 Oktober 2026
+Aplikasi web Laravel agar wali kelas menginput nilai sekali, lalu mengunduh raport .docx dengan format yang sama seperti dokumen contoh SD Negeri 2 Karangsari.
+Tujuan dan ruang lingkup
+Versi pertama menggantikan pengisian raport manual di Word: nilai diinput di aplikasi, jumlah dan rata-rata dihitung otomatis, dokumen .docx dibuat dengan tata letak dokumen contoh (A4, satu halaman per siswa).
+Tujuan
+Wali kelas menyelesaikan input satu kelas tanpa mengetik ulang kop, identitas, dan tanda tangan.
+Dokumen hasil unduhan identik dengan format contoh dan masih bisa diedit di Word.
+Data siswa, kelas, dan nilai tersimpan per tahun ajaran dan semester, sehingga bisa dicetak ulang kapan saja.
+Di luar cakupan versi pertama
+Deskripsi capaian kompetensi dan peringkat.
+Portal orang tua dan notifikasi.
+Integrasi ke Dapodik atau e-Rapor.
+Pengguna dan hak akses
+Tiga peran cukup untuk satu sekolah. Wali kelas hanya melihat kelas yang ia ampu.
+Peran
+	Hak akses
+	
+Admin sekolah
+	Kelola identitas sekolah, tahun ajaran, kelas, siswa, mata pelajaran, pembiasaan, dan akun pengguna
+	
+Wali kelas
+	Input nilai, pembiasaan, dan kehadiran siswa di kelasnya; pratinjau dan unduh raport kelasnya
+	
+Kepala sekolah
+	Lihat seluruh kelas dan rekap nilai; unduh raport; tidak mengubah nilai
+	
+Kebutuhan fungsional
+P0 wajib ada di rilis pertama, P1 menyusul setelah alur utama berjalan.
+ID
+	Modul
+	Kebutuhan
+	Prioritas
+	
+F1
+	Autentikasi
+	Login dengan email dan kata sandi; peran admin, wali kelas, kepala sekolah
+	P0
+	
+F2
+	Identitas sekolah
+	Simpan nama sekolah, alamat, pemda, dinas, logo kiri dan kanan, nama dan NIP kepala sekolah, gambar tanda tangan
+	P0
+	
+F3
+	Tahun ajaran
+	Atur tahun pelajaran dan semester (ganjil atau genap); satu periode aktif
+	P0
+	
+F4
+	Kelas
+	Buat kelas dengan fase, tahun ajaran, dan wali kelas
+	P0
+	
+F5
+	Siswa
+	Tambah, ubah, hapus siswa; impor dari Excel atau tempel dari klipboard
+	P0
+	
+F6
+	Penempatan siswa
+	Masukkan siswa ke kelas pada tahun ajaran tertentu
+	P0
+	
+F7
+	Mata pelajaran dan pembiasaan
+	Daftar dan urutan baris di raport dapat diatur
+	P0
+	
+F8
+	Input nilai
+	Nilai formatif dan sumatif per mata pelajaran per siswa, dengan jumlah dan rata-rata otomatis
+	P0
+	
+F9
+	Pembiasaan dan kehadiran
+	Predikat pembiasaan; jumlah hari sakit, izin, tanpa keterangan
+	P0
+	
+F10
+	Pratinjau raport
+	Tampilan di layar sebelum diunduh
+	P0
+	
+F11
+	Unduh raport
+	.docx satu siswa atau seluruh kelas dalam satu file
+	P0
+	
+F12
+	Unduh PDF
+	Konversi dari .docx untuk dicetak
+	P1
+	
+F13
+	Rekap kelas
+	Rata-rata per siswa dan status kelengkapan input
+	P1
+	
+F14
+	Riwayat cetak
+	Catat siapa mencetak raport siapa dan kapan
+	P1
+	
+F15
+	Cadangan dan impor
+	Ekspor data kelas ke Excel; impor nilai dari Excel
+	P1
+	
+ERD
+
+Tabel kelas_siswa adalah poros: nilai, nilai_pembiasaan, kehadiran, dan raport semuanya menunjuk ke sana. Garis berpanah mengarah ke sisi banyak (child).
+Aturan data dan bisnis
+Semua nilai menempel pada kelas_siswa, bukan langsung pada siswa. Satu siswa bisa pindah kelas antar tahun ajaran tanpa menimpa riwayat nilainya.
+siswa.nis unik. kelas_siswa unik pada pasangan kelas_id dan siswa_id.
+nilai unik pada kelas_siswa_id, mapel_id, dan periode. Kolom periode berisi sts atau sas.
+kehadiran dan nilai_pembiasaan juga per periode, karena tiap raport memuat kehadiran dan pembiasaannya sendiri.
+Nilai berupa angka 0 sampai 100, boleh kosong. Nilai kosong tidak ikut dihitung.
+Jumlah nilai = penjumlahan nilai yang terisi per kolom. Rata-rata = jumlah dibagi banyak nilai yang terisi, dibulatkan dua desimal dan ditulis dengan koma (contoh 86,5).
+Predikat pembiasaan: Sangat Baik, Baik, Cukup, Perlu Bimbingan.
+Hanya satu tahun ajaran berstatus aktif. Kelas dan nilai tahun lama tetap bisa dibuka dan dicetak, tidak bisa diubah wali kelas.
+Arsitektur Laravel
+Monolit Laravel dengan database relasional. Pilihan di bawah adalah usulan; versi persis ditetapkan saat proyek dibuat.
+Lapisan
+	Usulan
+	
+Framework
+	Laravel versi stabil terbaru, PHP 8.3 atau lebih baru
+	
+Database
+	MySQL atau MariaDB (umum di hosting sekolah); PostgreSQL juga cocok
+	
+Antarmuka
+	Blade dengan Livewire, atau panel admin Filament untuk mempercepat CRUD
+	
+Autentikasi
+	Laravel Breeze (login, reset kata sandi)
+	
+Peran
+	Kolom role pada users ditambah Policy; paket spatie/laravel-permission jika peran bertambah
+	
+Dokumen Word
+	phpoffice/phpword, memakai TemplateProcessor
+	
+PDF
+	Konversi .docx lewat LibreOffice headless; alternatif barryvdh/laravel-dompdf
+	
+Impor Excel
+	maatwebsite/excel
+	
+Antrian
+	Queue database untuk cetak seluruh kelas (banyak halaman)
+	
+Penyimpanan
+	Disk local untuk logo, tanda tangan, dan file raport hasil cetak
+	
+Struktur aplikasi
+Komponen
+	Isi
+	
+Model
+	User, Sekolah, TahunAjaran, Kelas, Siswa, KelasSiswa, MataPelajaran, Nilai, Pembiasaan, NilaiPembiasaan, Kehadiran, Raport
+	
+Controller
+	KelasController, SiswaController, NilaiController, RaportController (pratinjau, unduh satu, unduh semua)
+	
+Service
+	HitungNilaiService (jumlah dan rata-rata), RaportDocxService (isi template .docx)
+	
+Policy
+	KelasPolicy: wali kelas hanya mengakses kelas yang ia ampu
+	
+Form Request
+	Validasi nilai 0 sampai 100, tanggal, dan keunikan NIS
+	
+Output dokumen Word
+Dokumen contoh dijadikan template .docx berisi penanda, lalu RaportDocxService mengisinya per siswa. Cara ini menjaga kop, logo, dan tabel tetap persis seperti aslinya.
+Salin dokumen contoh menjadi storage/app/templates/raport.docx, ganti isian dengan penanda seperti ${nama}, ${nis}, ${kelas}, ${fase}, ${semester}, ${tahun}, ${wali}, ${kepsek}.
+Baris mata pelajaran dibuat satu kali sebagai ${no}, ${mapel}, ${formatif}, ${sumatif}, lalu digandakan dengan cloneRow('mapel', n).
+Jumlah, rata-rata, pembiasaan, dan kehadiran diisi lewat setValue.
+Logo dan tanda tangan diganti dengan setImageValue.
+Untuk satu kelas, tiap siswa dibuat sebagai file sementara lalu digabung menjadi satu dokumen, satu halaman per siswa, dan dikerjakan lewat antrian.
+Hasil disimpan di tabel raport (file_path) dan dikirim sebagai unduhan.
+Alternatif tanpa template: membangun dokumen dari kode dengan PhpWord. Lebih fleksibel, tetapi tata letak perlu dijaga manual setiap kali format sekolah berubah.
+Tahapan pengerjaan
+Fondasi: proyek Laravel, login, peran, migrasi dan seeder dari ERD, data sekolah.
+Data induk: CRUD tahun ajaran, kelas, siswa (termasuk impor Excel), mata pelajaran, pembiasaan.
+Input nilai: layar input per siswa, hitung jumlah dan rata-rata, pembiasaan, kehadiran, policy wali kelas.
+Raport: pratinjau, template .docx, unduh satu siswa dan seluruh kelas lewat antrian.
+Penyempurnaan: PDF, rekap kelas, riwayat cetak, uji dengan data kelas nyata, lalu rilis.
+Pertanyaan terbuka
+☐  Satu sekolah saja, atau banyak sekolah dalam satu aplikasi? Rancangan ERD sudah menyiapkan tabel sekolah, jadi keduanya bisa.
+☐  Apakah SAS (akhir semester) memakai format kolom yang sama dengan STS, atau ada tambahan kolom?
+☐  Apakah perlu deskripsi capaian per mata pelajaran seperti pada Kurikulum Merdeka?
+☐  Di mana aplikasi akan dipasang: hosting bersama, VPS, atau server sekolah? Ini menentukan pilihan konversi PDF.
+☐  Siapa yang menandatangani dan mengunggah tanda tangan kepala sekolah di aplikasi?
