@@ -75,31 +75,27 @@
                 </button>
             </form>
 
-            <!-- Quick Demo Accounts -->
-            <div class="mt-6 pt-6 border-t border-slate-100">
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-400 text-center mb-3">Akun Demo (Klik untuk Isi Cepat)</p>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <button type="button" onclick="setDemo('admin@sdn2karangsari.sch.id', 'password')"
-                        class="p-2 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left transition">
-                        <span class="font-bold text-slate-800 block"><i class="fa-solid fa-shield text-emerald-600 mr-1"></i> Admin</span>
-                        <span class="text-[10px] text-slate-500">Kelola Sekolah</span>
-                    </button>
-                    <button type="button" onclick="setDemo('wali1@sdn2karangsari.sch.id', 'password')"
-                        class="p-2 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left transition">
-                        <span class="font-bold text-slate-800 block"><i class="fa-solid fa-chalkboard-user text-blue-600 mr-1"></i> Wali Kelas 1</span>
-                        <span class="text-[10px] text-slate-500">Input & Cetak</span>
-                    </button>
-                    <button type="button" onclick="setDemo('wali4@sdn2karangsari.sch.id', 'password')"
-                        class="p-2 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left transition">
-                        <span class="font-bold text-slate-800 block"><i class="fa-solid fa-chalkboard-user text-blue-600 mr-1"></i> Wali Kelas 4</span>
-                        <span class="text-[10px] text-slate-500">Input & Cetak</span>
-                    </button>
-                    <button type="button" onclick="setDemo('kepsek@sdn2karangsari.sch.id', 'password')"
-                        class="p-2 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-left transition">
-                        <span class="font-bold text-slate-800 block"><i class="fa-solid fa-user-tie text-purple-600 mr-1"></i> Kepsek</span>
-                        <span class="text-[10px] text-slate-500">Lihat Rekap</span>
-                    </button>
-                </div>
+            <!-- Akun Pengelola Tunggal (Admin) -->
+            <div class="mt-6 pt-5 border-t border-slate-100">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center mb-2">Akun Pengelola Utama (Satu Akun Admin)</p>
+                <button type="button" onclick="setDemo('admin@sdn2karangsari.sch.id', 'password')"
+                    class="w-full p-3 rounded-xl border-2 border-emerald-500/60 bg-emerald-50/60 hover:bg-emerald-100/70 text-left transition flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-xs text-slate-900 block">Administrator / Operator Sekolah</span>
+                            <span class="text-[11px] text-slate-500 font-mono">admin@sdn2karangsari.sch.id</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-md shadow-xs">
+                        Klik Isi Cepat
+                    </span>
+                </button>
+                <p class="text-[10px] text-slate-400 text-center mt-2">
+                    <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> Mode Satu User: Seluruh hak akses input data nilai, siswa, kelas, & cetak raport berpusat pada Administrator.
+                </p>
             </div>
         </div>
     </div>

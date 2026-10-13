@@ -36,28 +36,29 @@ class KelasController extends Controller
             'fase' => 'required|string|max:10', // A, B, C
             'tahun_ajaran_id' => 'required|exists:tahun_ajaran,id',
             'wali_id' => 'nullable|exists:users,id',
+            'wali_nama' => 'nullable|string|max:255',
+            'wali_nip' => 'nullable|string|max:100',
         ]);
 
         $sekolah = Sekolah::first();
 
-        Kelas::create([
-            'nama' => $request->nama,
-            'fase' => $request->fase,
-            'sekolah_id' => $sekolah ? $sekolah->id : 1,
-            'tahun_ajaran_id' => $request->tahun_ajaran_id,
-            'wali_id' => $request->wali_id,
-        ]);
+        $data = $request->only(['nama', 'fase', 'tahun_ajaran_id', 'wali_id', 'wali_nama', 'wali_nip']);
+        $data['sekolah_id'] = $sekolah ? $sekolah->id : 1;
+
+        if (empty($data['wali_nama']) && !empty($data['wali_id'])) {
+            $userWali = User::find($data['wali_id']);
+            if ($userWali) {
+                $data['wali_nama'] = $userWali->name;
+            }
+        }
+
+        Kelas::create($data);
 
         return redirect()->route('kelas.index')->with('success', 'Kelas berhasil ditambahkan.');
     }
 
     public function show(Kelas $kelas)
     {
-        $user = auth()->user();
-        if ($user->isWali() && $kelas->wali_id !== $user->id) {
-            abort(403, 'Anda tidak berhak mengakses kelas ini.');
-        }
-
         $kelas->load(['wali', 'tahunAjaran', 'sekolah', 'kelasSiswa.siswa']);
 
         return view('kelas.show', compact('kelas'));
@@ -70,9 +71,20 @@ class KelasController extends Controller
             'fase' => 'required|string|max:10',
             'tahun_ajaran_id' => 'required|exists:tahun_ajaran,id',
             'wali_id' => 'nullable|exists:users,id',
+            'wali_nama' => 'nullable|string|max:255',
+            'wali_nip' => 'nullable|string|max:100',
         ]);
 
-        $kelas->update($request->only(['nama', 'fase', 'tahun_ajaran_id', 'wali_id']));
+        $data = $request->only(['nama', 'fase', 'tahun_ajaran_id', 'wali_id', 'wali_nama', 'wali_nip']);
+
+        if (empty($data['wali_nama']) && !empty($data['wali_id'])) {
+            $userWali = User::find($data['wali_id']);
+            if ($userWali) {
+                $data['wali_nama'] = $userWali->name;
+            }
+        }
+
+        $kelas->update($data);
 
         return redirect()->route('kelas.index')->with('success', 'Data kelas berhasil diperbarui.');
     }

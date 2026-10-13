@@ -48,7 +48,7 @@
                     <div class="p-5 space-y-3 text-xs">
                         <div class="flex items-center justify-between text-slate-600">
                             <span class="text-slate-400"><i class="fa-solid fa-user-tie mr-1"></i> Wali Kelas:</span>
-                            <span class="font-semibold text-slate-800">{{ $kelas->wali->name ?? 'Belum Ditentukan' }}</span>
+                            <span class="font-semibold text-slate-800">{{ $kelas->nama_wali }}</span>
                         </div>
                         <div class="flex items-center justify-between text-slate-600">
                             <span class="text-slate-400"><i class="fa-solid fa-users mr-1"></i> Jumlah Siswa:</span>
@@ -61,9 +61,15 @@
                     <a href="{{ route('kelas.show', $kelas->id) }}" class="py-2 px-3 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-center transition flex items-center justify-center">
                         <i class="fa-solid fa-list mr-1.5"></i> Siswa
                     </a>
-                    <a href="{{ route('nilai.input.kelas', $kelas->id) }}" class="py-2 px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-center transition flex items-center justify-center shadow-sm">
-                        <i class="fa-solid fa-pen-to-square mr-1.5"></i> Input Nilai
-                    </a>
+                    @if(auth()->user()->isAdmin())
+                        <a href="{{ route('nilai.input.kelas', $kelas->id) }}" class="py-2 px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-center transition flex items-center justify-center shadow-sm">
+                            <i class="fa-solid fa-pen-to-square mr-1.5"></i> Input Nilai
+                        </a>
+                    @else
+                        <a href="{{ route('rekap.kelas', $kelas->id) }}" class="py-2 px-3 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 text-center transition flex items-center justify-center">
+                            <i class="fa-solid fa-eye mr-1.5"></i> Lihat Rekap
+                        </a>
+                    @endif
                     <a href="{{ route('rekap.kelas', $kelas->id) }}" class="py-2 px-3 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 text-center transition flex items-center justify-center">
                         <i class="fa-solid fa-chart-column mr-1.5"></i> Rekap Nilai
                     </a>
@@ -120,13 +126,16 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Wali Kelas</label>
-                        <select name="wali_id" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
-                            <option value="">-- Pilih Wali Kelas --</option>
-                            @foreach($waliList as $w)
-                                <option value="{{ $w->id }}">{{ $w->name }} ({{ $w->email }})</option>
-                            @endforeach
-                        </select>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nama Guru / Wali Kelas *</label>
+                        <input type="text" name="wali_nama" placeholder="Contoh: Dewi Lestari, S.Pd." required
+                            class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-semibold">
+                        <span class="text-[10px] text-slate-500">Nama guru penandatangan raport untuk kelas ini</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">NIP Wali Kelas (Opsional)</label>
+                        <input type="text" name="wali_nip" placeholder="Contoh: 19880315 201101 2 008"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-mono">
                     </div>
 
                     <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2">

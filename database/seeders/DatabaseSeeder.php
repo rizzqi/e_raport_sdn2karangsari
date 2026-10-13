@@ -121,6 +121,8 @@ class DatabaseSeeder extends Seeder
                 'fase' => 'Fase A',
                 'sekolah_id' => $sekolah->id,
                 'wali_id' => $wali1->id,
+                'wali_nama' => 'Dewi Lestari, S.Pd.',
+                'wali_nip' => '19880315 201101 2 008',
             ]
         );
 
@@ -130,6 +132,8 @@ class DatabaseSeeder extends Seeder
                 'fase' => 'Fase B',
                 'sekolah_id' => $sekolah->id,
                 'wali_id' => $wali4->id,
+                'wali_nama' => 'Budi Santoso, S.Pd.',
+                'wali_nip' => '19820720 200902 1 003',
             ]
         );
 

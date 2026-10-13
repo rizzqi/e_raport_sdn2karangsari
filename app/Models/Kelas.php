@@ -20,7 +20,19 @@ class Kelas extends Model
         'sekolah_id',
         'tahun_ajaran_id',
         'wali_id',
+        'wali_nama',
+        'wali_nip',
     ];
+
+    public function getNamaWaliAttribute(): string
+    {
+        return $this->wali_nama ?: ($this->wali->name ?? '( ................................ )');
+    }
+
+    public function getNipWaliAttribute(): string
+    {
+        return $this->wali_nip ?: '-';
+    }
 
     public function sekolah(): BelongsTo
     {

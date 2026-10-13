@@ -172,4 +172,60 @@ class RaportTest extends TestCase
         Storage::disk('public')->assertExists($sekolah->logo);
         Storage::disk('public')->assertExists($sekolah->logo_kanan);
     }
+
+    public function test_only_admin_can_input_grades_and_non_admin_forbidden(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kepsek = User::where('role', 'kepsek')->first();
+        $ks = KelasSiswa::first();
+        $kelas = $ks->kelas;
+
+        // Admin dapat mengakses form input nilai
+        $adminGet = $this->actingAs($admin)->get(route('nilai.input.siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]));
+        $adminGet->assertStatus(200);
+
+        // Admin dapat menyimpan nilai
+        $mapel = \App\Models\MataPelajaran::first();
+        $adminPost = $this->actingAs($admin)->post(route('nilai.simpan.siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]), [
+            'periode' => 'sts',
+            'formatif' => [$mapel->id => 88],
+            'sumatif' => [$mapel->id => 92],
+            'sakit' => 0,
+            'izin' => 0,
+            'alpa' => 0,
+        ]);
+        $adminPost->assertRedirect();
+
+        // Non-admin (kepsek/wali yang tidak diizinkan) dilarang mengakses form input nilai
+        $kepsekGet = $this->actingAs($kepsek)->get(route('nilai.input.siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]));
+        $kepsekGet->assertStatus(403);
+
+        // Non-admin dilarang menyimpan nilai
+        $kepsekPost = $this->actingAs($kepsek)->post(route('nilai.simpan.siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]), [
+            'periode' => 'sts',
+            'formatif' => [$mapel->id => 50],
+        ]);
+        $kepsekPost->assertStatus(403);
+    }
+
+    public function test_kelas_direct_wali_nama_and_nip_without_user_account(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $ta = \App\Models\TahunAjaran::first();
+
+        // Admin menambahkan kelas dengan mengetikkan nama wali kelas secara langsung
+        $storePost = $this->actingAs($admin)->post(route('kelas.store'), [
+            'nama' => 'Kelas 2 Unggulan',
+            'fase' => 'Fase A',
+            'tahun_ajaran_id' => $ta->id,
+            'wali_nama' => 'Siti Nurhaliza, S.Pd.',
+            'wali_nip' => '19900101 201502 2 001',
+        ]);
+        $storePost->assertRedirect(route('kelas.index'));
+
+        $kelasBaru = \App\Models\Kelas::where('nama', 'Kelas 2 Unggulan')->first();
+        $this->assertNotNull($kelasBaru);
+        $this->assertEquals('Siti Nurhaliza, S.Pd.', $kelasBaru->nama_wali);
+        $this->assertEquals('19900101 201502 2 001', $kelasBaru->nip_wali);
+    }
 }

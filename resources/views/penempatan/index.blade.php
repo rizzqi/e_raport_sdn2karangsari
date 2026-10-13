@@ -48,13 +48,15 @@
                                 </div>
                             </div>
 
-                            <form action="{{ route('penempatan.remove', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]) }}" method="POST" onsubmit="return confirm('Keluarkan siswa ini dari kelas?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition" title="Keluarkan dari kelas">
-                                    <i class="fa-solid fa-user-minus"></i>
-                                </button>
-                            </form>
+                            @if(auth()->user()->isAdmin())
+                                <form action="{{ route('penempatan.remove', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]) }}" method="POST" onsubmit="return confirm('Keluarkan siswa ini dari kelas?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition" title="Keluarkan dari kelas">
+                                        <i class="fa-solid fa-user-minus"></i>
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     @empty
                         <div class="p-8 text-center text-slate-400 text-xs">
@@ -74,35 +76,52 @@
                 <span class="text-xs text-slate-400">Pilih untuk masukkan ke kelas</span>
             </div>
 
-            <form action="{{ route('penempatan.assign', $kelas->id) }}" method="POST">
-                @csrf
+            @if(auth()->user()->isAdmin())
+                <form action="{{ route('penempatan.assign', $kelas->id) }}" method="POST">
+                    @csrf
 
-                <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 text-xs">
-                    <label class="flex items-center cursor-pointer font-bold text-slate-700">
-                        <input type="checkbox" id="checkAll" class="rounded border-slate-300 text-emerald-600 mr-2" onchange="toggleAll(this)">
-                        Pilih Semua Siswa
-                    </label>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition">
-                        <i class="fa-solid fa-plus mr-1"></i> Tempatkan Siswa Terpilih
-                    </button>
-                </div>
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 text-xs">
+                        <label class="flex items-center cursor-pointer font-bold text-slate-700">
+                            <input type="checkbox" id="checkAll" class="rounded border-slate-300 text-emerald-600 mr-2" onchange="toggleAll(this)">
+                            Pilih Semua Siswa
+                        </label>
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition">
+                            <i class="fa-solid fa-plus mr-1"></i> Tempatkan Siswa Terpilih
+                        </button>
+                    </div>
 
+                    <div class="divide-y divide-slate-100 max-h-[440px] overflow-y-auto">
+                        @forelse($siswaTersedia as $s)
+                            <label class="p-3.5 flex items-center space-x-3 hover:bg-slate-50 cursor-pointer transition block">
+                                <input type="checkbox" name="siswa_ids[]" value="{{ $s->id }}" class="siswa-checkbox rounded border-slate-300 text-emerald-600">
+                                <div>
+                                    <p class="font-bold text-sm text-slate-900">{{ $s->nama }}</p>
+                                    <p class="text-xs text-slate-400 font-mono">NIS: {{ $s->nis }} &bull; NISN: {{ $s->nisn ?? '-' }}</p>
+                                </div>
+                            </label>
+                        @empty
+                            <div class="p-8 text-center text-slate-400 text-xs">
+                                Tidak ada siswa aktif yang belum memiliki kelas.
+                            </div>
+                        @endforelse
+                    </div>
+                </form>
+            @else
                 <div class="divide-y divide-slate-100 max-h-[440px] overflow-y-auto">
                     @forelse($siswaTersedia as $s)
-                        <label class="p-3.5 flex items-center space-x-3 hover:bg-slate-50 cursor-pointer transition block">
-                            <input type="checkbox" name="siswa_ids[]" value="{{ $s->id }}" class="siswa-checkbox rounded border-slate-300 text-emerald-600">
+                        <div class="p-3.5 flex items-center space-x-3">
                             <div>
                                 <p class="font-bold text-sm text-slate-900">{{ $s->nama }}</p>
                                 <p class="text-xs text-slate-400 font-mono">NIS: {{ $s->nis }} &bull; NISN: {{ $s->nisn ?? '-' }}</p>
                             </div>
-                        </label>
+                        </div>
                     @empty
                         <div class="p-8 text-center text-slate-400 text-xs">
                             Tidak ada siswa aktif yang belum memiliki kelas.
                         </div>
                     @endforelse
                 </div>
-            </form>
+            @endif
         </div>
 
     </div>

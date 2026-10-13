@@ -13,16 +13,18 @@
             <p class="text-xs text-slate-500">Kelola master siswa, NIS, NISN, dan impor data massal dari clipboard Excel</p>
         </div>
 
-        <div class="flex items-center space-x-2">
-            <button onclick="document.getElementById('modalImportClipboard').classList.remove('hidden')"
-                class="inline-flex items-center px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold rounded-xl text-xs transition">
-                <i class="fa-solid fa-paste mr-1.5"></i> Tempel dari Clipboard / Excel
-            </button>
-            <button onclick="document.getElementById('modalTambahSiswa').classList.remove('hidden')"
-                class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition">
-                <i class="fa-solid fa-plus mr-1.5"></i> Tambah Siswa
-            </button>
-        </div>
+        @if(auth()->user()->isAdmin())
+            <div class="flex items-center space-x-2">
+                <button onclick="document.getElementById('modalImportClipboard').classList.remove('hidden')"
+                    class="inline-flex items-center px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold rounded-xl text-xs transition">
+                    <i class="fa-solid fa-paste mr-1.5"></i> Tempel dari Clipboard / Excel
+                </button>
+                <button onclick="document.getElementById('modalTambahSiswa').classList.remove('hidden')"
+                    class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition">
+                    <i class="fa-solid fa-plus mr-1.5"></i> Tambah Siswa
+                </button>
+            </div>
+        @endif
     </div>
 
     <!-- Filter & Search Bar -->
@@ -97,17 +99,21 @@
                                 @endif
                             </td>
                             <td class="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
-                                <button onclick="editSiswa({{ json_encode($s) }})"
-                                    class="p-1.5 text-slate-400 hover:text-emerald-600 transition" title="Ubah">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <form action="{{ route('siswa.destroy', $s->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus siswa {{ $s->nama }}?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Hapus">
-                                        <i class="fa-solid fa-trash-can"></i>
+                                @if(auth()->user()->isAdmin())
+                                    <button onclick="editSiswa({{ json_encode($s) }})"
+                                        class="p-1.5 text-slate-400 hover:text-emerald-600 transition" title="Ubah">
+                                        <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
-                                </form>
+                                    <form action="{{ route('siswa.destroy', $s->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus siswa {{ $s->nama }}?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Hapus">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="text-xs text-slate-400 italic">Lihat Saja</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

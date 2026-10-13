@@ -220,8 +220,8 @@
                 {{ $sekolah->kota ?? 'Banyuwangi' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}<br>
                 Wali Kelas,
                 <div class="space-ttd"></div>
-                <b>{{ $kelas->wali->name ?? '( ................................ )' }}</b><br>
-                <span style="font-size: 8pt;">NIP. -</span>
+                <b>{{ $kelas->nama_wali }}</b><br>
+                <span style="font-size: 8pt;">{{ $kelas->nip_wali !== '-' ? 'NIP. ' . $kelas->nip_wali : 'NIP. -' }}</span>
             </td>
         </tr>
     </table>

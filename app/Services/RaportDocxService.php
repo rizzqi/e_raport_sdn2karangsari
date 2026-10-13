@@ -302,12 +302,13 @@ class RaportDocxService
         $ttdRow4 = $ttdTable->addRow();
         $ttdRow4->addCell(3000)->addText('( ....................................... )', 'boldText', ['alignment' => Jc::CENTER]);
         $ttdRow4->addCell(3000)->addText($sekolah->kepsek ?? '( ................................ )', 'boldText', ['alignment' => Jc::CENTER]);
-        $ttdRow4->addCell(3000)->addText($wali->name ?? '( ................................ )', 'boldText', ['alignment' => Jc::CENTER]);
+        $ttdRow4->addCell(3000)->addText($kelas->nama_wali, 'boldText', ['alignment' => Jc::CENTER]);
 
         $ttdRow5 = $ttdTable->addRow();
         $ttdRow5->addCell(3000)->addText('', 'tableBody');
         $nipKepsek = $sekolah->nip ? "NIP. {$sekolah->nip}" : '-';
         $ttdRow5->addCell(3000)->addText($nipKepsek, 'tableBody', ['alignment' => Jc::CENTER]);
-        $ttdRow5->addCell(3000)->addText('NIP. -', 'tableBody', ['alignment' => Jc::CENTER]);
+        $nipWali = $kelas->nip_wali !== '-' ? "NIP. {$kelas->nip_wali}" : 'NIP. -';
+        $ttdRow5->addCell(3000)->addText($nipWali, 'tableBody', ['alignment' => Jc::CENTER]);
     }
 }

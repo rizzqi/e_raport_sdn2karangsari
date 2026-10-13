@@ -213,10 +213,10 @@ class NilaiController extends Controller
     protected function authorizeAksesKelas(Kelas $kelas): void
     {
         $user = auth()->user();
-        if ($user->isWali() && $kelas->wali_id !== $user->id) {
-            abort(403, 'Anda hanya dapat mengakses kelas yang Anda ampu.');
+        if (!$user->isAdmin()) {
+            abort(403, 'Hanya Administrator yang memiliki hak akses untuk menginput atau mengubah nilai raport.');
         }
-        if ($user->isWali() && (!$kelas->tahunAjaran || !$kelas->tahunAjaran->aktif)) {
+        if (!$kelas->tahunAjaran || !$kelas->tahunAjaran->aktif) {
             abort(403, 'Tahun ajaran kelas ini tidak aktif. Nilai hanya dapat diubah pada tahun ajaran yang aktif.');
         }
     }

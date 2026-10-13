@@ -17,17 +17,19 @@
             </div>
             <h1 class="text-2xl font-black text-slate-900 mt-1">{{ $kelas->nama }}</h1>
             <p class="text-xs text-slate-500 mt-0.5">
-                <i class="fa-solid fa-user-tie text-slate-400 mr-1"></i> Wali Kelas: <strong class="text-slate-700">{{ $kelas->wali->name ?? 'Belum Ditentukan' }}</strong>
+                <i class="fa-solid fa-user-tie text-slate-400 mr-1"></i> Wali Kelas: <strong class="text-slate-700">{{ $kelas->nama_wali }}</strong>
             </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('penempatan.index', $kelas->id) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center">
-                <i class="fa-solid fa-user-plus mr-1.5 text-emerald-600"></i> Kelola Siswa
-            </a>
-            <a href="{{ route('nilai.input.kelas', $kelas->id) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm flex items-center">
-                <i class="fa-solid fa-pen-to-square mr-1.5"></i> Input Nilai Cepat
-            </a>
+            @if(auth()->user()->isAdmin())
+                <a href="{{ route('penempatan.index', $kelas->id) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center">
+                    <i class="fa-solid fa-user-plus mr-1.5 text-emerald-600"></i> Kelola Siswa
+                </a>
+                <a href="{{ route('nilai.input.kelas', $kelas->id) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm flex items-center">
+                    <i class="fa-solid fa-pen-to-square mr-1.5"></i> Input Nilai Cepat
+                </a>
+            @endif
             <a href="{{ route('rekap.kelas', $kelas->id) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition flex items-center">
                 <i class="fa-solid fa-chart-pie mr-1.5"></i> Rekap Nilai
             </a>
@@ -81,11 +83,13 @@
                                 </span>
                             </td>
                             <td class="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
-                                <a href="{{ route('nilai.input.siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]) }}"
-                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition"
-                                    title="Input Nilai Siswa">
-                                    <i class="fa-solid fa-pen-to-square mr-1"></i> Input Nilai
-                                </a>
+                                @if(auth()->user()->isAdmin())
+                                    <a href="{{ route('nilai.input.siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]) }}"
+                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition"
+                                        title="Input Nilai Siswa">
+                                        <i class="fa-solid fa-pen-to-square mr-1"></i> Input Nilai
+                                    </a>
+                                @endif
                                 <a href="{{ route('raport.preview', $ks->id) }}"
                                     class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
                                     title="Pratinjau Raport">
