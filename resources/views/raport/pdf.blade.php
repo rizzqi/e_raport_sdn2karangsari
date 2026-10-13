@@ -5,8 +5,8 @@
     <title>Raport - {{ $siswa->nama }}</title>
     <style>
         @page {
-            size: A4 portrait;
-            margin: 1.2cm 1.5cm;
+            size: 215mm 330mm portrait;
+            margin: 1cm 1.2cm;
         }
         body {
             font-family: Arial, sans-serif;
@@ -18,15 +18,21 @@
         .text-right { text-align: right; }
         .font-bold { font-weight: bold; }
         .uppercase { text-transform: uppercase; }
-        .kop {
-            text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 4px;
-            margin-bottom: 15px;
+        .kop-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-bottom: 3px double #000;
+            padding-bottom: 6px;
+            margin-bottom: 14px;
         }
-        .kop h3 { margin: 2px 0; font-size: 11pt; }
-        .kop h2 { margin: 3px 0; font-size: 14pt; }
-        .kop p { margin: 2px 0; font-size: 8.5pt; font-style: italic; }
+        .kop-table td {
+            vertical-align: middle;
+        }
+        .kop-table h3 { margin: 1px 0; font-size: 10.5pt; font-weight: bold; text-transform: uppercase; }
+        .kop-table h2 { margin: 2px 0; font-size: 13pt; font-weight: bold; text-transform: uppercase; }
+        .kop-table p { margin: 1px 0; font-size: 8.5pt; }
+        .kop-table .alamat { font-style: italic; }
+        .kop-table .kontak { font-size: 8pt; color: #333; }
         .judul {
             text-align: center;
             margin-bottom: 12px;
@@ -80,13 +86,30 @@
 </head>
 <body>
 
-    <!-- KOP SURAT -->
-    <div class="kop">
-        <h3 class="uppercase font-bold">{{ $sekolah->pemda ?? 'PEMERINTAH KABUPATEN BANYUWANGI' }}</h3>
-        <h3 class="uppercase font-bold">{{ $sekolah->dinas ?? 'DINAS PENDIDIKAN' }}</h3>
-        <h2 class="uppercase font-bold">{{ $sekolah->nama ?? 'SD NEGERI 2 KARANGSARI' }}</h2>
-        <p>{{ $sekolah->alamat ?? 'Jl. Karangsari No. 12, Sempu, Banyuwangi' }}</p>
-    </div>
+    <!-- KOP SURAT RESMI F4 -->
+    <table class="kop-table">
+        <tr>
+            <td style="width: 15%; text-align: left;">
+                @if($sekolah->logo && file_exists(public_path('storage/' . $sekolah->logo)))
+                    <img src="{{ public_path('storage/' . $sekolah->logo) }}" style="max-height: 65px; max-width: 65px;">
+                @endif
+            </td>
+            <td style="width: 70%; text-align: center;">
+                <h3>{{ $sekolah->pemda ?? 'PEMERINTAH KABUPATEN BANYUWANGI' }}</h3>
+                <h3>{{ $sekolah->dinas ?? 'DINAS PENDIDIKAN' }}</h3>
+                <h2>{{ $sekolah->nama ?? 'SD NEGERI 2 KARANGSARI' }}</h2>
+                <p class="alamat">{{ $sekolah->alamat ?? 'Jl. Karangsari No. 12, Sempu, Banyuwangi' }}</p>
+                @if($sekolah->kontak)
+                    <p class="kontak">{{ $sekolah->kontak }}</p>
+                @endif
+            </td>
+            <td style="width: 15%; text-align: right;">
+                @if($sekolah->logo_kanan && file_exists(public_path('storage/' . $sekolah->logo_kanan)))
+                    <img src="{{ public_path('storage/' . $sekolah->logo_kanan) }}" style="max-height: 65px; max-width: 65px;">
+                @endif
+            </td>
+        </tr>
+    </table>
 
     <!-- JUDUL -->
     <div class="judul">

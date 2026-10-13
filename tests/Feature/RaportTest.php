@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\KelasSiswa;
 use App\Services\HitungNilaiService;
 use App\Services\RaportDocxService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class RaportTest extends TestCase
 {
@@ -72,10 +74,72 @@ class RaportTest extends TestCase
         $previewResponse = $this->actingAs($wali)->get("/raport/preview/{$ks->id}?periode=sts");
         $previewResponse->assertStatus(200);
         $previewResponse->assertSee($ks->siswa->nama);
+        $previewResponse->assertSee('F4');
 
         // Test PDF Download
         $pdfResponse = $this->actingAs($wali)->get("/raport/download-pdf/{$ks->id}?periode=sts");
         $pdfResponse->assertStatus(200);
         $pdfResponse->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_update_sekolah_kop_and_f4_raport(): void
+    {
+        Storage::fake('public');
+        $admin = User::where('role', 'admin')->first();
+
+        // Akses halaman identitas sekolah
+        $editPage = $this->actingAs($admin)->get(route('sekolah.edit'));
+        $editPage->assertStatus(200);
+        $editPage->assertSeeText('Identitas & Kop Surat Raport');
+        $editPage->assertSeeText('F4 / Folio (215 × 330 mm)');
+
+        // Buat file fake untuk logo kiri dan logo kanan
+        $logoKiri = UploadedFile::fake()->image('logo_pemda.png', 100, 100);
+        $logoKanan = UploadedFile::fake()->image('logo_sekolah.png', 100, 100);
+
+        // Submit pembaruan Kop
+        $updatePost = $this->actingAs($admin)->post(route('sekolah.update'), [
+            'nama' => 'SD NEGERI 2 KARANGSARI UNGGULAN',
+            'pemda' => 'PEMERINTAH KABUPATEN BANYUWANGI JATIM',
+            'dinas' => 'DINAS PENDIDIKAN DAN KEBUDAYAAN',
+            'kota' => 'Banyuwangi',
+            'alamat' => 'Jl. Karangsari Indah No. 99, Sempu',
+            'kontak' => 'Telp: 08123456789 | Email: sdn2karangsari@sekolah.id',
+            'kepsek' => 'Bambang Irawan, M.Pd.',
+            'nip' => '198001012005011005',
+            'logo' => $logoKiri,
+            'logo_kanan' => $logoKanan,
+        ]);
+
+        $updatePost->assertRedirect(route('sekolah.edit'));
+        $updatePost->assertSessionHas('success');
+
+        // Verifikasi database terupdate
+        $sekolah = \App\Models\Sekolah::first();
+        $this->assertEquals('SD NEGERI 2 KARANGSARI UNGGULAN', $sekolah->nama);
+        $this->assertEquals('PEMERINTAH KABUPATEN BANYUWANGI JATIM', $sekolah->pemda);
+        $this->assertEquals('DINAS PENDIDIKAN DAN KEBUDAYAAN', $sekolah->dinas);
+        $this->assertEquals('Telp: 08123456789 | Email: sdn2karangsari@sekolah.id', $sekolah->kontak);
+        $this->assertNotNull($sekolah->logo);
+        $this->assertNotNull($sekolah->logo_kanan);
+        Storage::disk('public')->assertExists($sekolah->logo);
+        Storage::disk('public')->assertExists($sekolah->logo_kanan);
+
+        // Verifikasi kop muncul pada pratinjau raport
+        $ks = KelasSiswa::first();
+        $preview = $this->actingAs($admin)->get("/raport/preview/{$ks->id}?periode=sts");
+        $preview->assertStatus(200);
+        $preview->assertSee('SD NEGERI 2 KARANGSARI UNGGULAN');
+        $preview->assertSee('PEMERINTAH KABUPATEN BANYUWANGI JATIM');
+        $preview->assertSee('Telp: 08123456789 | Email: sdn2karangsari@sekolah.id');
+
+        // Verifikasi generate DOCX dengan kop dan logo
+        $docxService = app(\App\Services\RaportDocxService::class);
+        $filePath = $docxService->generateDocxSatuSiswa($ks, 'sts');
+        $this->assertFileExists($filePath);
+
+        // Verifikasi PDF download dengan kop baru
+        $pdfResponse = $this->actingAs($admin)->get("/raport/download-pdf/{$ks->id}?periode=sts");
+        $pdfResponse->assertStatus(200);
     }
 }

@@ -154,7 +154,7 @@ class RaportController extends Controller
             'pembiasaanList',
             'nilaiPemList',
             'kehadiran'
-        ))->setPaper('a4', 'portrait');
+        ))->setPaper([0, 0, 609.45, 935.43], 'portrait');
 
         $fileName = 'Raport_' . str_replace(' ', '_', $siswa->nama) . '_' . strtoupper($periode) . '.pdf';
         return $pdf->download($fileName);

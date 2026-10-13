@@ -21,7 +21,9 @@ class Sekolah extends Model
         'kepsek',
         'nip',
         'logo',
+        'logo_kanan',
         'ttd',
+        'kontak',
     ];
 
     public function kelas(): HasMany

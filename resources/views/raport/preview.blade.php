@@ -3,6 +3,30 @@
 @section('title', 'Pratinjau Raport - ' . $siswa->nama)
 
 @section('content')
+<style>
+    @media print {
+        @page {
+            size: 215mm 330mm;
+            margin: 10mm 15mm;
+        }
+        body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .no-print {
+            display: none !important;
+        }
+        .page-sheet {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+    }
+</style>
+
 <div class="space-y-6">
 
     <!-- Action Toolbar (No-Print) -->
@@ -21,40 +45,67 @@
                    SAS
                 </a>
             </div>
+            <span class="hidden md:inline-flex items-center px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-semibold">
+                <i class="fa-solid fa-ruler-combined mr-1 text-amber-600"></i> F4 (215 × 330 mm)
+            </span>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
             <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
-                <i class="fa-solid fa-print mr-1.5"></i> Cetak Dokumen (A4)
+                <i class="fa-solid fa-print mr-1.5"></i> Cetak Dokumen (F4)
             </button>
             <a href="{{ route('raport.download.docx', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode]) }}"
                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
-                <i class="fa-solid fa-file-word mr-1.5"></i> Unduh Word (.docx)
+                <i class="fa-solid fa-file-word mr-1.5"></i> Unduh Word F4 (.docx)
             </a>
             <a href="{{ route('raport.download.pdf', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode]) }}"
                class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
-                <i class="fa-solid fa-file-pdf mr-1.5"></i> Unduh PDF
+                <i class="fa-solid fa-file-pdf mr-1.5"></i> Unduh PDF F4
             </a>
         </div>
     </div>
 
-    <!-- Official Report Card Sheet (Standard A4) -->
-    <div class="max-w-[850px] mx-auto bg-white p-8 sm:p-12 rounded-2xl border border-slate-200 shadow-xl print:shadow-none print:border-none print:p-0 print:m-0 text-slate-900">
+    <!-- Official Report Card Sheet (Standard F4 / Folio: 215 x 330 mm) -->
+    <div class="page-sheet max-w-[850px] mx-auto bg-white p-8 sm:p-12 rounded-2xl border border-slate-200 shadow-xl print:shadow-none print:border-none print:p-0 print:m-0 text-slate-900">
 
-        <!-- 1. KOP SURAT RESMI -->
-        <div class="text-center pb-2 border-b-2 border-slate-900">
-            <h3 class="text-sm sm:text-base font-bold uppercase tracking-wider leading-tight">
-                {{ $sekolah->pemda ?? 'PEMERINTAH KABUPATEN BANYUWANGI' }}
-            </h3>
-            <h3 class="text-sm sm:text-base font-bold uppercase tracking-wider leading-tight">
-                {{ $sekolah->dinas ?? 'DINAS PENDIDIKAN' }}
-            </h3>
-            <h2 class="text-lg sm:text-2xl font-black uppercase text-slate-900 tracking-wide mt-1 leading-tight">
-                {{ $sekolah->nama ?? 'SD NEGERI 2 KARANGSARI' }}
-            </h2>
-            <p class="text-[11px] sm:text-xs italic text-slate-600 mt-1">
-                {{ $sekolah->alamat ?? 'Jl. Karangsari No. 12, Sempu, Banyuwangi' }}
-            </p>
+        <!-- 1. KOP SURAT RESMI STANDAR F4 -->
+        <div class="pb-3 border-b-4 border-double border-slate-900">
+            <div class="flex items-center justify-between gap-4">
+                <!-- Logo Kiri -->
+                <div class="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                    @if($sekolah->logo && file_exists(public_path('storage/' . $sekolah->logo)))
+                        <img src="{{ asset('storage/' . $sekolah->logo) }}" alt="Logo Pemda" class="max-h-20 max-w-20 object-contain">
+                    @endif
+                </div>
+
+                <!-- Teks Kop Tengah -->
+                <div class="flex-1 text-center font-serif text-slate-900 space-y-0.5">
+                    <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider leading-tight">
+                        {{ $sekolah->pemda ?? 'PEMERINTAH KABUPATEN BANYUWANGI' }}
+                    </h3>
+                    <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider leading-tight">
+                        {{ $sekolah->dinas ?? 'DINAS PENDIDIKAN' }}
+                    </h3>
+                    <h2 class="text-base sm:text-xl font-black uppercase text-slate-900 tracking-wider leading-tight">
+                        {{ $sekolah->nama ?? 'SD NEGERI 2 KARANGSARI' }}
+                    </h2>
+                    <p class="text-[11px] sm:text-xs italic text-slate-600 leading-tight">
+                        {{ $sekolah->alamat ?? 'Jl. Karangsari No. 12, Sempu, Banyuwangi' }}
+                    </p>
+                    @if($sekolah->kontak)
+                        <p class="text-[10px] text-slate-500 leading-tight">
+                            {{ $sekolah->kontak }}
+                        </p>
+                    @endif
+                </div>
+
+                <!-- Logo Kanan -->
+                <div class="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                    @if($sekolah->logo_kanan && file_exists(public_path('storage/' . $sekolah->logo_kanan)))
+                        <img src="{{ asset('storage/' . $sekolah->logo_kanan) }}" alt="Logo Tut Wuri / Sekolah" class="max-h-20 max-w-20 object-contain">
+                    @endif
+                </div>
+            </div>
         </div>
 
         <!-- 2. JUDUL RAPOR -->

@@ -33,7 +33,8 @@ class RaportDocxService
         $this->setupStyles($phpWord);
 
         $section = $phpWord->addSection([
-            'paperSize' => 'A4',
+            'pageSizeW' => 12189, // F4 / Folio (215 mm)
+            'pageSizeH' => 18709, // F4 / Folio (330 mm)
             'marginTop' => 720, // ~1.27 cm
             'marginBottom' => 720,
             'marginLeft' => 1000,
@@ -67,7 +68,8 @@ class RaportDocxService
 
         foreach ($kelasSiswaList as $index => $ks) {
             $section = $phpWord->addSection([
-                'paperSize' => 'A4',
+                'pageSizeW' => 12189, // F4 / Folio (215 mm)
+                'pageSizeH' => 18709, // F4 / Folio (330 mm)
                 'marginTop' => 720,
                 'marginBottom' => 720,
                 'marginLeft' => 1000,
@@ -98,9 +100,10 @@ class RaportDocxService
         $phpWord->setDefaultFontName('Calibri');
         $phpWord->setDefaultFontSize(10);
 
-        $phpWord->addFontStyle('kopPemda', ['bold' => true, 'size' => 12]);
-        $phpWord->addFontStyle('kopSekolah', ['bold' => true, 'size' => 14]);
-        $phpWord->addFontStyle('kopAlamat', ['italic' => true, 'size' => 9]);
+        $phpWord->addFontStyle('kopPemda', ['bold' => true, 'size' => 11]);
+        $phpWord->addFontStyle('kopSekolah', ['bold' => true, 'size' => 13]);
+        $phpWord->addFontStyle('kopAlamat', ['italic' => true, 'size' => 8.5]);
+        $phpWord->addFontStyle('kopKontak', ['size' => 8, 'color' => '333333']);
         $phpWord->addFontStyle('judulRaport', ['bold' => true, 'size' => 12, 'underline' => 'single']);
         $phpWord->addFontStyle('boldText', ['bold' => true, 'size' => 10]);
         $phpWord->addFontStyle('tableHeader', ['bold' => true, 'size' => 9.5]);
@@ -115,19 +118,55 @@ class RaportDocxService
         $siswa = $ks->siswa;
         $wali = $kelas->wali;
 
-        // 1. KOP SURAT
-        $kopTable = $section->addTable(['alignment' => JcTable::CENTER, 'width' => 100 * 50]);
+        // Cari logo jika ada
+        $logoKiriPath = null;
+        if ($sekolah && $sekolah->logo) {
+            if (file_exists(storage_path('app/public/' . $sekolah->logo))) {
+                $logoKiriPath = storage_path('app/public/' . $sekolah->logo);
+            } elseif (file_exists(public_path('storage/' . $sekolah->logo))) {
+                $logoKiriPath = public_path('storage/' . $sekolah->logo);
+            }
+        }
+
+        $logoKananPath = null;
+        if ($sekolah && $sekolah->logo_kanan) {
+            if (file_exists(storage_path('app/public/' . $sekolah->logo_kanan))) {
+                $logoKananPath = storage_path('app/public/' . $sekolah->logo_kanan);
+            } elseif (file_exists(public_path('storage/' . $sekolah->logo_kanan))) {
+                $logoKananPath = public_path('storage/' . $sekolah->logo_kanan);
+            }
+        }
+
+        // 1. KOP SURAT STANDAR F4
+        $kopTable = $section->addTable(['alignment' => JcTable::CENTER, 'width' => 10000]);
         $kopRow = $kopTable->addRow();
-        $kopCell = $kopRow->addCell(9000);
-        $kopCell->addText(strtoupper($sekolah->pemda ?? 'PEMERINTAH KABUPATEN BANYUWANGI'), 'kopPemda', ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
-        $kopCell->addText(strtoupper($sekolah->dinas ?? 'DINAS PENDIDIKAN'), 'kopPemda', ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
-        $kopCell->addText(strtoupper($sekolah->nama ?? 'SD NEGERI 2 KARANGSARI'), 'kopSekolah', ['alignment' => Jc::CENTER, 'spaceAfter' => 30]);
-        $kopCell->addText($sekolah->alamat ?? 'Jl. Karangsari, Sempu, Banyuwangi', 'kopAlamat', ['alignment' => Jc::CENTER, 'spaceAfter' => 60]);
+
+        // Kolom Logo Kiri
+        $cellKiri = $kopRow->addCell(1300, ['valign' => VerticalJc::CENTER]);
+        if ($logoKiriPath) {
+            $cellKiri->addImage($logoKiriPath, ['width' => 50, 'height' => 50, 'alignment' => Jc::CENTER]);
+        }
+
+        // Kolom Teks Kop Tengah
+        $kopCell = $kopRow->addCell(7400, ['valign' => VerticalJc::CENTER]);
+        $kopCell->addText(strtoupper($sekolah->pemda ?? 'PEMERINTAH KABUPATEN BANYUWANGI'), 'kopPemda', ['alignment' => Jc::CENTER, 'spaceAfter' => 15]);
+        $kopCell->addText(strtoupper($sekolah->dinas ?? 'DINAS PENDIDIKAN'), 'kopPemda', ['alignment' => Jc::CENTER, 'spaceAfter' => 15]);
+        $kopCell->addText(strtoupper($sekolah->nama ?? 'SD NEGERI 2 KARANGSARI'), 'kopSekolah', ['alignment' => Jc::CENTER, 'spaceAfter' => 25]);
+        $kopCell->addText($sekolah->alamat ?? 'Jl. Karangsari No. 12, Sempu, Banyuwangi', 'kopAlamat', ['alignment' => Jc::CENTER, 'spaceAfter' => 15]);
+        if ($sekolah && $sekolah->kontak) {
+            $kopCell->addText($sekolah->kontak, 'kopKontak', ['alignment' => Jc::CENTER, 'spaceAfter' => 25]);
+        }
+
+        // Kolom Logo Kanan
+        $cellKanan = $kopRow->addCell(1300, ['valign' => VerticalJc::CENTER]);
+        if ($logoKananPath) {
+            $cellKanan->addImage($logoKananPath, ['width' => 50, 'height' => 50, 'alignment' => Jc::CENTER]);
+        }
 
         // Garis Pembatas Kop
-        $lineTable = $section->addTable(['alignment' => JcTable::CENTER, 'width' => 100 * 50]);
+        $lineTable = $section->addTable(['alignment' => JcTable::CENTER, 'width' => 10000]);
         $lineRow = $lineTable->addRow();
-        $lineRow->addCell(9000, ['borderBottomSize' => 18, 'borderBottomColor' => '000000']);
+        $lineRow->addCell(10000, ['borderBottomSize' => 18, 'borderBottomColor' => '000000']);
 
         $section->addTextBreak(1);
 
