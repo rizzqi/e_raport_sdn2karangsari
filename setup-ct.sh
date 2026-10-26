@@ -7,12 +7,17 @@ echo "=========================================================="
 echo "  MEMULAI INSTALASI E-RAPORT SDN 2 KARANGSARI PADA CT    "
 echo "=========================================================="
 
-# Pastikan PHP 8.4 terpasang (diperlukan oleh Symfony 8.1 / Laravel 12)
-echo "[0/7] Memastikan PHP 8.4 terpasang..."
+# Pastikan PHP 8.4 dan Composer resmi terpasang
+echo "[0/7] Memastikan PHP 8.4 dan Composer resmi terpasang..."
 apt-get update -y
 apt-get install -y php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl php8.4-gd php8.4-zip php8.4-bcmath php8.4-intl
 update-alternatives --set php /usr/bin/php8.4 2>/dev/null || true
 systemctl enable --now php8.4-fpm
+
+# Hapus composer bawaan apt (yang bentrok) dan pasang Composer standalone resmi
+apt-get remove -y composer 2>/dev/null || true
+curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+chmod +x /usr/local/bin/composer
 
 # 1. Konfigurasi Database MariaDB
 echo "[1/7] Menyiapkan database MariaDB 'db_eraport'..."
@@ -47,7 +52,7 @@ sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env
 
 # 4. Install Dependensi PHP Composer
 echo "[4/7] Menginstal dependensi Composer..."
-composer install --no-dev --optimize-autoloader --no-interaction
+/usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction
 
 # Generate APP_KEY jika belum ada (setelah vendor terpasang)
 if ! grep -q "^APP_KEY=base64:" .env; then
