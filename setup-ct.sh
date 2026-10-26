@@ -1,9 +1,18 @@
 #!/bin/bash
 set -e
 
+export COMPOSER_ALLOW_SUPERUSER=1
+
 echo "=========================================================="
 echo "  MEMULAI INSTALASI E-RAPORT SDN 2 KARANGSARI PADA CT    "
 echo "=========================================================="
+
+# Pastikan PHP 8.4 terpasang (diperlukan oleh Symfony 8.1 / Laravel 12)
+echo "[0/7] Memastikan PHP 8.4 terpasang..."
+apt-get update -y
+apt-get install -y php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl php8.4-gd php8.4-zip php8.4-bcmath php8.4-intl
+update-alternatives --set php /usr/bin/php8.4 2>/dev/null || true
+systemctl enable --now php8.4-fpm
 
 # 1. Konfigurasi Database MariaDB
 echo "[1/7] Menyiapkan database MariaDB 'db_eraport'..."
@@ -65,13 +74,12 @@ chown -R www-data:www-data /var/www/e_raport_sdn2karangsari
 
 # 7. Konfigurasi Nginx
 echo "[7/7] Mengonfigurasi web server Nginx..."
-PHP_SOCKET="/var/run/php/php8.3-fpm.sock"
-if [ ! -S "$PHP_SOCKET" ]; then
-    # Cari socket PHP-FPM aktif lainnya jika bukan 8.3
-    FOUND_SOCK=$(find /var/run/php/ -name "php*-fpm.sock" | head -n 1)
-    if [ -n "$FOUND_SOCK" ]; then
-        PHP_SOCKET="$FOUND_SOCK"
-    fi
+if [ -S "/var/run/php/php8.4-fpm.sock" ]; then
+    PHP_SOCKET="/var/run/php/php8.4-fpm.sock"
+elif [ -S "/var/run/php/php8.3-fpm.sock" ]; then
+    PHP_SOCKET="/var/run/php/php8.3-fpm.sock"
+else
+    PHP_SOCKET=$(find /var/run/php/ -name "php*-fpm.sock" | head -n 1)
 fi
 
 cat <<EOF > /etc/nginx/sites-available/eraport
