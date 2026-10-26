@@ -61,10 +61,19 @@ fi
 
 # 5. Build Frontend Assets
 echo "[5/7] Mengompilasi asset frontend (Vite)..."
-if command -v npm &> /dev/null; then
-    npm install --no-audit --prefer-offline
-    npm run build
+NODE_MAJOR=0
+if command -v node &> /dev/null; then
+    NODE_MAJOR=$(node -v | cut -d'.' -f1 | tr -d 'v')
 fi
+
+if [ "$NODE_MAJOR" -lt 20 ]; then
+    echo "Node.js saat ini versi $(node -v 2>/dev/null || echo 'none'), memperbarui ke Node.js 20 LTS..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt-get install -y nodejs
+fi
+
+npm install --no-audit --prefer-offline
+npm run build
 
 # 6. Database Migration, Seeder & Storage Link
 echo "[6/7] Menjalankan migrasi database & seeder data awal..."
