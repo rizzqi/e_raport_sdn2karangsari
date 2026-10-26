@@ -44,9 +44,15 @@ if [ ! -f ".env" ]; then
     cp .env.example .env
 fi
 
-sed -i 's/DB_DATABASE=.*/DB_DATABASE=db_eraport/' .env
-sed -i 's/DB_USERNAME=.*/DB_USERNAME=eraport/' .env
-sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=eraport123/' .env
+sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+sed -i 's/^# DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+sed -i 's/^# DB_PORT=.*/DB_PORT=3306/' .env
+sed -i 's/^# DB_DATABASE=.*/DB_DATABASE=db_eraport/' .env
+sed -i 's/^DB_DATABASE=.*/DB_DATABASE=db_eraport/' .env
+sed -i 's/^# DB_USERNAME=.*/DB_USERNAME=eraport/' .env
+sed -i 's/^DB_USERNAME=.*/DB_USERNAME=eraport/' .env
+sed -i 's/^# DB_PASSWORD=.*/DB_PASSWORD=eraport123/' .env
+sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=eraport123/' .env
 sed -i 's/APP_ENV=local/APP_ENV=production/' .env
 sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env
 
