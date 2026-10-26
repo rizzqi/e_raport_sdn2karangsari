@@ -101,6 +101,7 @@
             <!-- Hidden inputs untuk menyimpan base64 hasil crop -->
             <input type="hidden" name="cropped_logo" id="cropped_logo" value="">
             <input type="hidden" name="cropped_logo_kanan" id="cropped_logo_kanan" value="">
+            <input type="hidden" name="cropped_ttd" id="cropped_ttd" value="">
 
             <!-- Bagian 1: Teks Kop Surat -->
             <div>
@@ -278,7 +279,7 @@
             <!-- Bagian 3: Kepala Sekolah & Tanda Tangan -->
             <div class="pt-4 border-t border-slate-100">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-3 flex items-center">
-                    <i class="fa-solid fa-signature mr-1.5"></i> 3. Data Kepala Sekolah & Pengesahan Raport
+                    <i class="fa-solid fa-signature mr-1.5"></i> 3. Data Kepala Sekolah & Tanda Tangan Digital Raport
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -293,6 +294,55 @@
                         <input type="text" name="nip" value="{{ old('nip', $sekolah->nip) }}"
                             placeholder="Contoh: 19750812 200003 1 004"
                             class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 font-mono">
+                    </div>
+
+                    <!-- Scan / Upload Tanda Tangan & Stempel Digital Kepsek -->
+                    <div class="md:col-span-2 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Scan / Upload Tanda Tangan Digital Kepala Sekolah
+                            </label>
+                            <span id="badge_status_ttd" class="hidden text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                <i class="fa-solid fa-circle-check mr-0.5"></i> TTD Siap Disimpan
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mb-3">
+                            Unggah foto/scan tanda tangan & cap stempel kepala sekolah (format PNG transparan atau JPG). Gunakan fitur crop untuk menyesuaikan ukuran agar tercetak proporsional pada raport resmi.
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <!-- Area Preview TTD -->
+                            <div class="w-44 h-24 bg-white rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center p-2 overflow-hidden shadow-2xs shrink-0">
+                                @if($sekolah->ttd && file_exists(public_path('storage/' . $sekolah->ttd)))
+                                    <img id="thumb_ttd" src="{{ asset('storage/' . $sekolah->ttd) }}" alt="Tanda Tangan Kepsek" class="max-h-20 max-w-full object-contain">
+                                @else
+                                    <img id="thumb_ttd" src="" alt="Tanda Tangan Kepsek" class="hidden max-h-20 max-w-full object-contain">
+                                    <div id="thumb_placeholder_ttd" class="text-center text-slate-400">
+                                        <i class="fa-solid fa-signature text-2xl block mb-1 text-slate-300"></i>
+                                        <span class="text-[10px]">Belum ada TTD</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="flex-1 space-y-2 w-full">
+                                <div class="flex items-center gap-2">
+                                    <input type="file" id="file_ttd" name="ttd" accept="image/*"
+                                        class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+
+                                    <button type="button" id="btn_recrop_ttd" onclick="reCropExisting('ttd')"
+                                        class="{{ $sekolah->ttd ? '' : 'hidden' }} shrink-0 px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition">
+                                        <i class="fa-solid fa-crop mr-1"></i> Sesuaikan
+                                    </button>
+                                </div>
+
+                                @if($sekolah->ttd)
+                                    <label class="inline-flex items-center text-xs text-rose-600 cursor-pointer pt-1">
+                                        <input type="checkbox" name="hapus_ttd" value="1" class="rounded text-rose-600 mr-1.5 border-slate-300 focus:ring-rose-500">
+                                        <span>Hapus tanda tangan digital (kembali ke tanda tangan manual/basah)</span>
+                                    </label>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -403,10 +453,11 @@
 
 <script>
     let cropper = null;
-    let currentTarget = null; // 'logo' atau 'logo_kanan'
+    let currentTarget = null; // 'logo', 'logo_kanan', atau 'ttd'
     let lastLoadedImageSource = {
         logo: document.getElementById('thumb_logo') ? document.getElementById('thumb_logo').src : '',
-        logo_kanan: document.getElementById('thumb_logo_kanan') ? document.getElementById('thumb_logo_kanan').src : ''
+        logo_kanan: document.getElementById('thumb_logo_kanan') ? document.getElementById('thumb_logo_kanan').src : '',
+        ttd: document.getElementById('thumb_ttd') ? document.getElementById('thumb_ttd').src : ''
     };
 
     const modal = document.getElementById('cropModal');
@@ -422,6 +473,10 @@
 
     document.getElementById('file_logo_kanan').addEventListener('change', function(e) {
         handleFileSelect(e, 'logo_kanan');
+    });
+
+    document.getElementById('file_ttd')?.addEventListener('change', function(e) {
+        handleFileSelect(e, 'ttd');
     });
 
     function handleFileSelect(e, targetType) {
@@ -444,7 +499,11 @@
     function reCropExisting(targetType) {
         let src = lastLoadedImageSource[targetType];
         if (!src) {
-            const thumb = document.getElementById(targetType === 'logo' ? 'thumb_logo' : 'thumb_logo_kanan');
+            let thumbId = 'thumb_logo';
+            if (targetType === 'logo_kanan') thumbId = 'thumb_logo_kanan';
+            if (targetType === 'ttd') thumbId = 'thumb_ttd';
+
+            const thumb = document.getElementById(thumbId);
             if (thumb && thumb.src) {
                 src = thumb.src;
             }
@@ -456,9 +515,13 @@
 
     function openCropModal(imageSrc, targetType) {
         currentTarget = targetType;
-        modalTitle.innerHTML = targetType === 'logo'
-            ? '<i class="fa-solid fa-landmark text-emerald-600 mr-2"></i> Crop Logo Kiri (Pemda / Daerah)'
-            : '<i class="fa-solid fa-graduation-cap text-emerald-600 mr-2"></i> Crop Logo Kanan (Sekolah / Tut Wuri)';
+        if (targetType === 'logo') {
+            modalTitle.innerHTML = '<i class="fa-solid fa-landmark text-emerald-600 mr-2"></i> Crop Logo Kiri (Pemda / Daerah)';
+        } else if (targetType === 'logo_kanan') {
+            modalTitle.innerHTML = '<i class="fa-solid fa-graduation-cap text-emerald-600 mr-2"></i> Crop Logo Kanan (Sekolah / Tut Wuri)';
+        } else if (targetType === 'ttd') {
+            modalTitle.innerHTML = '<i class="fa-solid fa-signature text-emerald-600 mr-2"></i> Crop Tanda Tangan & Stempel Kepala Sekolah';
+        }
 
         // Tampilkan modal
         modal.classList.remove('hidden');
@@ -471,12 +534,14 @@
 
         cropperImage.src = imageSrc;
 
+        const defaultRatio = targetType === 'ttd' ? NaN : 1;
+
         // Inisialisasi Cropper.js
         cropper = new Cropper(cropperImage, {
-            aspectRatio: 1, // Default 1:1 persegi
+            aspectRatio: defaultRatio,
             viewMode: 1,
             dragMode: 'move',
-            autoCropArea: 0.85,
+            autoCropArea: 0.9,
             restore: false,
             guides: true,
             center: true,
@@ -486,7 +551,7 @@
             toggleDragModeOnDblclick: false,
             preview: '#cropperPreview',
             ready: function () {
-                setCropRatio(1);
+                setCropRatio(defaultRatio);
             }
         });
     }
@@ -528,8 +593,8 @@
 
         // Dapatkan gambar hasil crop dalam resolusi yang jernih
         const canvas = cropper.getCroppedCanvas({
-            width: 320,
-            height: 320,
+            width: currentTarget === 'ttd' ? 480 : 320,
+            height: currentTarget === 'ttd' ? 240 : 320,
             imageSmoothingEnabled: true,
             imageSmoothingQuality: 'high',
         });
@@ -593,6 +658,22 @@
                 kopContainer.appendChild(kopImg);
             }
             kopImg.src = croppedBase64;
+
+        } else if (currentTarget === 'ttd') {
+            // 1. Simpan ke hidden input
+            document.getElementById('cropped_ttd').value = croppedBase64;
+
+            // 2. Update thumbnail pada form
+            const thumb = document.getElementById('thumb_ttd');
+            thumb.src = croppedBase64;
+            thumb.classList.remove('hidden');
+            const placeholder = document.getElementById('thumb_placeholder_ttd');
+            if (placeholder) placeholder.classList.add('hidden');
+
+            const badge = document.getElementById('badge_status_ttd');
+            if (badge) badge.classList.remove('hidden');
+            const btnRecrop = document.getElementById('btn_recrop_ttd');
+            if (btnRecrop) btnRecrop.classList.remove('hidden');
         }
 
         closeCropModal();

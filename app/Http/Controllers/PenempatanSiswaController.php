@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Kelas;
-use App\Models\Siswa;
 use App\Models\KelasSiswa;
+use App\Models\Siswa;
+use Illuminate\Http\Request;
 
 class PenempatanSiswaController extends Controller
 {
@@ -37,12 +37,13 @@ class PenempatanSiswaController extends Controller
             ]);
         }
 
-        return redirect()->route('penempatan.index', $kelas->id)->with('success', count($request->siswa_ids) . ' siswa berhasil ditempatkan ke kelas.');
+        return redirect()->route('penempatan.index', $kelas->id)->with('success', count($request->siswa_ids).' siswa berhasil ditempatkan ke kelas.');
     }
 
     public function remove(Kelas $kelas, KelasSiswa $kelasSiswa)
     {
         $kelasSiswa->delete();
+
         return redirect()->route('penempatan.index', $kelas->id)->with('success', 'Siswa berhasil dikeluarkan dari kelas.');
     }
 }

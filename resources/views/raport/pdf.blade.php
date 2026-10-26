@@ -138,9 +138,10 @@
         <thead>
             <tr>
                 <th style="width: 5%;">No</th>
-                <th style="width: 55%; text-align: left;">Mata Pelajaran</th>
-                <th style="width: 20%;">Nilai Formatif</th>
-                <th style="width: 20%;">Nilai Sumatif</th>
+                <th style="width: 45%; text-align: left;">Mata Pelajaran</th>
+                <th style="width: 15%;">KKM</th>
+                <th style="width: 15%;">Nilai</th>
+                <th style="width: 20%;">Keterangan</th>
             </tr>
         </thead>
         <tbody>
@@ -148,21 +149,24 @@
                 <tr>
                     <td class="text-center">{{ $b['no'] }}</td>
                     <td>{{ $b['mapel_nama'] }}</td>
-                    <td class="text-center font-bold">{{ $b['formatif_format'] }}</td>
-                    <td class="text-center font-bold">{{ $b['sumatif_format'] }}</td>
+                    <td class="text-center font-bold">{{ $b['kkm'] }}</td>
+                    <td class="text-center font-bold">{{ $b['akhir_format'] }}</td>
+                    <td class="text-center">{{ $b['keterangan'] }}</td>
                 </tr>
             @endforeach
         </tbody>
         <tfoot>
             <tr style="background-color: #f9f9f9;" class="font-bold">
                 <td colspan="2" class="text-right uppercase">Jumlah Nilai</td>
-                <td class="text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_formatif']) }}</td>
-                <td class="text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_sumatif']) }}</td>
+                <td class="text-center">-</td>
+                <td class="text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_akhir']) }}</td>
+                <td class="text-center">-</td>
             </tr>
             <tr style="background-color: #f9f9f9;" class="font-bold">
                 <td colspan="2" class="text-right uppercase">Rata-rata Nilai</td>
-                <td class="text-center">{{ $hasilNilai['rata_formatif_format'] }}</td>
-                <td class="text-center">{{ $hasilNilai['rata_sumatif_format'] }}</td>
+                <td class="text-center">-</td>
+                <td class="text-center">{{ $hasilNilai['rata_akhir_format'] }}</td>
+                <td class="text-center">-</td>
             </tr>
         </tfoot>
     </table>
@@ -212,12 +216,22 @@
             <td style="width: 33%;">
                 <br>
                 Kepala Sekolah,
-                <div class="space-ttd"></div>
+                <div class="space-ttd" style="height: 55px; text-align: center;">
+                    @php
+                        $ttdPath = $sekolah->ttd ? public_path('storage/' . $sekolah->ttd) : null;
+                        if (!$ttdPath || !file_exists($ttdPath)) {
+                            $ttdPath = $sekolah->ttd ? storage_path('app/public/' . $sekolah->ttd) : null;
+                        }
+                    @endphp
+                    @if($ttdPath && file_exists($ttdPath))
+                        <img src="{{ $ttdPath }}" style="max-height: 50px; max-width: 140px;" alt="TTD">
+                    @endif
+                </div>
                 <b>{{ $sekolah->kepsek ?? '( ................................ )' }}</b><br>
                 <span style="font-size: 8pt;">NIP. {{ $sekolah->nip ?? '-' }}</span>
             </td>
             <td style="width: 34%;">
-                {{ $sekolah->kota ?? 'Banyuwangi' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}<br>
+                {{ $sekolah->kota ?? 'Banyuwangi' }}, {{ (isset($tanggalObj) ? $tanggalObj : \Carbon\Carbon::now()->locale('id'))->translatedFormat('d F Y') }}<br>
                 Wali Kelas,
                 <div class="space-ttd"></div>
                 <b>{{ $kelas->nama_wali }}</b><br>

@@ -49,7 +49,7 @@
                                         Admin Sekolah
                                     </span>
                                 @elseif($u->role === 'wali')
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                         Wali Kelas
                                     </span>
                                 @else
@@ -60,7 +60,7 @@
                             </td>
                             <td class="py-3.5 px-4 text-xs text-slate-600">
                                 @if($u->role === 'wali')
-                                    <span class="font-semibold text-slate-800">{{ $u->kelas_wali_count }} Kelas</span>
+                                    <span class="font-bold text-slate-800 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">{{ $u->kelas_wali_count }} Kelas</span>
                                 @else
                                     <span class="text-slate-400">-</span>
                                 @endif
@@ -82,7 +82,11 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-8 text-center text-slate-400 text-xs">Belum ada akun pengguna.</td>
+                            <td colspan="6" class="py-12 text-center text-slate-400 text-xs">
+                                <i class="fa-solid fa-users text-3xl mb-2 block text-slate-300"></i>
+                                <p class="font-bold text-slate-700">Belum ada akun pengguna tambahan.</p>
+                                <p class="text-xs text-slate-400 mt-1">Gunakan tombol "Tambah Pengguna" di atas untuk menambahkan akun baru.</p>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

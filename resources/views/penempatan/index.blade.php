@@ -20,9 +20,14 @@
             <p class="text-xs text-slate-500">Tahun Ajaran: {{ $kelas->tahunAjaran->nama_lengkap ?? '-' }} &bull; Fase: {{ $kelas->fase ?? 'A' }}</p>
         </div>
 
-        <a href="{{ route('kelas.show', $kelas->id) }}" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition flex items-center">
-            <i class="fa-solid fa-arrow-left mr-1.5"></i> Kembali ke Kelas
-        </a>
+        <div class="flex items-center space-x-2">
+            <a href="{{ route('siswa.index', ['open_import' => 1, 'kelas_id' => $kelas->id]) }}" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold rounded-xl text-xs transition flex items-center shadow-sm" title="Impor file Excel langsung ke kelas ini">
+                <i class="fa-solid fa-file-excel mr-1.5 text-emerald-600"></i> Impor Excel ke {{ $kelas->nama }}
+            </a>
+            <a href="{{ route('kelas.show', $kelas->id) }}" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition flex items-center">
+                <i class="fa-solid fa-arrow-left mr-1.5"></i> Kembali ke Kelas
+            </a>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

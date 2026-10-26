@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sekolah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class AuthController extends Controller
 {
@@ -12,7 +14,14 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
-        return view('auth.login');
+
+        try {
+            $sekolah = Schema::hasTable('sekolah') ? Sekolah::first() : null;
+        } catch (\Throwable) {
+            $sekolah = null;
+        }
+
+        return view('auth.login', compact('sekolah'));
     }
 
     public function login(Request $request)
@@ -26,8 +35,9 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
+
             return redirect()->intended(route('dashboard'))
-                ->with('success', 'Selamat datang, ' . Auth::user()->name);
+                ->with('success', 'Selamat datang, '.Auth::user()->name.'! Anda berhasil masuk ke sistem.');
         }
 
         return back()->withErrors([
@@ -41,6 +51,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')->with('info', 'Anda telah berhasil keluar.');
+        return redirect()->route('login')->with('success', 'Anda telah berhasil keluar dari sistem.');
     }
 }

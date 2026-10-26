@@ -41,9 +41,15 @@
                                 {{ $r->kelasSiswa->kelas->nama ?? '-' }}
                             </td>
                             <td class="py-3.5 px-4 text-center">
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-800">
-                                    {{ $r->periode }}
-                                </span>
+                                @if(strtolower($r->periode) === 'sts')
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        STS
+                                    </span>
+                                @else
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-800 border border-blue-200">
+                                        SAS
+                                    </span>
+                                @endif
                             </td>
                             <td class="py-3.5 px-4 text-xs text-slate-600 font-mono">
                                 {{ $r->created_at->format('d/m/Y H:i') }}
@@ -55,16 +61,18 @@
                             <td class="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
                                 @if($r->kelas_siswa_id)
                                     <a href="{{ route('raport.preview', ['kelasSiswa' => $r->kelas_siswa_id, 'periode' => $r->periode]) }}"
-                                       class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-                                       <i class="fa-solid fa-eye mr-1"></i> Buka
+                                       class="inline-flex items-center px-3 py-1 text-xs font-bold rounded-xl bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 transition shadow-2xs">
+                                       <i class="fa-solid fa-file-lines mr-1.5 text-emerald-600"></i> Buka Raport
                                     </a>
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-8 text-center text-slate-400">
-                                Belum ada riwayat pencetakan raport.
+                            <td colspan="7" class="py-12 text-center text-slate-400">
+                                <i class="fa-solid fa-clock-rotate-left text-3xl mb-2 block text-slate-300"></i>
+                                <p class="font-bold text-slate-700">Belum ada riwayat pencetakan raport.</p>
+                                <p class="text-xs text-slate-400 mt-1">Riwayat akan otomatis tercatat setiap kali ada raport yang diunduh atau dicetak.</p>
                             </td>
                         </tr>
                     @endforelse

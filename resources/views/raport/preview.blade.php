@@ -51,14 +51,30 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <!-- Ganti Tanggal Raport (No-Print) -->
+            <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl text-xs shadow-2xs">
+                <i class="fa-regular fa-calendar-days text-slate-500"></i>
+                <label for="inputTanggalRaport" class="font-bold text-slate-700 whitespace-nowrap">Tgl Rapor:</label>
+                <input type="date" id="inputTanggalRaport" value="{{ $tanggalObj->format('Y-m-d') }}"
+                       class="bg-white border border-slate-300 rounded-lg px-2 py-0.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-2xs">
+                @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                    <button type="button" onclick="simpanTanggalRaport()"
+                            class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition flex items-center shadow-2xs"
+                            title="Simpan tanggal ini ke sistem agar sewaktu print berikutnya tanggalnya tetap sama">
+                        <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan
+                    </button>
+                @endif
+                <span id="badgeStatusTanggal" class="hidden text-[10px] font-bold text-emerald-600 ml-1"></span>
+            </div>
+
             <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
                 <i class="fa-solid fa-print mr-1.5"></i> Cetak Dokumen (F4)
             </button>
-            <a href="{{ route('raport.download.docx', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode]) }}"
+            <a id="btnDownloadDocx" href="{{ route('raport.download.docx', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
                 <i class="fa-solid fa-file-word mr-1.5"></i> Unduh Word F4 (.docx)
             </a>
-            <a href="{{ route('raport.download.pdf', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode]) }}"
+            <a id="btnDownloadPdf" href="{{ route('raport.download.pdf', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
                class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
                 <i class="fa-solid fa-file-pdf mr-1.5"></i> Unduh PDF F4
             </a>
@@ -149,8 +165,9 @@
                     <tr class="bg-slate-100 text-slate-900 font-bold text-center">
                         <th class="border border-slate-900 py-2 px-2 w-10">No</th>
                         <th class="border border-slate-900 py-2 px-3 text-left">Mata Pelajaran</th>
-                        <th class="border border-slate-900 py-2 px-3 w-28">Nilai Formatif</th>
-                        <th class="border border-slate-900 py-2 px-3 w-28">Nilai Sumatif</th>
+                        <th class="border border-slate-900 py-2 px-3 w-20">KKM</th>
+                        <th class="border border-slate-900 py-2 px-3 w-24">Nilai</th>
+                        <th class="border border-slate-900 py-2 px-3 w-28">Keterangan</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -158,21 +175,26 @@
                         <tr>
                             <td class="border border-slate-900 py-1.5 px-2 text-center">{{ $b['no'] }}</td>
                             <td class="border border-slate-900 py-1.5 px-3 font-medium">{{ $b['mapel_nama'] }}</td>
-                            <td class="border border-slate-900 py-1.5 px-3 text-center font-bold">{{ $b['formatif_format'] }}</td>
-                            <td class="border border-slate-900 py-1.5 px-3 text-center font-bold">{{ $b['sumatif_format'] }}</td>
+                            <td class="border border-slate-900 py-1.5 px-3 text-center font-bold">{{ $b['kkm'] }}</td>
+                            <td class="border border-slate-900 py-1.5 px-3 text-center font-bold">{{ $b['akhir_format'] }}</td>
+                            <td class="border border-slate-900 py-1.5 px-3 text-center text-xs {{ $b['keterangan'] === 'Tuntas' ? 'text-emerald-700 font-bold' : ($b['keterangan'] === 'Belum Tuntas' ? 'text-rose-600 font-bold' : 'text-slate-400') }}">
+                                {{ $b['keterangan'] }}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot class="font-bold bg-slate-50">
                     <tr>
                         <td colspan="2" class="border border-slate-900 py-1.5 px-3 text-right uppercase">Jumlah Nilai</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_formatif']) }}</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_sumatif']) }}</td>
+                        <td class="border border-slate-900 py-1.5 px-3 text-center text-slate-400">-</td>
+                        <td class="border border-slate-900 py-1.5 px-3 text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_akhir']) }}</td>
+                        <td class="border border-slate-900 py-1.5 px-3 text-center text-slate-400">-</td>
                     </tr>
                     <tr>
                         <td colspan="2" class="border border-slate-900 py-1.5 px-3 text-right uppercase">Rata-rata Nilai</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center">{{ $hasilNilai['rata_formatif_format'] }}</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center">{{ $hasilNilai['rata_sumatif_format'] }}</td>
+                        <td class="border border-slate-900 py-1.5 px-3 text-center text-slate-400">-</td>
+                        <td class="border border-slate-900 py-1.5 px-3 text-center">{{ $hasilNilai['rata_akhir_format'] }}</td>
+                        <td class="border border-slate-900 py-1.5 px-3 text-center text-slate-400">-</td>
                     </tr>
                 </tfoot>
             </table>
@@ -231,15 +253,35 @@
             <div>
                 <p>&nbsp;</p>
                 <p class="font-medium">Kepala Sekolah,</p>
-                <div class="h-20"></div>
+                <div class="h-20 flex items-center justify-center">
+                    @if($sekolah->ttd && file_exists(public_path('storage/' . $sekolah->ttd)))
+                        <img src="{{ asset('storage/' . $sekolah->ttd) }}" alt="Tanda Tangan Kepala Sekolah" class="max-h-20 max-w-[150px] object-contain">
+                    @endif
+                </div>
                 <p class="font-bold underline">{{ $sekolah->kepsek ?? '( ........................................ )' }}</p>
                 <p class="text-[11px] text-slate-600">NIP. {{ $sekolah->nip ?? '-' }}</p>
             </div>
 
             <div>
-                <p>{{ $sekolah->kota ?? 'Banyuwangi' }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</p>
-                <p class="font-medium">Wali Kelas,</p>
-                <div class="h-20"></div>
+                <p>{{ $sekolah->kota ?? 'Banyuwangi' }}, <span id="labelTanggalRaport" class="label-tanggal-raport">{{ $tanggalObj->translatedFormat('d F Y') }}</span></p>
+                <div class="flex items-center justify-between">
+                    <p class="font-medium">Wali Kelas,</p>
+                    <div class="flex items-center space-x-1 no-print">
+                        <button type="button" onclick="focusGantiTanggal()"
+                            class="text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded border border-blue-200 transition"
+                            title="Ganti Tanggal Cetak Raport">
+                            <i class="fa-regular fa-calendar-days mr-1 text-blue-600"></i> Ganti Tgl
+                        </button>
+                        @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                            <button type="button" onclick="document.getElementById('modalEditWaliKelas').classList.remove('hidden')"
+                                class="text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-200 transition"
+                                title="Edit Nama / NIP Wali Kelas jika ada salah ketik">
+                                <i class="fa-solid fa-pen-to-square mr-1 text-amber-600"></i> Edit Wali
+                            </button>
+                        @endif
+                    </div>
+                </div>
+                <div class="h-16"></div>
                 <p class="font-bold underline">{{ $kelas->nama_wali }}</p>
                 <p class="text-[11px] text-slate-600">{{ $kelas->nip_wali !== '-' ? 'NIP. ' . $kelas->nip_wali : 'NIP. -' }}</p>
             </div>
@@ -247,5 +289,166 @@
 
     </div>
 
+    <!-- Modal Edit Nama dan NIP Wali Kelas -->
+    <div id="modalEditWaliKelas" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-100 text-left">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
+                        <i class="fa-solid fa-user-pen text-amber-600 mr-2 text-base"></i> Edit Wali Kelas & NIP
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">{{ $kelas->nama }} &bull; TP {{ $kelas->tahunAjaran->nama_lengkap ?? '-' }}</p>
+                </div>
+                <button type="button" onclick="document.getElementById('modalEditWaliKelas').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+            </div>
+
+            <form action="{{ route('kelas.update.wali', $kelas->id) }}" method="POST" class="space-y-4 mt-4">
+                @csrf
+                @method('PUT')
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                        Nama Lengkap & Gelar Wali Kelas *
+                    </label>
+                    <input type="text" name="wali_nama" value="{{ old('wali_nama', $kelas->wali_nama ?: ($kelas->wali->name ?? '')) }}" required
+                        placeholder="Contoh: Dewi Lestari, S.Pd."
+                        class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500">
+                    <span class="text-[11px] text-slate-500 mt-1 block">Nama ini akan dicetak pada tanda tangan raport.</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                        Nomor Induk Pegawai (NIP)
+                    </label>
+                    <input type="text" name="wali_nip" value="{{ old('wali_nip', $kelas->wali_nip) }}"
+                        placeholder="Contoh: 19880315 201101 2 008"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500">
+                    <span class="text-[11px] text-slate-500 mt-1 block">Kosongkan atau beri tanda strip (-) jika belum memiliki NIP.</span>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+                    <button type="button" onclick="document.getElementById('modalEditWaliKelas').classList.add('hidden')"
+                        class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm flex items-center transition">
+                        <i class="fa-solid fa-check mr-1.5"></i> Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Manajemen Ganti Tanggal Raport Real-time & Auto-Save -->
+    <script>
+        const inputTanggal = document.getElementById('inputTanggalRaport');
+        const badgeStatus = document.getElementById('badgeStatusTanggal');
+        const btnDocx = document.getElementById('btnDownloadDocx');
+        const btnPdf = document.getElementById('btnDownloadPdf');
+
+        function formatTanggalIndo(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            const bulanIndo = [
+                '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            return `${day} ${bulanIndo[month] || ''} ${year}`;
+        }
+
+        function updateDownloadUrls(val) {
+            if (btnDocx) {
+                const url = new URL(btnDocx.href, window.location.origin);
+                url.searchParams.set('tanggal', val);
+                btnDocx.href = url.pathname + url.search;
+            }
+            if (btnPdf) {
+                const url = new URL(btnPdf.href, window.location.origin);
+                url.searchParams.set('tanggal', val);
+                btnPdf.href = url.pathname + url.search;
+            }
+        }
+
+        function onTanggalChanged() {
+            const val = inputTanggal.value;
+            if (!val) return;
+            const formatted = formatTanggalIndo(val);
+            document.querySelectorAll('.label-tanggal-raport').forEach(el => {
+                el.textContent = formatted;
+            });
+            updateDownloadUrls(val);
+        }
+
+        function focusGantiTanggal() {
+            if (inputTanggal) {
+                inputTanggal.focus();
+                if (typeof inputTanggal.showPicker === 'function') {
+                    inputTanggal.showPicker();
+                }
+            }
+        }
+
+        function simpanTanggalRaport() {
+            const val = inputTanggal.value;
+            if (!val) {
+                alert('Silakan pilih tanggal terlebih dahulu.');
+                return;
+            }
+
+            if (badgeStatus) {
+                badgeStatus.textContent = 'Menyimpan...';
+                badgeStatus.classList.remove('hidden', 'text-rose-600');
+                badgeStatus.classList.add('text-slate-500');
+            }
+
+            fetch('{{ route("kelas.tanggal-raport.update", $kelas->id) }}', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    periode: '{{ $periode }}',
+                    tanggal: val
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (badgeStatus) {
+                        badgeStatus.textContent = '✓ Tersimpan';
+                        badgeStatus.classList.remove('text-slate-500', 'text-rose-600');
+                        badgeStatus.classList.add('text-emerald-600');
+                        setTimeout(() => {
+                            badgeStatus.classList.add('hidden');
+                        }, 3500);
+                    }
+                } else {
+                    throw new Error(data.message || 'Gagal menyimpan');
+                }
+            })
+            .catch(err => {
+                if (badgeStatus) {
+                    badgeStatus.textContent = 'Gagal menyimpan';
+                    badgeStatus.classList.remove('text-slate-500', 'text-emerald-600');
+                    badgeStatus.classList.add('text-rose-600');
+                }
+            });
+        }
+
+        if (inputTanggal) {
+            inputTanggal.addEventListener('change', () => {
+                onTanggalChanged();
+                @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                    simpanTanggalRaport();
+                @endif
+            });
+        }
+    </script>
 </div>
 @endsection

@@ -2,18 +2,18 @@
 
 namespace App\Services;
 
-use App\Models\KelasSiswa;
-use App\Models\Kelas;
-use App\Models\Sekolah;
-use App\Models\Pembiasaan;
-use App\Models\NilaiPembiasaan;
 use App\Models\Kehadiran;
-use PhpOffice\PhpWord\PhpWord;
+use App\Models\Kelas;
+use App\Models\KelasSiswa;
+use App\Models\NilaiPembiasaan;
+use App\Models\Pembiasaan;
+use App\Models\Sekolah;
+use Carbon\Carbon;
 use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\SimpleType\Jc;
 use PhpOffice\PhpWord\SimpleType\JcTable;
 use PhpOffice\PhpWord\SimpleType\VerticalJc;
-use PhpOffice\PhpWord\Style\Table as TableStyle;
 
 class RaportDocxService
 {
@@ -27,9 +27,9 @@ class RaportDocxService
     /**
      * Buat file Docx untuk satu siswa
      */
-    public function generateDocxSatuSiswa(KelasSiswa $kelasSiswa, string $periode = 'sts'): string
+    public function generateDocxSatuSiswa(KelasSiswa $kelasSiswa, string $periode = 'sts', ?string $tanggal = null): string
     {
-        $phpWord = new PhpWord();
+        $phpWord = new PhpWord;
         $this->setupStyles($phpWord);
 
         $section = $phpWord->addSection([
@@ -41,12 +41,12 @@ class RaportDocxService
             'marginRight' => 1000,
         ]);
 
-        $this->tulisHalamanRaport($section, $kelasSiswa, $periode);
+        $this->tulisHalamanRaport($section, $kelasSiswa, $periode, $tanggal);
 
-        $filename = 'raport_' . str_replace(' ', '_', strtolower($kelasSiswa->siswa->nama)) . '_' . $periode . '.docx';
-        $savePath = storage_path('app/public/raport/' . $filename);
+        $filename = 'raport_'.str_replace(' ', '_', strtolower($kelasSiswa->siswa->nama)).'_'.$periode.'.docx';
+        $savePath = storage_path('app/public/raport/'.$filename);
 
-        if (!file_exists(dirname($savePath))) {
+        if (! file_exists(dirname($savePath))) {
             mkdir(dirname($savePath), 0777, true);
         }
 
@@ -59,9 +59,9 @@ class RaportDocxService
     /**
      * Buat file Docx untuk seluruh siswa dalam satu kelas
      */
-    public function generateDocxSatuKelas(Kelas $kelas, string $periode = 'sts'): string
+    public function generateDocxSatuKelas(Kelas $kelas, string $periode = 'sts', ?string $tanggal = null): string
     {
-        $phpWord = new PhpWord();
+        $phpWord = new PhpWord;
         $this->setupStyles($phpWord);
 
         $kelasSiswaList = $kelas->kelasSiswa()->with(['siswa'])->get();
@@ -76,16 +76,16 @@ class RaportDocxService
                 'marginRight' => 1000,
             ]);
 
-            $this->tulisHalamanRaport($section, $ks, $periode);
+            $this->tulisHalamanRaport($section, $ks, $periode, $tanggal);
 
             // Jika bukan siswa terakhir, section baru akan bertindak sebagai page break
         }
 
         $namaKelasClean = str_replace(' ', '_', strtolower($kelas->nama));
-        $filename = 'raport_kelas_' . $namaKelasClean . '_' . $periode . '.docx';
-        $savePath = storage_path('app/public/raport/' . $filename);
+        $filename = 'raport_kelas_'.$namaKelasClean.'_'.$periode.'.docx';
+        $savePath = storage_path('app/public/raport/'.$filename);
 
-        if (!file_exists(dirname($savePath))) {
+        if (! file_exists(dirname($savePath))) {
             mkdir(dirname($savePath), 0777, true);
         }
 
@@ -110,7 +110,7 @@ class RaportDocxService
         $phpWord->addFontStyle('tableBody', ['size' => 9.5]);
     }
 
-    protected function tulisHalamanRaport($section, KelasSiswa $ks, string $periode): void
+    protected function tulisHalamanRaport($section, KelasSiswa $ks, string $periode, ?string $tanggal = null): void
     {
         $kelas = $ks->kelas;
         $sekolah = $kelas->sekolah ?? Sekolah::first();
@@ -121,19 +121,28 @@ class RaportDocxService
         // Cari logo jika ada
         $logoKiriPath = null;
         if ($sekolah && $sekolah->logo) {
-            if (file_exists(storage_path('app/public/' . $sekolah->logo))) {
-                $logoKiriPath = storage_path('app/public/' . $sekolah->logo);
-            } elseif (file_exists(public_path('storage/' . $sekolah->logo))) {
-                $logoKiriPath = public_path('storage/' . $sekolah->logo);
+            if (file_exists(storage_path('app/public/'.$sekolah->logo))) {
+                $logoKiriPath = storage_path('app/public/'.$sekolah->logo);
+            } elseif (file_exists(public_path('storage/'.$sekolah->logo))) {
+                $logoKiriPath = public_path('storage/'.$sekolah->logo);
             }
         }
 
         $logoKananPath = null;
         if ($sekolah && $sekolah->logo_kanan) {
-            if (file_exists(storage_path('app/public/' . $sekolah->logo_kanan))) {
-                $logoKananPath = storage_path('app/public/' . $sekolah->logo_kanan);
-            } elseif (file_exists(public_path('storage/' . $sekolah->logo_kanan))) {
-                $logoKananPath = public_path('storage/' . $sekolah->logo_kanan);
+            if (file_exists(storage_path('app/public/'.$sekolah->logo_kanan))) {
+                $logoKananPath = storage_path('app/public/'.$sekolah->logo_kanan);
+            } elseif (file_exists(public_path('storage/'.$sekolah->logo_kanan))) {
+                $logoKananPath = public_path('storage/'.$sekolah->logo_kanan);
+            }
+        }
+
+        $ttdPath = null;
+        if ($sekolah && $sekolah->ttd) {
+            if (file_exists(storage_path('app/public/'.$sekolah->ttd))) {
+                $ttdPath = storage_path('app/public/'.$sekolah->ttd);
+            } elseif (file_exists(public_path('storage/'.$sekolah->ttd))) {
+                $ttdPath = public_path('storage/'.$sekolah->ttd);
             }
         }
 
@@ -179,11 +188,11 @@ class RaportDocxService
         $idTable = $section->addTable(['alignment' => JcTable::CENTER]);
         $idRow1 = $idTable->addRow();
         $idRow1->addCell(4500)->addText("Nama Peserta Didik  : {$siswa->nama}", 'boldText');
-        $idRow1->addCell(4500)->addText("Kelas / Fase           : {$kelas->nama} / " . ($kelas->fase ?? 'A'), 'tableBody');
+        $idRow1->addCell(4500)->addText("Kelas / Fase           : {$kelas->nama} / ".($kelas->fase ?? 'A'), 'tableBody');
 
         $idRow2 = $idTable->addRow();
-        $idRow2->addCell(4500)->addText("NIS / NISN              : {$siswa->nis} / " . ($siswa->nisn ?? '-'), 'tableBody');
-        $idRow2->addCell(4500)->addText("Semester / Tahun    : " . ucfirst($tahun->semester ?? 'Ganjil') . " / " . ($tahun->tahun ?? '2026/2027'), 'tableBody');
+        $idRow2->addCell(4500)->addText("NIS / NISN              : {$siswa->nis} / ".($siswa->nisn ?? '-'), 'tableBody');
+        $idRow2->addCell(4500)->addText('Semester / Tahun    : '.ucfirst($tahun->semester ?? 'Ganjil').' / '.($tahun->tahun ?? '2026/2027'), 'tableBody');
 
         $section->addTextBreak(1);
 
@@ -204,29 +213,33 @@ class RaportDocxService
         // Header Tabel Nilai
         $rowH = $nilaiTable->addRow(350);
         $rowH->addCell(600, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('No', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(5000, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Mata Pelajaran', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(1600, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Formatif', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(1800, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Sumatif', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(4400, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Mata Pelajaran', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(1200, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('KKM', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(1400, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Nilai', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(1400, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Keterangan', 'tableHeader', ['alignment' => Jc::CENTER]);
 
         // Isi Tabel Nilai
         foreach ($hasilNilai['baris'] as $b) {
             $rowB = $nilaiTable->addRow(300);
             $rowB->addCell(600)->addText($b['no'], 'tableBody', ['alignment' => Jc::CENTER]);
-            $rowB->addCell(5000)->addText($b['mapel_nama'], 'tableBody');
-            $rowB->addCell(1600)->addText($b['formatif_format'], 'tableBody', ['alignment' => Jc::CENTER]);
-            $rowB->addCell(1800)->addText($b['sumatif_format'], 'tableBody', ['alignment' => Jc::CENTER]);
+            $rowB->addCell(4400)->addText($b['mapel_nama'], 'tableBody');
+            $rowB->addCell(1200)->addText((string) $b['kkm'], 'tableBody', ['alignment' => Jc::CENTER]);
+            $rowB->addCell(1400)->addText($b['akhir_format'], 'tableBody', ['alignment' => Jc::CENTER]);
+            $rowB->addCell(1400)->addText($b['keterangan'], 'tableBody', ['alignment' => Jc::CENTER]);
         }
 
         // Baris Jumlah & Rata-rata
         $rowJumlah = $nilaiTable->addRow(300);
-        $rowJumlah->addCell(5600, ['gridSpan' => 2, 'bgColor' => 'F2F2F2'])->addText('Jumlah Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
-        $rowJumlah->addCell(1600, ['bgColor' => 'F2F2F2'])->addText(HitungNilaiService::formatAngka($hasilNilai['total_formatif']), 'boldText', ['alignment' => Jc::CENTER]);
-        $rowJumlah->addCell(1800, ['bgColor' => 'F2F2F2'])->addText(HitungNilaiService::formatAngka($hasilNilai['total_sumatif']), 'boldText', ['alignment' => Jc::CENTER]);
+        $rowJumlah->addCell(5000, ['gridSpan' => 2, 'bgColor' => 'F2F2F2'])->addText('Jumlah Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
+        $rowJumlah->addCell(1200, ['bgColor' => 'F2F2F2'])->addText('-', 'boldText', ['alignment' => Jc::CENTER]);
+        $rowJumlah->addCell(1400, ['bgColor' => 'F2F2F2'])->addText(HitungNilaiService::formatAngka($hasilNilai['total_akhir']), 'boldText', ['alignment' => Jc::CENTER]);
+        $rowJumlah->addCell(1400, ['bgColor' => 'F2F2F2'])->addText('-', 'boldText', ['alignment' => Jc::CENTER]);
 
         $rowRata = $nilaiTable->addRow(300);
-        $rowRata->addCell(5600, ['gridSpan' => 2, 'bgColor' => 'F2F2F2'])->addText('Rata-rata Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
-        $rowRata->addCell(1600, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['rata_formatif_format'], 'boldText', ['alignment' => Jc::CENTER]);
-        $rowRata->addCell(1800, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['rata_sumatif_format'], 'boldText', ['alignment' => Jc::CENTER]);
+        $rowRata->addCell(5000, ['gridSpan' => 2, 'bgColor' => 'F2F2F2'])->addText('Rata-rata Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
+        $rowRata->addCell(1200, ['bgColor' => 'F2F2F2'])->addText('-', 'boldText', ['alignment' => Jc::CENTER]);
+        $rowRata->addCell(1400, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['rata_akhir_format'], 'boldText', ['alignment' => Jc::CENTER]);
+        $rowRata->addCell(1400, ['bgColor' => 'F2F2F2'])->addText('-', 'boldText', ['alignment' => Jc::CENTER]);
 
         $section->addTextBreak(1);
 
@@ -260,7 +273,7 @@ class RaportDocxService
 
         foreach ($pembiasaanList as $pIdx => $pem) {
             $rowPem = $bottomTable->addRow(280);
-            $rowPem->addCell(5600)->addText(($pIdx + 1) . '. ' . $pem->nama, 'tableBody');
+            $rowPem->addCell(5600)->addText(($pIdx + 1).'. '.$pem->nama, 'tableBody');
             $val = $nilaiPemList->get($pem->id);
             $pred = $val ? $val->predikat : 'Baik';
             $rowPem->addCell(1600)->addText($pred, 'tableBody', ['alignment' => Jc::CENTER]);
@@ -284,7 +297,8 @@ class RaportDocxService
         $ttdRow1->addCell(3000)->addText('Mengetahui,', 'tableBody', ['alignment' => Jc::CENTER]);
         $ttdRow1->addCell(3000)->addText('', 'tableBody');
         $kota = $sekolah->kota ?? 'Banyuwangi';
-        $tanggalSekarang = date('d F Y');
+        $tanggalObj = $tanggal ? Carbon::parse($tanggal)->locale('id') : Carbon::now()->locale('id');
+        $tanggalSekarang = $tanggalObj->translatedFormat('d F Y');
         $ttdRow1->addCell(3000)->addText("{$kota}, {$tanggalSekarang}", 'tableBody', ['alignment' => Jc::CENTER]);
 
         $ttdRow2 = $ttdTable->addRow();
@@ -295,7 +309,16 @@ class RaportDocxService
         // Spasi TTD
         $ttdRow3 = $ttdTable->addRow(900);
         $ttdRow3->addCell(3000)->addTextBreak(3);
-        $ttdRow3->addCell(3000)->addTextBreak(3);
+        $cellKepsekTtd = $ttdRow3->addCell(3000);
+        if ($ttdPath) {
+            $cellKepsekTtd->addImage($ttdPath, [
+                'width' => 90,
+                'height' => 45,
+                'alignment' => Jc::CENTER,
+            ]);
+        } else {
+            $cellKepsekTtd->addTextBreak(3);
+        }
         $ttdRow3->addCell(3000)->addTextBreak(3);
 
         // Nama & NIP

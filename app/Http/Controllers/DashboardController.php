@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Siswa;
 use App\Models\Kelas;
-use App\Models\TahunAjaran;
-use App\Models\Sekolah;
 use App\Models\Raport;
+use App\Models\Sekolah;
+use App\Models\Siswa;
+use App\Models\TahunAjaran;
 use App\Services\HitungNilaiService;
 
 class DashboardController extends Controller
@@ -29,8 +28,17 @@ class DashboardController extends Controller
 
         $kelasList = $queryKelas->get();
 
-        $totalSiswa = Siswa::where('status', 'aktif')->count();
-        $totalKelas = Kelas::count();
+        if ($user->isWali()) {
+            $waliKelasIds = $kelasList->pluck('id');
+            $totalSiswa = Siswa::whereHas('kelasSiswa', function ($q) use ($waliKelasIds) {
+                $q->whereIn('kelas_id', $waliKelasIds);
+            })->where('status', 'aktif')->count();
+            $totalKelas = $kelasList->count();
+        } else {
+            $totalSiswa = Siswa::where('status', 'aktif')->count();
+            $totalKelas = Kelas::count();
+        }
+
         $totalRaportDicetak = Raport::count();
 
         // Hitung kelengkapan tiap kelas

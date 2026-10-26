@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -11,6 +11,7 @@ class UserController extends Controller
     public function index()
     {
         $users = User::withCount('kelasWali')->orderBy('name', 'asc')->get();
+
         return view('users.index', compact('users'));
     }
 
@@ -37,7 +38,7 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'password' => 'nullable|min:6',
             'role' => 'required|in:admin,wali,kepsek',
         ]);
@@ -64,6 +65,7 @@ class UserController extends Controller
         }
 
         $user->delete();
+
         return redirect()->route('users.index')->with('success', 'Pengguna berhasil dihapus.');
     }
 }

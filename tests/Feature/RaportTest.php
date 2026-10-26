@@ -2,14 +2,19 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
-use App\Models\User;
+use App\Models\Kelas;
 use App\Models\KelasSiswa;
+use App\Models\MataPelajaran;
+use App\Models\Raport;
+use App\Models\Sekolah;
+use App\Models\TahunAjaran;
+use App\Models\User;
 use App\Services\HitungNilaiService;
 use App\Services\RaportDocxService;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
 
 class RaportTest extends TestCase
 {
@@ -115,7 +120,7 @@ class RaportTest extends TestCase
         $updatePost->assertSessionHas('success');
 
         // Verifikasi database terupdate
-        $sekolah = \App\Models\Sekolah::first();
+        $sekolah = Sekolah::first();
         $this->assertEquals('SD NEGERI 2 KARANGSARI UNGGULAN', $sekolah->nama);
         $this->assertEquals('PEMERINTAH KABUPATEN BANYUWANGI JATIM', $sekolah->pemda);
         $this->assertEquals('DINAS PENDIDIKAN DAN KEBUDAYAAN', $sekolah->dinas);
@@ -134,7 +139,7 @@ class RaportTest extends TestCase
         $preview->assertSee('Telp: 08123456789 | Email: sdn2karangsari@sekolah.id');
 
         // Verifikasi generate DOCX dengan kop dan logo
-        $docxService = app(\App\Services\RaportDocxService::class);
+        $docxService = app(RaportDocxService::class);
         $filePath = $docxService->generateDocxSatuSiswa($ks, 'sts');
         $this->assertFileExists($filePath);
 
@@ -163,7 +168,7 @@ class RaportTest extends TestCase
         $updatePost->assertRedirect(route('sekolah.edit'));
         $updatePost->assertSessionHas('success');
 
-        $sekolah = \App\Models\Sekolah::first();
+        $sekolah = Sekolah::first();
         $this->assertEquals('SD NEGERI 2 KARANGSARI CROPPED', $sekolah->nama);
         $this->assertNotNull($sekolah->logo);
         $this->assertNotNull($sekolah->logo_kanan);
@@ -185,7 +190,7 @@ class RaportTest extends TestCase
         $adminGet->assertStatus(200);
 
         // Admin dapat menyimpan nilai
-        $mapel = \App\Models\MataPelajaran::first();
+        $mapel = MataPelajaran::first();
         $adminPost = $this->actingAs($admin)->post(route('nilai.simpan.siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]), [
             'periode' => 'sts',
             'formatif' => [$mapel->id => 88],
@@ -211,7 +216,7 @@ class RaportTest extends TestCase
     public function test_kelas_direct_wali_nama_and_nip_without_user_account(): void
     {
         $admin = User::where('role', 'admin')->first();
-        $ta = \App\Models\TahunAjaran::first();
+        $ta = TahunAjaran::first();
 
         // Admin menambahkan kelas dengan mengetikkan nama wali kelas secara langsung
         $storePost = $this->actingAs($admin)->post(route('kelas.store'), [
@@ -223,9 +228,170 @@ class RaportTest extends TestCase
         ]);
         $storePost->assertRedirect(route('kelas.index'));
 
-        $kelasBaru = \App\Models\Kelas::where('nama', 'Kelas 2 Unggulan')->first();
+        $kelasBaru = Kelas::where('nama', 'Kelas 2 Unggulan')->first();
         $this->assertNotNull($kelasBaru);
         $this->assertEquals('Siti Nurhaliza, S.Pd.', $kelasBaru->nama_wali);
         $this->assertEquals('19900101 201502 2 001', $kelasBaru->nip_wali);
+    }
+
+    public function test_upload_ttd_kepsek_and_preview(): void
+    {
+        Storage::fake('public');
+        $admin = User::where('role', 'admin')->first();
+        $fakeTtd = UploadedFile::fake()->image('ttd_kepsek.png', 300, 150);
+
+        $updatePost = $this->actingAs($admin)->post(route('sekolah.update'), [
+            'nama' => 'SD Negeri 2 Karangsari',
+            'pemda' => 'Pemerintah Kabupaten Banyuwangi',
+            'dinas' => 'Dinas Pendidikan',
+            'kota' => 'Banyuwangi',
+            'alamat' => 'Jl. Karangsari No. 12',
+            'kontak' => 'Telp: 08123456789',
+            'kepsek' => 'Budi Santoso, M.Pd.',
+            'nip' => '19750101 200003 1 002',
+            'ttd' => $fakeTtd,
+        ]);
+        $updatePost->assertRedirect(route('sekolah.edit'));
+
+        $sekolah = Sekolah::first();
+        $this->assertNotNull($sekolah->ttd);
+        Storage::disk('public')->assertExists($sekolah->ttd);
+
+        // Uji hapus TTD
+        $hapusPost = $this->actingAs($admin)->post(route('sekolah.update'), [
+            'nama' => $sekolah->nama,
+            'pemda' => $sekolah->pemda,
+            'dinas' => $sekolah->dinas,
+            'kota' => $sekolah->kota,
+            'hapus_ttd' => '1',
+        ]);
+        $hapusPost->assertRedirect(route('sekolah.edit'));
+        $this->assertNull($sekolah->fresh()->ttd);
+    }
+
+    public function test_cetak_sekelas_and_download_pdf_sekelas(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $this->assertNotNull($kelas);
+
+        // Akses halaman cetak sekelas di browser
+        $cetakResponse = $this->actingAs($admin)->get(route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => 'sts']));
+        $cetakResponse->assertStatus(200);
+        $cetakResponse->assertSeeText('Cetak Semua (Ctrl+P)');
+        $cetakResponse->assertSeeText('Format F4 (215 × 330 mm)');
+        $cetakResponse->assertSeeText('Unduh PDF Sekelas');
+
+        // Pastikan nama-nama siswa di kelas tampil di lembar cetak
+        foreach ($kelas->kelasSiswa as $ks) {
+            $cetakResponse->assertSeeText($ks->siswa->nama);
+        }
+
+        // Akses download PDF gabungan sekelas
+        $pdfResponse = $this->actingAs($admin)->get(route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => 'sts']));
+        $pdfResponse->assertStatus(200);
+        $pdfResponse->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_update_tanggal_raport_authorization_and_persistence(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $otherUser = User::factory()->create(['role' => 'kepsek']);
+
+        // Unauthorized user cannot update tanggal raport
+        $forbidden = $this->actingAs($otherUser)->put(route('kelas.tanggal-raport.update', $kelas->id), [
+            'periode' => 'sts',
+            'tanggal' => '2024-12-20',
+        ]);
+        $forbidden->assertStatus(403);
+
+        // Admin can update via AJAX (returns JSON)
+        $ajaxResponse = $this->actingAs($admin)->putJson(route('kelas.tanggal-raport.update', $kelas->id), [
+            'periode' => 'sts',
+            'tanggal' => '2024-10-15',
+        ]);
+        $ajaxResponse->assertStatus(200);
+        $ajaxResponse->assertJson([
+            'success' => true,
+            'tanggal' => '2024-10-15',
+            'periode' => 'sts',
+        ]);
+
+        $this->assertEquals('2024-10-15', $kelas->fresh()->tanggal_raport_sts->format('Y-m-d'));
+
+        // Admin can also update both via full form
+        $formResponse = $this->actingAs($admin)->put(route('kelas.tanggal-raport.update', $kelas->id), [
+            'tanggal_raport_sts' => '2024-10-20',
+            'tanggal_raport_sas' => '2024-12-21',
+        ]);
+        $formResponse->assertRedirect();
+        $fresh = $kelas->fresh();
+        $this->assertEquals('2024-10-20', $fresh->tanggal_raport_sts->format('Y-m-d'));
+        $this->assertEquals('2024-12-21', $fresh->tanggal_raport_sas->format('Y-m-d'));
+    }
+
+    public function test_raport_preview_and_cetak_sekelas_uses_custom_and_saved_date(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $ks = $kelas->kelasSiswa->first();
+
+        // 1. Set saved date
+        $kelas->update([
+            'tanggal_raport_sts' => '2024-10-18',
+        ]);
+
+        // Preview should use saved date: 18 Oktober 2024
+        $previewSaved = $this->actingAs($admin)->get(route('raport.preview', ['kelasSiswa' => $ks->id, 'periode' => 'sts']));
+        $previewSaved->assertStatus(200);
+        $previewSaved->assertSee('18 Oktober 2024');
+
+        // 2. Query param ?tanggal= overrides saved date
+        $previewOverride = $this->actingAs($admin)->get(route('raport.preview', ['kelasSiswa' => $ks->id, 'periode' => 'sts', 'tanggal' => '2024-10-25']));
+        $previewOverride->assertStatus(200);
+        $previewOverride->assertSee('25 Oktober 2024');
+
+        // 3. Cetak sekelas also uses the custom date
+        $cetakSekelas = $this->actingAs($admin)->get(route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => 'sts', 'tanggal' => '2024-10-25']));
+        $cetakSekelas->assertStatus(200);
+        $cetakSekelas->assertSee('25 Oktober 2024');
+    }
+
+    public function test_download_pdf_and_docx_uses_custom_date_and_records_history(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $ks = $kelas->kelasSiswa->first();
+
+        // PDF single student with custom date
+        $pdfResponse = $this->actingAs($admin)->get(route('raport.download.pdf', [
+            'kelasSiswa' => $ks->id,
+            'periode' => 'sts',
+            'tanggal' => '2024-10-15',
+        ]));
+        $pdfResponse->assertStatus(200);
+
+        $riwayatPdf = Raport::where('kelas_siswa_id', $ks->id)
+            ->where('file_path', 'PDF_STREAM')
+            ->latest('id')
+            ->first();
+        $this->assertNotNull($riwayatPdf);
+        $this->assertEquals('2024-10-15', $riwayatPdf->tanggal_cetak->format('Y-m-d'));
+
+        // DOCX single student with custom date
+        $docxResponse = $this->actingAs($admin)->get(route('raport.download.docx', [
+            'kelasSiswa' => $ks->id,
+            'periode' => 'sts',
+            'tanggal' => '2024-10-15',
+        ]));
+        $docxResponse->assertStatus(200);
+
+        $riwayatDocx = Raport::where('kelas_siswa_id', $ks->id)
+            ->where('file_path', '!=', 'PDF_STREAM')
+            ->latest('id')
+            ->first();
+        $this->assertNotNull($riwayatDocx);
+        $this->assertEquals('2024-10-15', $riwayatDocx->tanggal_cetak->format('Y-m-d'));
     }
 }

@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class TahunAjaran extends Model
 {
@@ -38,6 +38,6 @@ class TahunAjaran extends Model
 
     public function getNamaLengkapAttribute(): string
     {
-        return "{$this->tahun} (" . ucfirst($this->semester) . ")";
+        return "{$this->tahun} (".ucfirst($this->semester).')';
     }
 }

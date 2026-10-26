@@ -43,6 +43,11 @@ class KelasSiswa extends Model
         return $this->hasMany(Kehadiran::class);
     }
 
+    public function kehadiranBulanan(): HasMany
+    {
+        return $this->hasMany(KehadiranBulanan::class);
+    }
+
     public function raport(): HasMany
     {
         return $this->hasMany(Raport::class);

@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\TahunAjaran;
+use Illuminate\Http\Request;
 
 class TahunAjaranController extends Controller
 {
     public function index()
     {
         $tahunAjaranList = TahunAjaran::withCount('kelas')->orderBy('tahun', 'desc')->get();
+
         return view('tahun_ajaran.index', compact('tahunAjaranList'));
     }
 
@@ -51,6 +52,7 @@ class TahunAjaranController extends Controller
         }
 
         $tahunAjaran->delete();
+
         return redirect()->route('tahun-ajaran.index')->with('success', 'Tahun ajaran berhasil dihapus.');
     }
 }

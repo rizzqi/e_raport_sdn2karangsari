@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Sekolah;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class SekolahController extends Controller
@@ -38,12 +38,13 @@ class SekolahController extends Controller
             'logo_kanan' => 'nullable|image|max:3072',
             'cropped_logo' => 'nullable|string',
             'cropped_logo_kanan' => 'nullable|string',
-            'ttd' => 'nullable|image|max:2048',
+            'cropped_ttd' => 'nullable|string',
+            'ttd' => 'nullable|image|max:3072',
         ]);
 
         $sekolah = Sekolah::first();
-        if (!$sekolah) {
-            $sekolah = new Sekolah();
+        if (! $sekolah) {
+            $sekolah = new Sekolah;
         }
 
         $data = $request->only(['nama', 'pemda', 'dinas', 'kota', 'alamat', 'kontak', 'kepsek', 'nip']);
@@ -63,18 +64,25 @@ class SekolahController extends Controller
             $data['logo_kanan'] = null;
         }
 
+        if ($request->boolean('hapus_ttd') && $sekolah->ttd) {
+            if (Storage::disk('public')->exists($sekolah->ttd)) {
+                Storage::disk('public')->delete($sekolah->ttd);
+            }
+            $data['ttd'] = null;
+        }
+
         // Upload / Crop Logo Kiri (Pemda / Daerah)
         if ($request->filled('cropped_logo')) {
             $cropData = $request->input('cropped_logo');
             if (str_starts_with($cropData, 'data:image')) {
-                @list($type, $cropData) = explode(';', $cropData);
-                @list(, $cropData) = explode(',', $cropData);
+                @[$type, $cropData] = explode(';', $cropData);
+                @[, $cropData] = explode(',', $cropData);
                 $decoded = base64_decode($cropData);
                 if ($decoded !== false) {
                     if ($sekolah->logo && Storage::disk('public')->exists($sekolah->logo)) {
                         Storage::disk('public')->delete($sekolah->logo);
                     }
-                    $filename = 'sekolah/logo_' . uniqid() . '.png';
+                    $filename = 'sekolah/logo_'.uniqid().'.png';
                     Storage::disk('public')->put($filename, $decoded);
                     $data['logo'] = $filename;
                 }
@@ -90,14 +98,14 @@ class SekolahController extends Controller
         if ($request->filled('cropped_logo_kanan')) {
             $cropData = $request->input('cropped_logo_kanan');
             if (str_starts_with($cropData, 'data:image')) {
-                @list($type, $cropData) = explode(';', $cropData);
-                @list(, $cropData) = explode(',', $cropData);
+                @[$type, $cropData] = explode(';', $cropData);
+                @[, $cropData] = explode(',', $cropData);
                 $decoded = base64_decode($cropData);
                 if ($decoded !== false) {
                     if ($sekolah->logo_kanan && Storage::disk('public')->exists($sekolah->logo_kanan)) {
                         Storage::disk('public')->delete($sekolah->logo_kanan);
                     }
-                    $filename = 'sekolah/logo_kanan_' . uniqid() . '.png';
+                    $filename = 'sekolah/logo_kanan_'.uniqid().'.png';
                     Storage::disk('public')->put($filename, $decoded);
                     $data['logo_kanan'] = $filename;
                 }
@@ -109,8 +117,23 @@ class SekolahController extends Controller
             $data['logo_kanan'] = $request->file('logo_kanan')->store('sekolah', 'public');
         }
 
-        // Upload TTD / Cap
-        if ($request->hasFile('ttd')) {
+        // Upload / Crop TTD / Cap Kepala Sekolah
+        if ($request->filled('cropped_ttd')) {
+            $cropData = $request->input('cropped_ttd');
+            if (str_starts_with($cropData, 'data:image')) {
+                @[$type, $cropData] = explode(';', $cropData);
+                @[, $cropData] = explode(',', $cropData);
+                $decoded = base64_decode($cropData);
+                if ($decoded !== false) {
+                    if ($sekolah->ttd && Storage::disk('public')->exists($sekolah->ttd)) {
+                        Storage::disk('public')->delete($sekolah->ttd);
+                    }
+                    $filename = 'sekolah/ttd_'.uniqid().'.png';
+                    Storage::disk('public')->put($filename, $decoded);
+                    $data['ttd'] = $filename;
+                }
+            }
+        } elseif ($request->hasFile('ttd')) {
             if ($sekolah->ttd && Storage::disk('public')->exists($sekolah->ttd)) {
                 Storage::disk('public')->delete($sekolah->ttd);
             }
