@@ -36,14 +36,14 @@ sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=eraport123/' .env
 sed -i 's/APP_ENV=local/APP_ENV=production/' .env
 sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env
 
-# Generate APP_KEY jika belum ada
-if ! grep -q "^APP_KEY=base64:" .env; then
-    php artisan key:generate --force
-fi
-
 # 4. Install Dependensi PHP Composer
 echo "[4/7] Menginstal dependensi Composer..."
 composer install --no-dev --optimize-autoloader --no-interaction
+
+# Generate APP_KEY jika belum ada (setelah vendor terpasang)
+if ! grep -q "^APP_KEY=base64:" .env; then
+    php artisan key:generate --force
+fi
 
 # 5. Build Frontend Assets
 echo "[5/7] Mengompilasi asset frontend (Vite)..."
