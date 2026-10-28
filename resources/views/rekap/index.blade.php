@@ -180,8 +180,13 @@
             <a href="#section-grafik" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs border border-blue-200 shadow-2xs transition flex items-center" title="Lihat Visualisasi Grafik Nilai">
                 <i class="fa-solid fa-chart-pie mr-1.5 text-blue-600"></i> Grafik Nilai
             </a>
+            <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
+               class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
+               title="Buka Lembar Leger Rekap Nilai Resmi Siap Cetak (A4/F4)">
+                <i class="fa-solid fa-print mr-1.5 text-amber-300"></i> Cetak Rekap Semester
+            </a>
             <button onclick="window.print()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center" title="Cetak Rekap Pas 1 Lembar Landscape">
-                <i class="fa-solid fa-print mr-1.5"></i> Cetak 1 Lembar Rekap
+                <i class="fa-solid fa-file-invoice mr-1.5"></i> Cetak Layar Ini
             </button>
             <a id="btnCetakRaportSekelas" href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center" title="Cetak Raport Seluruh Siswa Sekelas">
                 <i class="fa-solid fa-file-lines mr-1.5"></i> Cetak Raport Sekelas

@@ -45,4 +45,42 @@ class RekapController extends Controller
 
         return view('rekap.index', compact('kelas', 'periode', 'sortBy', 'rekapData', 'tanggal', 'tanggalObj', 'kelasList'));
     }
+
+    /**
+     * Cetak Rekapitulasi Nilai Semester Otomatis (Leger Kelas Siap Cetak F4/A4)
+     */
+    public function cetak(Kelas $kelas, Request $request)
+    {
+        $periode = $request->input('periode', 'sas'); // Default ke 'sas' untuk rekap semester penuh
+        $sortBy = $request->input('sort', 'ranking');
+        $kelas->load(['tahunAjaran', 'wali', 'sekolah', 'mapelKkm']);
+
+        $rawTanggal = $request->input('tanggal') ?? $kelas->getTanggalRaport($periode);
+        try {
+            $tanggalObj = $rawTanggal ? Carbon::parse($rawTanggal)->locale('id') : Carbon::now()->locale('id');
+        } catch (\Throwable $e) {
+            $tanggalObj = Carbon::now()->locale('id');
+        }
+        $tanggal = $tanggalObj->format('Y-m-d');
+
+        $kelasSiswaList = $kelas->kelasSiswa()->with('siswa')->get();
+        $rekapData = $this->hitungService->hitungRekapKelas($kelasSiswaList, $periode, $sortBy);
+
+        // Ambil kehadiran untuk seluruh siswa di kelas
+        $ksIds = $kelasSiswaList->pluck('id');
+        $kehadiranList = \App\Models\Kehadiran::whereIn('kelas_siswa_id', $ksIds)
+            ->where('periode', in_array($periode, ['sas', 'semester']) ? 'sas' : 'sts')
+            ->get()
+            ->keyBy('kelas_siswa_id');
+
+        // Jika periode sas belum diisi absensinya, otomatis ambil dari sts
+        if ($kehadiranList->isEmpty() && in_array($periode, ['sas', 'semester'])) {
+            $kehadiranList = \App\Models\Kehadiran::whereIn('kelas_siswa_id', $ksIds)
+                ->where('periode', 'sts')
+                ->get()
+                ->keyBy('kelas_siswa_id');
+        }
+
+        return view('rekap.cetak', compact('kelas', 'periode', 'sortBy', 'rekapData', 'tanggal', 'tanggalObj', 'kehadiranList'));
+    }
 }

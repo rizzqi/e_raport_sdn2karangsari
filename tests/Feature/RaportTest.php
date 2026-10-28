@@ -394,4 +394,34 @@ class RaportTest extends TestCase
         $this->assertNotNull($riwayatDocx);
         $this->assertEquals('2024-10-15', $riwayatDocx->tanggal_cetak->format('Y-m-d'));
     }
+
+    public function test_raport_view_columns_are_clean_for_parents_and_pdf_kelas_works(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $ks = $kelas->kelasSiswa->first();
+
+        // 1. Preview Tunggal Rapor
+        $preview = $this->actingAs($admin)->get(route('raport.preview', ['kelasSiswa' => $ks->id, 'periode' => 'sts']));
+        $preview->assertStatus(200);
+        $preview->assertSee('Nilai Rapor');
+        $preview->assertSee('Predikat');
+        $preview->assertSee('Capaian Kompetensi');
+        // Tidak menampilkan kolom formatif/uts/uas di tabel nilai
+        $preview->assertDontSee('<th class="border border-slate-900 py-2 px-2 w-16">UTS</th>', false);
+        $preview->assertDontSee('<th class="border border-slate-900 py-2 px-2 w-16">UAS</th>', false);
+
+        // 2. Cetak Sekelas
+        $cetakKelas = $this->actingAs($admin)->get(route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => 'sts']));
+        $cetakKelas->assertStatus(200);
+        $cetakKelas->assertSee('Nilai Rapor');
+        $cetakKelas->assertSee('Predikat');
+        $cetakKelas->assertSee('Capaian Kompetensi');
+        $cetakKelas->assertSee('sheet-raport');
+
+        // 3. Download PDF Sekelas
+        $pdfKelas = $this->actingAs($admin)->get(route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => 'sts']));
+        $pdfKelas->assertStatus(200);
+        $this->assertEquals('application/pdf', $pdfKelas->headers->get('content-type'));
+    }
 }

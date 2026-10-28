@@ -162,35 +162,37 @@
                 <thead>
                     <tr>
                         <th style="width: 5%;">No</th>
-                        <th style="width: 45%; text-align: left;">Mata Pelajaran</th>
-                        <th style="width: 15%;">KKM</th>
-                        <th style="width: 15%;">Nilai</th>
-                        <th style="width: 20%;">Keterangan</th>
+                        <th style="width: 27%; text-align: left;">Mata Pelajaran</th>
+                        <th style="width: 8%;">KKM</th>
+                        <th style="width: 12%;">Nilai Rapor</th>
+                        <th style="width: 10%;">Predikat</th>
+                        <th style="width: 38%; text-align: left;">Capaian Kompetensi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($hasilNilai['baris'] as $b)
                         <tr>
                             <td class="text-center">{{ $b['no'] }}</td>
-                            <td>{{ $b['mapel_nama'] }}</td>
+                            <td class="font-bold">{{ $b['mapel_nama'] }}</td>
                             <td class="text-center font-bold">{{ $b['kkm'] }}</td>
-                            <td class="text-center font-bold">{{ $b['akhir_format'] }}</td>
-                            <td class="text-center">{{ $b['keterangan'] }}</td>
+                            <td class="text-center font-bold">{{ $b['nilai_rapor_format'] }}</td>
+                            <td class="text-center font-bold">{{ $b['predikat'] }}</td>
+                            <td style="font-size: 8pt; line-height: 1.15; text-align: justify;">{{ $b['capaian_kompetensi'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr style="background-color: #f9f9f9;" class="font-bold">
-                        <td colspan="2" class="text-right uppercase">Jumlah Nilai</td>
-                        <td class="text-center">-</td>
+                        <td colspan="3" class="text-right uppercase">Jumlah Nilai</td>
                         <td class="text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_akhir']) }}</td>
-                        <td class="text-center">-</td>
+                        <td class="text-center">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
+                        <td style="font-size: 8pt; color: #444;">Total dari {{ $hasilNilai['total_mapel'] }} mata pelajaran</td>
                     </tr>
                     <tr style="background-color: #f9f9f9;" class="font-bold">
-                        <td colspan="2" class="text-right uppercase">Rata-rata Nilai</td>
-                        <td class="text-center">-</td>
+                        <td colspan="3" class="text-right uppercase">Rata-rata Nilai</td>
                         <td class="text-center">{{ $hasilNilai['rata_akhir_format'] }}</td>
-                        <td class="text-center">-</td>
+                        <td class="text-center">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
+                        <td style="font-size: 8pt; color: #444;">Predikat Rata-rata: <b>{{ $hasilNilai['predikat_rata'] ?? '-' }}</b></td>
                     </tr>
                 </tfoot>
             </table>

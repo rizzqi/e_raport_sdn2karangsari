@@ -212,34 +212,36 @@ class RaportDocxService
 
         // Header Tabel Nilai
         $rowH = $nilaiTable->addRow(350);
-        $rowH->addCell(600, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('No', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(4400, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Mata Pelajaran', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(1200, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('KKM', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(1400, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Nilai', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(1400, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Keterangan', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(500, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('No', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(2700, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Mata Pelajaran', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(800, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('KKM', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(1100, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Nilai Rapor', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(900, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Predikat', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(3200, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Capaian Kompetensi', 'tableHeader', ['alignment' => Jc::CENTER]);
 
         // Isi Tabel Nilai
         foreach ($hasilNilai['baris'] as $b) {
             $rowB = $nilaiTable->addRow(300);
-            $rowB->addCell(600)->addText($b['no'], 'tableBody', ['alignment' => Jc::CENTER]);
-            $rowB->addCell(4400)->addText($b['mapel_nama'], 'tableBody');
-            $rowB->addCell(1200)->addText((string) $b['kkm'], 'tableBody', ['alignment' => Jc::CENTER]);
-            $rowB->addCell(1400)->addText($b['akhir_format'], 'tableBody', ['alignment' => Jc::CENTER]);
-            $rowB->addCell(1400)->addText($b['keterangan'], 'tableBody', ['alignment' => Jc::CENTER]);
+            $rowB->addCell(500)->addText($b['no'], 'tableBody', ['alignment' => Jc::CENTER]);
+            $rowB->addCell(2700)->addText($b['mapel_nama'], 'boldText');
+            $rowB->addCell(800)->addText((string) $b['kkm'], 'tableBody', ['alignment' => Jc::CENTER]);
+            $rowB->addCell(1100)->addText($b['nilai_rapor_format'], 'boldText', ['alignment' => Jc::CENTER]);
+            $rowB->addCell(900)->addText($b['predikat'], 'boldText', ['alignment' => Jc::CENTER]);
+            $rowB->addCell(3200)->addText($b['capaian_kompetensi'] ?? '-', 'tableBody');
         }
 
         // Baris Jumlah & Rata-rata
         $rowJumlah = $nilaiTable->addRow(300);
-        $rowJumlah->addCell(5000, ['gridSpan' => 2, 'bgColor' => 'F2F2F2'])->addText('Jumlah Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
-        $rowJumlah->addCell(1200, ['bgColor' => 'F2F2F2'])->addText('-', 'boldText', ['alignment' => Jc::CENTER]);
-        $rowJumlah->addCell(1400, ['bgColor' => 'F2F2F2'])->addText(HitungNilaiService::formatAngka($hasilNilai['total_akhir']), 'boldText', ['alignment' => Jc::CENTER]);
-        $rowJumlah->addCell(1400, ['bgColor' => 'F2F2F2'])->addText('-', 'boldText', ['alignment' => Jc::CENTER]);
+        $rowJumlah->addCell(4000, ['gridSpan' => 3, 'bgColor' => 'F2F2F2'])->addText('Jumlah Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
+        $rowJumlah->addCell(1100, ['bgColor' => 'F2F2F2'])->addText(HitungNilaiService::formatAngka($hasilNilai['total_akhir']), 'boldText', ['alignment' => Jc::CENTER]);
+        $rowJumlah->addCell(900, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['predikat_rata'] ?? '-', 'boldText', ['alignment' => Jc::CENTER]);
+        $rowJumlah->addCell(3200, ['bgColor' => 'F2F2F2'])->addText("Total {$hasilNilai['total_mapel']} mata pelajaran", 'tableBody');
 
         $rowRata = $nilaiTable->addRow(300);
-        $rowRata->addCell(5000, ['gridSpan' => 2, 'bgColor' => 'F2F2F2'])->addText('Rata-rata Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
-        $rowRata->addCell(1200, ['bgColor' => 'F2F2F2'])->addText('-', 'boldText', ['alignment' => Jc::CENTER]);
-        $rowRata->addCell(1400, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['rata_akhir_format'], 'boldText', ['alignment' => Jc::CENTER]);
-        $rowRata->addCell(1400, ['bgColor' => 'F2F2F2'])->addText('-', 'boldText', ['alignment' => Jc::CENTER]);
+        $rowRata->addCell(4000, ['gridSpan' => 3, 'bgColor' => 'F2F2F2'])->addText('Rata-rata Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
+        $rowRata->addCell(1100, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['rata_akhir_format'], 'boldText', ['alignment' => Jc::CENTER]);
+        $rowRata->addCell(900, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['predikat_rata'] ?? '-', 'boldText', ['alignment' => Jc::CENTER]);
+        $rowRata->addCell(3200, ['bgColor' => 'F2F2F2'])->addText("Predikat Rata-rata: " . ($hasilNilai['predikat_rata'] ?? '-'), 'tableBody');
 
         $section->addTextBreak(1);
 

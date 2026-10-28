@@ -9,6 +9,16 @@ use Illuminate\Http\Request;
 
 class PenempatanSiswaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (!auth()->check() || !auth()->user()->isAdmin()) {
+                abort(403, 'Akses ditolak. Penempatan siswa hanya dapat dilakukan oleh Administrator.');
+            }
+            return $next($request);
+        });
+    }
+
     public function index(Kelas $kelas)
     {
         $kelas->load(['tahunAjaran', 'wali', 'kelasSiswa.siswa']);

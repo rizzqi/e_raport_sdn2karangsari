@@ -48,6 +48,16 @@ class KelasSiswa extends Model
         return $this->hasMany(KehadiranBulanan::class);
     }
 
+    public function nilaiFormatifBulanan(): HasMany
+    {
+        return $this->hasMany(NilaiFormatifBulanan::class);
+    }
+
+    public function nilaiRaporMapel(): HasMany
+    {
+        return $this->hasMany(NilaiRaporMapel::class);
+    }
+
     public function raport(): HasMany
     {
         return $this->hasMany(Raport::class);

@@ -6,12 +6,13 @@
 <style>
     @media print {
         @page {
-            size: 215mm 330mm;
+            size: 215mm 330mm portrait;
             margin: 10mm 15mm;
         }
         body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            background: white !important;
         }
         .no-print {
             display: none !important;
@@ -30,19 +31,19 @@
 <div class="space-y-6">
 
     <!-- Action Toolbar (No-Print) -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 no-print">
-        <div class="flex items-center space-x-2">
-            <a href="{{ route('kelas.show', $kelas->id) }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
-                <i class="fa-solid fa-arrow-left mr-1"></i> Kembali ke Kelas
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 no-print">
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('kelas.show', $kelas->id) }}" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition flex items-center">
+                <i class="fa-solid fa-arrow-left mr-1.5"></i> Kembali ke Kelas
             </a>
             <div class="bg-slate-100 p-1 rounded-xl flex items-center space-x-1 text-xs font-bold">
                 <a href="{{ route('raport.preview', ['kelasSiswa' => $kelasSiswa->id, 'periode' => 'sts']) }}"
                    class="px-2.5 py-1 rounded-lg transition {{ $periode === 'sts' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
-                   STS
+                   STS (Tengah Semester)
                 </a>
                 <a href="{{ route('raport.preview', ['kelasSiswa' => $kelasSiswa->id, 'periode' => 'sas']) }}"
                    class="px-2.5 py-1 rounded-lg transition {{ $periode === 'sas' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
-                   SAS
+                   SAS (Semester)
                 </a>
             </div>
             <span class="hidden md:inline-flex items-center px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-semibold">
@@ -52,7 +53,7 @@
 
         <div class="flex flex-wrap items-center gap-2">
             <!-- Ganti Tanggal Raport (No-Print) -->
-            <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl text-xs shadow-2xs">
+            <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-xl text-xs shadow-2xs">
                 <i class="fa-regular fa-calendar-days text-slate-500"></i>
                 <label for="inputTanggalRaport" class="font-bold text-slate-700 whitespace-nowrap">Tgl Rapor:</label>
                 <input type="date" id="inputTanggalRaport" value="{{ $tanggalObj->format('Y-m-d') }}"
@@ -67,19 +68,49 @@
                 <span id="badgeStatusTanggal" class="hidden text-[10px] font-bold text-emerald-600 ml-1"></span>
             </div>
 
-            <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
-                <i class="fa-solid fa-print mr-1.5"></i> Cetak Dokumen (F4)
+            <!-- Tombol Cetak Per Siswa -->
+            <button type="button" onclick="cetakDokumen({{ $hasilNilai['ada_nilai_kosong'] ? 'true' : 'false' }}, {{ $hasilNilai['jumlah_kosong'] }})"
+                    class="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
+                <i class="fa-solid fa-print mr-1.5 text-amber-400"></i> Cetak Rapor Siswa Ini (F4)
             </button>
-            <a id="btnDownloadDocx" href="{{ route('raport.download.docx', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
-               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
-                <i class="fa-solid fa-file-word mr-1.5"></i> Unduh Word F4 (.docx)
+
+            <!-- Tombol Cetak Semua Sekelas -->
+            <a href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => $periode]) }}"
+               class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
+               title="Cetak seluruh siswa dalam satu kelas sekaligus">
+                <i class="fa-solid fa-users mr-1.5"></i> Cetak Semua Sekelas
             </a>
+
+            <!-- Tombol Unduh Dokumen -->
             <a id="btnDownloadPdf" href="{{ route('raport.download.pdf', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
-               class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
-                <i class="fa-solid fa-file-pdf mr-1.5"></i> Unduh PDF F4
+               class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
+               title="Unduh file PDF resmi">
+                <i class="fa-solid fa-file-pdf mr-1.5"></i> Unduh PDF
+            </a>
+            <a id="btnDownloadDocx" href="{{ route('raport.download.docx', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
+               class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
+               title="Unduh file Microsoft Word (.docx)">
+                <i class="fa-solid fa-file-word mr-1.5"></i> Word (.docx)
             </a>
         </div>
     </div>
+
+    <!-- Peringatan Nilai Kosong (No-Print) -->
+    @if($hasilNilai['ada_nilai_kosong'])
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-2xl text-amber-900 shadow-sm no-print flex items-start space-x-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-600 text-xl mt-0.5 shrink-0"></i>
+            <div class="flex-1 text-xs">
+                <p class="font-bold text-sm text-amber-950">Peringatan: Nilai Rapor Belum Lengkap!</p>
+                <p class="mt-1">
+                    Terdapat <strong>{{ $hasilNilai['jumlah_kosong'] }} mata pelajaran</strong> yang nilainya masih kosong:
+                    <strong class="text-amber-800">{{ implode(', ', $hasilNilai['mapel_kosong']) }}</strong>.
+                </p>
+                <p class="mt-1 text-amber-700">
+                    Pastikan seluruh nilai telah diinput pada menu <a href="{{ route('kelas.input-nilai', ['kelas' => $kelas->id, 'tab' => 'rapor', 'kelas_siswa_id' => $kelasSiswa->id]) }}" class="underline font-bold hover:text-amber-950">Input Nilai Rapor</a> sebelum mencetak atau membagikan rapor ini ke orang tua murid.
+                </p>
+            </div>
+        </div>
+    @endif
 
     <!-- Official Report Card Sheet (Standard F4 / Folio: 215 x 330 mm) -->
     <div class="page-sheet max-w-[850px] mx-auto bg-white p-8 sm:p-12 rounded-2xl border border-slate-200 shadow-xl print:shadow-none print:border-none print:p-0 print:m-0 text-slate-900">
@@ -158,43 +189,45 @@
             </div>
         </div>
 
-        <!-- 4. TABEL NILAI MATA PELAJARAN -->
-        <div class="mb-5">
+        <!-- 4. TABEL NILAI RAPOR (RINGKAS & RESMI: MATA PELAJARAN, KKM, NILAI RAPOR, PREDIKAT, CAPAIAN KOMPETENSI) -->
+        <div class="mb-6">
             <table class="w-full text-xs sm:text-sm border-collapse border border-slate-900">
                 <thead>
-                    <tr class="bg-slate-100 text-slate-900 font-bold text-center">
+                    <tr class="bg-slate-100 font-bold text-center">
                         <th class="border border-slate-900 py-2 px-2 w-10">No</th>
                         <th class="border border-slate-900 py-2 px-3 text-left">Mata Pelajaran</th>
-                        <th class="border border-slate-900 py-2 px-3 w-20">KKM</th>
-                        <th class="border border-slate-900 py-2 px-3 w-24">Nilai</th>
-                        <th class="border border-slate-900 py-2 px-3 w-28">Keterangan</th>
+                        <th class="border border-slate-900 py-2 px-2 w-16">KKM</th>
+                        <th class="border border-slate-900 py-2 px-2 w-24">Nilai Rapor</th>
+                        <th class="border border-slate-900 py-2 px-2 w-16">Predikat</th>
+                        <th class="border border-slate-900 py-2 px-3 text-left">Capaian Kompetensi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($hasilNilai['baris'] as $b)
                         <tr>
-                            <td class="border border-slate-900 py-1.5 px-2 text-center">{{ $b['no'] }}</td>
-                            <td class="border border-slate-900 py-1.5 px-3 font-medium">{{ $b['mapel_nama'] }}</td>
-                            <td class="border border-slate-900 py-1.5 px-3 text-center font-bold">{{ $b['kkm'] }}</td>
-                            <td class="border border-slate-900 py-1.5 px-3 text-center font-bold">{{ $b['akhir_format'] }}</td>
-                            <td class="border border-slate-900 py-1.5 px-3 text-center text-xs {{ $b['keterangan'] === 'Tuntas' ? 'text-emerald-700 font-bold' : ($b['keterangan'] === 'Belum Tuntas' ? 'text-rose-600 font-bold' : 'text-slate-400') }}">
-                                {{ $b['keterangan'] }}
+                            <td class="border border-slate-900 py-2 px-2 text-center align-top">{{ $b['no'] }}</td>
+                            <td class="border border-slate-900 py-2 px-3 font-semibold align-top">{{ $b['mapel_nama'] }}</td>
+                            <td class="border border-slate-900 py-2 px-2 text-center font-bold align-top">{{ $b['kkm'] }}</td>
+                            <td class="border border-slate-900 py-2 px-2 text-center font-black text-sm align-top {{ $b['is_kosong'] ? 'text-rose-600 bg-rose-50/50' : '' }}">
+                                {{ $b['nilai_rapor_format'] }}
+                            </td>
+                            <td class="border border-slate-900 py-2 px-2 text-center font-bold align-top">
+                                {{ $b['predikat'] }}
+                            </td>
+                            <td class="border border-slate-900 py-2 px-3 text-xs leading-relaxed align-top">
+                                {{ $b['capaian_kompetensi'] }}
                             </td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot class="font-bold bg-slate-50">
                     <tr>
-                        <td colspan="2" class="border border-slate-900 py-1.5 px-3 text-right uppercase">Jumlah Nilai</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center text-slate-400">-</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_akhir']) }}</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center text-slate-400">-</td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" class="border border-slate-900 py-1.5 px-3 text-right uppercase">Rata-rata Nilai</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center text-slate-400">-</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center">{{ $hasilNilai['rata_akhir_format'] }}</td>
-                        <td class="border border-slate-900 py-1.5 px-3 text-center text-slate-400">-</td>
+                        <td colspan="3" class="border border-slate-900 py-2 px-3 text-right uppercase">Jumlah Nilai</td>
+                        <td class="border border-slate-900 py-2 px-2 text-center font-mono font-black">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_akhir']) }}</td>
+                        <td class="border border-slate-900 py-2 px-2 text-center font-mono font-black">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
+                        <td class="border border-slate-900 py-2 px-3 text-xs text-slate-500 font-normal">
+                            Rata-rata: <strong>{{ $hasilNilai['rata_akhir_format'] }}</strong> &bull; Predikat Keseluruhan: <strong>{{ $hasilNilai['predikat_rata'] ?? '-' }}</strong>
+                        </td>
                     </tr>
                 </tfoot>
             </table>
@@ -241,7 +274,7 @@
             </table>
         </div>
 
-        <!-- 6. BLOK TANDA TANGAN RESMI -->
+        <!-- 6. BLOK TANDA TANGAN RESMI (3 PIHAK: ORANG TUA, KEPALA SEKOLAH, WALI KELAS) -->
         <div class="grid grid-cols-3 gap-2 text-center text-xs sm:text-sm pt-2">
             <div>
                 <p>Mengetahui,</p>
@@ -289,35 +322,31 @@
 
     </div>
 
-    <!-- Modal Edit Nama dan NIP Wali Kelas -->
+    <!-- Modal Edit Wali Kelas & NIP -->
     <div id="modalEditWaliKelas" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
-        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-100 text-left">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
-                        <i class="fa-solid fa-user-pen text-amber-600 mr-2 text-base"></i> Edit Wali Kelas & NIP
-                    </h3>
-                    <p class="text-xs text-slate-500 mt-0.5">{{ $kelas->nama }} &bull; TP {{ $kelas->tahunAjaran->nama_lengkap ?? '-' }}</p>
-                </div>
-                <button type="button" onclick="document.getElementById('modalEditWaliKelas').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-100">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="font-bold text-slate-900 text-sm flex items-center">
+                    <i class="fa-solid fa-user-pen text-amber-600 mr-2"></i> Edit Nama & NIP Wali Kelas
+                </h3>
+                <button type="button" onclick="document.getElementById('modalEditWaliKelas').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
-            <form action="{{ route('kelas.update.wali', $kelas->id) }}" method="POST" class="space-y-4 mt-4">
+            <form action="{{ route('kelas.update.wali', $kelas->id) }}" method="POST" class="space-y-4">
                 @csrf
                 @method('PUT')
-
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Nama Lengkap & Gelar Wali Kelas *
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        Nama Lengkap Wali Kelas (dengan Gelar)
                     </label>
-                    <input type="text" name="wali_nama" value="{{ old('wali_nama', $kelas->wali_nama ?: ($kelas->wali->name ?? '')) }}" required
-                        placeholder="Contoh: Dewi Lestari, S.Pd."
-                        class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500">
-                    <span class="text-[11px] text-slate-500 mt-1 block">Nama ini akan dicetak pada tanda tangan raport.</span>
+                    <input type="text" name="wali_nama" value="{{ old('wali_nama', $kelas->nama_wali) }}" required
+                        class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
                         Nomor Induk Pegawai (NIP)
                     </label>
                     <input type="text" name="wali_nip" value="{{ old('wali_nip', $kelas->wali_nip) }}"
@@ -339,12 +368,22 @@
         </div>
     </div>
 
-    <!-- Script Manajemen Ganti Tanggal Raport Real-time & Auto-Save -->
+    <!-- Script Manajemen Cetak & Ganti Tanggal Raport Real-time -->
     <script>
         const inputTanggal = document.getElementById('inputTanggalRaport');
         const badgeStatus = document.getElementById('badgeStatusTanggal');
         const btnDocx = document.getElementById('btnDownloadDocx');
         const btnPdf = document.getElementById('btnDownloadPdf');
+
+        // Fungsi Cetak dengan Pengaman Nilai Kosong
+        function cetakDokumen(adaKosong, jumlahKosong) {
+            if (adaKosong) {
+                if (!confirm(`PERINGATAN NILAI KOSONG:\nMasih ada ${jumlahKosong} mata pelajaran yang nilainya belum diinput pada rapor siswa ini.\n\nApakah Anda yakin tetap ingin mencetak rapor ini sekarang?`)) {
+                    return;
+                }
+            }
+            window.print();
+        }
 
         function formatTanggalIndo(dateStr) {
             if (!dateStr) return '';
@@ -429,10 +468,14 @@
                         }, 3500);
                     }
                 } else {
-                    throw new Error(data.message || 'Gagal menyimpan');
+                    if (badgeStatus) {
+                        badgeStatus.textContent = 'Gagal menyimpan';
+                        badgeStatus.classList.remove('text-slate-500', 'text-emerald-600');
+                        badgeStatus.classList.add('text-rose-600');
+                    }
                 }
             })
-            .catch(err => {
+            .catch(() => {
                 if (badgeStatus) {
                     badgeStatus.textContent = 'Gagal menyimpan';
                     badgeStatus.classList.remove('text-slate-500', 'text-emerald-600');
@@ -442,12 +485,7 @@
         }
 
         if (inputTanggal) {
-            inputTanggal.addEventListener('change', () => {
-                onTanggalChanged();
-                @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
-                    simpanTanggalRaport();
-                @endif
-            });
+            inputTanggal.addEventListener('change', onTanggalChanged);
         }
     </script>
 </div>

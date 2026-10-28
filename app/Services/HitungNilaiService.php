@@ -7,6 +7,7 @@ use App\Models\KelasSiswa;
 use App\Models\MataPelajaran;
 use App\Models\Nilai;
 use App\Models\NilaiPembiasaan;
+use App\Models\NilaiRaporMapel;
 use App\Models\Pembiasaan;
 use Illuminate\Support\Collection;
 
@@ -22,9 +23,18 @@ class HitungNilaiService
             $kelas->load('mapelKkm');
         }
 
+        $tahunAjaran = $kelas ? $kelas->tahunAjaran : null;
+        $semesterAktif = strtolower($tahunAjaran ? ($tahunAjaran->semester ?? 'ganjil') : 'ganjil');
+
         $mapels = $kelas ? $kelas->mataPelajaran() : MataPelajaran::aktif()->get();
         $nilaiList = Nilai::where('kelas_siswa_id', $kelasSiswa->id)
             ->where('periode', $periode)
+            ->get()
+            ->keyBy('mapel_id');
+
+        // Ambil data nilai rapor resmi beserta capaian kompetensi
+        $raporMapelList = NilaiRaporMapel::where('kelas_siswa_id', $kelasSiswa->id)
+            ->where('semester', $semesterAktif)
             ->get()
             ->keyBy('mapel_id');
 
@@ -35,21 +45,65 @@ class HitungNilaiService
         $countSumatif = 0;
         $totalAkhir = 0;
         $countAkhir = 0;
+        $mapelKosong = [];
 
         foreach ($mapels as $index => $mapel) {
-            $n = $nilaiList->get($mapel->id);
             $kkm = $kelas ? $kelas->getKkmForMapel($mapel) : (int) ($mapel->kkm ?? 70);
-            $sumatif = $n && $n->sumatif !== null ? (float) $n->sumatif : null;
-            $formatif = $n && $n->formatif !== null ? (float) $n->formatif : null;
+            $recRapor = $raporMapelList->get($mapel->id);
+            $n = $nilaiList->get($mapel->id);
+            if (! $n && in_array($periode, ['sas', 'semester'])) {
+                $n = Nilai::where('kelas_siswa_id', $kelasSiswa->id)
+                    ->where('mapel_id', $mapel->id)
+                    ->where('periode', 'sts')
+                    ->first();
+            }
 
-            // Nilai siswa: mengacu pada sumatif (atau formatif jika sumatif belum diisi)
-            $nilaiMapelAkhir = $sumatif !== null ? $sumatif : $formatif;
+            // Prioritaskan nilai rapor akhir yang sudah dihitung atau tersimpan di nilai_rapor_mapel
+            $nilaiMapelAkhir = null;
+            $predikat = null;
+            $catatan = '';
+
+            if ($recRapor && $recRapor->nilai_rapor !== null) {
+                $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
+                $predikat = $recRapor->predikat ?? NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir);
+                $catatan = $recRapor->catatan ?? '';
+            } elseif ($n && ($n->sumatif !== null || $n->formatif !== null)) {
+                $nilaiMapelAkhir = $n->sumatif !== null ? (float) $n->sumatif : (float) $n->formatif;
+                $predikat = NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir);
+                $catatan = '';
+            }
 
             if ($nilaiMapelAkhir !== null) {
                 $totalAkhir += $nilaiMapelAkhir;
                 $countAkhir++;
                 $totalSumatif += $nilaiMapelAkhir;
                 $countSumatif++;
+
+                // Jika catatan capaian kompetensi masih kosong, beri template deskripsi otomatis sesuai predikat
+                if (empty(trim((string) $catatan))) {
+                    switch ($predikat) {
+                        case 'A':
+                            $catatan = "Menunjukkan penguasaan materi yang sangat istimewa dalam seluruh tujuan pembelajaran {$mapel->nama}.";
+                            break;
+                        case 'B':
+                            $catatan = "Menunjukkan pemahaman yang baik dan mampu menguasai tujuan pembelajaran {$mapel->nama} secara optimal.";
+                            break;
+                        case 'C':
+                            $catatan = "Cukup memahami materi pokok {$mapel->nama}, perlu peningkatan latihan mandiri.";
+                            break;
+                        case 'D':
+                            $catatan = "Perlu bimbingan dan pendampingan intensif dalam memahami materi pokok {$mapel->nama}.";
+                            break;
+                        default:
+                            $catatan = "Capaian pembelajaran {$mapel->nama} telah terpenuhi dengan baik.";
+                            break;
+                    }
+                }
+                $isKosong = false;
+            } else {
+                $mapelKosong[] = $mapel->nama;
+                $isKosong = true;
+                $catatan = 'Belum ada nilai';
             }
 
             $totalFormatif += $kkm;
@@ -65,8 +119,14 @@ class HitungNilaiService
                 'formatif' => $kkm,
                 'sumatif' => $nilaiMapelAkhir,
                 'nilai' => $nilaiMapelAkhir,
+                'nilai_rapor' => $nilaiMapelAkhir,
+                'nilai_rapor_format' => $nilaiMapelAkhir !== null ? self::formatAngka($nilaiMapelAkhir) : '-',
                 'akhir' => $nilaiMapelAkhir,
+                'predikat' => $predikat ?? '-',
+                'capaian_kompetensi' => $catatan,
+                'catatan' => $catatan,
                 'keterangan' => $keterangan,
+                'is_kosong' => $isKosong,
                 'formatif_format' => (string) $kkm,
                 'sumatif_format' => $nilaiMapelAkhir !== null ? self::formatAngka($nilaiMapelAkhir) : '-',
                 'akhir_format' => $nilaiMapelAkhir !== null ? self::formatAngka($nilaiMapelAkhir) : '-',
@@ -76,6 +136,7 @@ class HitungNilaiService
         $rataFormatif = $countFormatif > 0 ? round($totalFormatif / $countFormatif, 2) : 70;
         $rataSumatif = $countSumatif > 0 ? round($totalSumatif / $countSumatif, 2) : 0;
         $rataAkhir = $countAkhir > 0 ? round($totalAkhir / $countAkhir, 2) : 0;
+        $predikatRata = $countAkhir > 0 ? NilaiRaporMapel::hitungPredikat($rataAkhir) : '-';
 
         return [
             'baris' => $baris,
@@ -90,11 +151,15 @@ class HitungNilaiService
             'total_akhir' => $totalAkhir,
             'rata_akhir' => $rataAkhir,
             'rata_akhir_format' => self::formatAngka($rataAkhir),
+            'predikat_rata' => $predikatRata,
             'total_nilai' => $totalAkhir,
             'rata_nilai' => $rataAkhir,
             'rata_nilai_format' => self::formatAngka($rataAkhir),
             'total_mapel' => $mapels->count(),
-            'terisi_semua' => $countAkhir === $mapels->count(),
+            'mapel_kosong' => $mapelKosong,
+            'jumlah_kosong' => count($mapelKosong),
+            'ada_nilai_kosong' => count($mapelKosong) > 0,
+            'terisi_semua' => count($mapelKosong) === 0,
         ];
     }
 

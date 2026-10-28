@@ -347,6 +347,67 @@
                 </div>
             </div>
 
+            <!-- 3. Pengaturan Bobot Penilaian Nilai Rapor -->
+            <div class="space-y-4 pt-4 border-t border-slate-100">
+                <div class="flex items-center space-x-2">
+                    <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-calculator"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Bobot Penilaian Nilai Rapor (E-Rapor 4 Lembar)</h3>
+                        <p class="text-[11px] text-slate-400">Atur proporsi persentase pembobotan nilai akhir (Total harus 100%)</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Bobot Formatif Bulanan (%) *
+                        </label>
+                        <div class="relative">
+                            <input type="number" min="0" max="100" name="bobot_formatif" id="bobot_formatif"
+                                value="{{ old('bobot_formatif', $sekolah->bobot_formatif ?? 40) }}" required
+                                class="input-bobot w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-indigo-500">
+                            <span class="absolute right-3 top-2 text-xs font-bold text-slate-400">%</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Default: 40% (Rata-rata ulangan bulanan)</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Bobot UTS / STS (%) *
+                        </label>
+                        <div class="relative">
+                            <input type="number" min="0" max="100" name="bobot_uts" id="bobot_uts"
+                                value="{{ old('bobot_uts', $sekolah->bobot_uts ?? 30) }}" required
+                                class="input-bobot w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-indigo-500">
+                            <span class="absolute right-3 top-2 text-xs font-bold text-slate-400">%</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Default: 30% (Sumatif tengah semester)</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Bobot UAS / SAS (%) *
+                        </label>
+                        <div class="relative">
+                            <input type="number" min="0" max="100" name="bobot_uas" id="bobot_uas"
+                                value="{{ old('bobot_uas', $sekolah->bobot_uas ?? 30) }}" required
+                                class="input-bobot w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-indigo-500">
+                            <span class="absolute right-3 top-2 text-xs font-bold text-slate-400">%</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Default: 30% (Sumatif akhir semester)</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs font-semibold px-2">
+                    <span class="text-slate-600">Total Akumulasi Bobot:</span>
+                    <span id="label_total_bobot" class="font-mono font-bold px-2 py-0.5 rounded text-emerald-800 bg-emerald-100">
+                        100%
+                    </span>
+                </div>
+            </div>
+
             <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <div class="text-xs text-slate-500 flex items-center">
                     <i class="fa-solid fa-circle-info text-blue-500 mr-1.5"></i>
@@ -678,5 +739,28 @@
 
         closeCropModal();
     }
+
+    // Hitung live total bobot
+    function hitungTotalBobot() {
+        const bf = parseInt(document.getElementById('bobot_formatif')?.value || 0);
+        const bu = parseInt(document.getElementById('bobot_uts')?.value || 0);
+        const ba = parseInt(document.getElementById('bobot_uas')?.value || 0);
+        const total = bf + bu + ba;
+
+        const badge = document.getElementById('label_total_bobot');
+        if (badge) {
+            badge.textContent = total + '%';
+            if (total === 100) {
+                badge.className = 'font-mono font-bold px-2 py-0.5 rounded text-emerald-800 bg-emerald-100';
+            } else {
+                badge.className = 'font-mono font-bold px-2 py-0.5 rounded text-rose-800 bg-rose-100';
+            }
+        }
+    }
+
+    document.querySelectorAll('.input-bobot').forEach(inp => {
+        inp.addEventListener('input', hitungTotalBobot);
+    });
+    document.addEventListener('DOMContentLoaded', hitungTotalBobot);
 </script>
 @endpush

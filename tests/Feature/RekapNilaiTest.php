@@ -415,4 +415,30 @@ class RekapNilaiTest extends TestCase
         $response->assertSee('Semua Mapel (Grafik Bertumpuk)');
         $response->assertSee('Rata-rata Nilai Akhir Siswa');
     }
+
+    public function test_cetak_rekap_semester_page_renders_successfully(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+
+        $response = $this->actingAs($admin)->get(route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']));
+
+        $response->assertStatus(200);
+        $response->assertSee('REKAPITULASI NILAI SEMESTER');
+        $response->assertSee('Rata-rata Otomatis');
+        $response->assertSee($kelas->nama);
+    }
+
+    public function test_cetak_rekap_bulanan_page_renders_successfully(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+
+        $response = $this->actingAs($admin)->get(route('kelas.nilai-formatif.cetak-rekap', ['kelas' => $kelas->id, 'bulan' => 10]));
+
+        $response->assertStatus(200);
+        $response->assertSee('REKAPITULASI NILAI BULANAN (FORMATIF)');
+        $response->assertSee('Rata-rata Otomatis');
+        $response->assertSee($kelas->nama);
+    }
 }

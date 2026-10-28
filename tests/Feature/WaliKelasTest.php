@@ -159,4 +159,27 @@ class WaliKelasTest extends TestCase
             $response->assertSee("Kelas {$i}");
         }
     }
+
+    public function test_wali_kelas_cannot_access_or_see_penempatan_siswa(): void
+    {
+        $this->seed(WaliKelas6Seeder::class);
+        $wali = User::where('email', 'wali6@sdn2karangsari.sch.id')->firstOrFail();
+        $kelas6 = Kelas::where('nama', 'like', '%Kelas 6%')->firstOrFail();
+
+        // 1. Wali Kelas tidak boleh melihat tombol/menu Penempatan Siswa di halaman kelas
+        $showResponse = $this->actingAs($wali)->get(route('kelas.show', $kelas6->id));
+        $showResponse->assertStatus(200);
+        $showResponse->assertDontSee(route('penempatan.index', $kelas6->id));
+        $showResponse->assertDontSee('Penempatan Siswa');
+
+        // 2. Akses langsung URL GET penempatan diblokir 403
+        $getResponse = $this->actingAs($wali)->get(route('penempatan.index', $kelas6->id));
+        $getResponse->assertStatus(403);
+
+        // 3. Request POST assign penempatan siswa diblokir 403
+        $postResponse = $this->actingAs($wali)->post(route('penempatan.assign', $kelas6->id), [
+            'siswa_ids' => [1],
+        ]);
+        $postResponse->assertStatus(403);
+    }
 }

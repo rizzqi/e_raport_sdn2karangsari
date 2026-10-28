@@ -40,6 +40,9 @@ class SekolahController extends Controller
             'cropped_logo_kanan' => 'nullable|string',
             'cropped_ttd' => 'nullable|string',
             'ttd' => 'nullable|image|max:3072',
+            'bobot_formatif' => 'nullable|integer|min:0|max:100',
+            'bobot_uts' => 'nullable|integer|min:0|max:100',
+            'bobot_uas' => 'nullable|integer|min:0|max:100',
         ]);
 
         $sekolah = Sekolah::first();
@@ -47,7 +50,7 @@ class SekolahController extends Controller
             $sekolah = new Sekolah;
         }
 
-        $data = $request->only(['nama', 'pemda', 'dinas', 'kota', 'alamat', 'kontak', 'kepsek', 'nip']);
+        $data = $request->only(['nama', 'pemda', 'dinas', 'kota', 'alamat', 'kontak', 'kepsek', 'nip', 'bobot_formatif', 'bobot_uts', 'bobot_uas']);
 
         // Hapus logo jika diminta
         if ($request->boolean('hapus_logo') && $sekolah->logo) {

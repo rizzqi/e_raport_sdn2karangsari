@@ -63,56 +63,132 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
-                <!-- Tombol Utama: Input Nilai Cepat (Hijau Emerald #059669) -->
-                <a href="{{ route('nilai.input.kelas', $kelas->id) }}" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-xs hover:shadow flex items-center" title="Input Matriks Nilai Kelas">
-                    <i class="fa-solid fa-pen-to-square mr-1.5"></i> Input Nilai Cepat
-                </a>
-                <!-- Tombol Input SIA & Pembiasaan (Amber) -->
-                <a href="{{ route('kelas.sia-pembiasaan.index', $kelas->id) }}" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-xs hover:shadow flex items-center" title="Input Matriks Kehadiran (SIA) & Karakter Pembiasaan Sekelas">
-                    <i class="fa-solid fa-clipboard-user mr-1.5"></i> Input SIA & Pembiasaan
-                </a>
-                <button type="button" onclick="document.getElementById('modalImportNilai').classList.remove('hidden')"
-                    class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 transition shadow-2xs flex items-center"
-                    title="Import Nilai Siswa dari file Excel (.xlsx / .csv), PDF (.pdf) atau Copy-Paste">
-                    <i class="fa-solid fa-file-arrow-up mr-1.5 text-emerald-600"></i> Impor Excel / PDF
+            <!-- 1. Tombol Utama: Input Nilai Terpadu (Formatif, UTS, UAS, & Nilai Rapor Semua Mapel) -->
+            <a href="{{ route('kelas.input-nilai', $kelas->id) }}"
+               class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>Input Nilai</span>
+            </a>
+
+            <!-- Tombol Cetak Rekap Semester Otomatis -->
+            <button type="button" onclick="document.getElementById('modalCetakRekapSemester').classList.remove('hidden')"
+               class="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+               title="Cetak Rekap Nilai Semester Otomatis (1 Siswa 1 Lembar F4 Sekelas / Leger)">
+                <i class="fa-solid fa-print"></i>
+                <span>Cetak Rekap Semester</span>
+            </button>
+
+            <!-- Tombol Cetak Bulanan -->
+            <button type="button" onclick="document.getElementById('modalCetakBulanan').classList.remove('hidden')"
+               class="px-3.5 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+               title="Cetak Nilai Bulanan (Pilih Bulan Juli–Desember, Rapor Bulanan F4 / Leger)">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Cetak Bulanan</span>
+            </button>
+
+            <!-- 2. Dropdown Menu Raport & Dokumen Cetak -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" type="button"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition flex items-center shadow-2xs">
+                    <i class="fa-solid fa-print mr-1.5 text-slate-500"></i> Cetak / Rapor
+                    <i class="fa-solid fa-chevron-down ml-1.5 text-[10px] opacity-75"></i>
                 </button>
-                <button type="button" onclick="document.getElementById('modalKosongkanNilai').classList.remove('hidden')"
-                    class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 transition shadow-2xs flex items-center"
-                    title="Kosongkan / Reset Nilai Siswa Per Kelas jika terjadi kesalahan input atau impor">
-                    <i class="fa-solid fa-trash-can mr-1.5 text-rose-600"></i> Kosongkan Nilai
+                <div x-show="open" @click.outside="open = false"
+                     class="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 py-1.5 text-xs divide-y divide-slate-100" style="display: none;">
+                    <div class="py-1">
+                        <button type="button" onclick="open = false; document.getElementById('modalCetakRekapSemester').classList.remove('hidden')"
+                           class="w-full text-left flex items-center px-4 py-2 text-blue-700 hover:bg-blue-50 font-bold cursor-pointer">
+                            <i class="fa-solid fa-print w-5 text-blue-600 mr-2 text-center"></i> Cetak Rekap Semester (F4 / Leger)
+                        </button>
+                        <button type="button" onclick="open = false; document.getElementById('modalCetakBulanan').classList.remove('hidden')"
+                           class="w-full text-left flex items-center px-4 py-2 text-purple-700 hover:bg-purple-50 font-bold cursor-pointer">
+                            <i class="fa-solid fa-calendar-days w-5 text-purple-600 mr-2 text-center"></i> Cetak Bulanan (Pilih Bulan)
+                        </button>
+                        <a href="{{ route('kelas.nilai-formatif.rekap-semester-sekelas', $kelas->id) }}" target="_blank"
+                           class="flex items-center px-4 py-2 text-blue-800 hover:bg-blue-50 font-medium">
+                            <i class="fa-solid fa-file-lines w-5 text-blue-600 mr-2 text-center"></i> Rekap Semester Sekelas (F4)
+                        </a>
+                        <a href="{{ route('kelas.nilai-formatif.cetak-sekelas', $kelas->id) }}" target="_blank"
+                           class="flex items-center px-4 py-2 text-indigo-700 hover:bg-indigo-50 font-medium">
+                            <i class="fa-solid fa-file-invoice w-5 text-indigo-600 mr-2 text-center"></i> Cetak Rapor Bulanan Sekelas
+                        </a>
+                        <a href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => 'sts']) }}"
+                           class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                            <i class="fa-solid fa-print w-5 text-slate-500 mr-2 text-center"></i> Cetak Rapor Sekelas (F4)
+                        </a>
+                        <a href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => 'sts']) }}"
+                           class="flex items-center px-4 py-2 text-rose-700 hover:bg-rose-50 font-medium">
+                            <i class="fa-solid fa-file-pdf w-5 text-rose-600 mr-2 text-center"></i> Unduh PDF Sekelas
+                        </a>
+                        <a href="{{ route('raport.download.kelas.docx', ['kelas' => $kelas->id, 'periode' => 'sts']) }}"
+                           class="flex items-center px-4 py-2 text-indigo-700 hover:bg-indigo-50 font-medium">
+                            <i class="fa-solid fa-file-word w-5 text-indigo-600 mr-2 text-center"></i> Unduh Word (.docx)
+                        </a>
+                        <a href="{{ route('kelas.daftar-hadir', ['kelas' => $kelas->id, 'periode' => 'sts']) }}"
+                           class="flex items-center px-4 py-2 text-amber-700 hover:bg-amber-50 font-medium">
+                            <i class="fa-solid fa-clipboard-user w-5 text-amber-600 mr-2 text-center"></i> Daftar Hadir (STS)
+                        </a>
+                        <a href="{{ route('rekap.kelas', $kelas->id) }}"
+                           class="flex items-center px-4 py-2 text-blue-700 hover:bg-blue-50 font-medium">
+                            <i class="fa-solid fa-chart-column w-5 text-blue-600 mr-2 text-center"></i> Rekapitulasi Nilai &amp; Grafik
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Dropdown Menu Administrasi & Alat Kelas -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" type="button"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition flex items-center shadow-2xs">
+                    <i class="fa-solid fa-sliders mr-1.5 text-slate-500"></i> Alat Kelas
+                    <i class="fa-solid fa-chevron-down ml-1.5 text-[10px] opacity-75"></i>
                 </button>
-                @if(auth()->user()->isAdmin())
-                    <a href="{{ route('penempatan.index', $kelas->id) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition flex items-center shadow-2xs">
-                        <i class="fa-solid fa-user-plus mr-1.5 text-slate-500"></i> Kelola Siswa
-                    </a>
-                @endif
-            @endif
-            <a href="{{ route('rekap.kelas', $kelas->id) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 transition flex items-center shadow-2xs">
-                <i class="fa-solid fa-chart-column mr-1.5 text-blue-500"></i> Rekap Nilai
-            </a>
-            <a href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white transition flex items-center shadow-2xs hover:shadow" title="Cetak Raport Seluruh Siswa Sekelas Sekaligus">
-                <i class="fa-solid fa-print mr-1.5 text-slate-200"></i> Cetak Raport Sekelas
-            </a>
-            <a href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 transition flex items-center shadow-2xs" title="Unduh PDF Gabungan Raport Sekelas">
-                <i class="fa-solid fa-file-pdf mr-1.5 text-rose-600"></i> Unduh PDF Sekelas
-            </a>
-            <a href="{{ route('raport.download.kelas.docx', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 transition flex items-center shadow-2xs">
-                <i class="fa-solid fa-file-word mr-1.5 text-indigo-500"></i> Unduh Word (.docx)
-            </a>
-            <a href="{{ route('kelas.absensi.index', $kelas->id) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-cyan-50 text-cyan-800 border border-cyan-300 transition flex items-center shadow-2xs" title="Kelola Absensi / Presensi Bulanan">
-                <i class="fa-solid fa-calendar-check mr-1.5 text-cyan-600"></i> Absensi Bulanan
-            </a>
-            <a href="{{ route('kelas.daftar-hadir', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-amber-50 text-amber-800 border border-amber-300 transition flex items-center shadow-2xs" title="Cetak atau Unduh Lembar Daftar Hadir Ujian STS / SAS">
-                <i class="fa-solid fa-clipboard-user mr-1.5 text-amber-600"></i> Daftar Hadir (STS)
-            </a>
-            @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
-                <button type="button" onclick="document.getElementById('modalEditKkmKelas').classList.remove('hidden')"
-                    class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-purple-50 text-purple-800 border border-purple-300 transition flex items-center shadow-2xs"
-                    title="Atur Kriteria Ketuntasan Minimal (KKM / KKTP) per mata pelajaran untuk kelas ini">
-                    <i class="fa-solid fa-sliders mr-1.5 text-purple-600"></i> KKM Rombel
-                </button>
-            @endif
+                <div x-show="open" @click.outside="open = false"
+                     class="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 py-1.5 text-xs divide-y divide-slate-100" style="display: none;">
+                    <div class="py-1">
+                        <a href="{{ route('kelas.input-nilai', ['kelas' => $kelas->id, 'tab' => 'formatif']) }}"
+                           class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                            <i class="fa-solid fa-calendar-check w-5 text-amber-600 mr-2 text-center"></i> Nilai Formatif Bulanan
+                        </a>
+                        <a href="{{ route('kelas.input-nilai', ['kelas' => $kelas->id, 'tab' => 'rapor']) }}"
+                           class="flex items-center px-4 py-2 text-indigo-700 hover:bg-indigo-50 font-medium">
+                            <i class="fa-solid fa-table-list w-5 text-indigo-600 mr-2 text-center"></i> Rapor Semua Mapel
+                        </a>
+                        @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                            <a href="{{ route('nilai.input.kelas', $kelas->id) }}"
+                               class="flex items-center px-4 py-2 text-emerald-700 hover:bg-emerald-50 font-medium">
+                                <i class="fa-solid fa-pen-to-square w-5 text-emerald-600 mr-2 text-center"></i> Matriks Nilai Cepat
+                            </a>
+                        @endif
+                        <a href="{{ route('kelas.absensi.index', $kelas->id) }}"
+                           class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                            <i class="fa-regular fa-calendar-check w-5 text-slate-500 mr-2 text-center"></i> Absensi Bulanan
+                        </a>
+                        <a href="{{ route('kelas.sia-pembiasaan.index', $kelas->id) }}"
+                           class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                            <i class="fa-solid fa-heart-pulse w-5 text-rose-500 mr-2 text-center"></i> SIA & Pembiasaan
+                        </a>
+                        @if(auth()->user()->isAdmin())
+                            <a href="{{ route('penempatan.index', $kelas->id) }}"
+                               class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                                <i class="fa-solid fa-user-plus w-5 text-indigo-500 mr-2 text-center"></i> Penempatan Siswa
+                            </a>
+                        @endif
+                    </div>
+                    @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                        <div class="py-1">
+                            <button type="button" onclick="open = false; document.getElementById('modalImportNilai').classList.remove('hidden')"
+                                    class="w-full text-left flex items-center px-4 py-2 text-emerald-800 hover:bg-emerald-50 font-medium">
+                                <i class="fa-solid fa-file-arrow-up w-5 text-emerald-600 mr-2 text-center"></i> Impor Nilai Excel/PDF
+                            </button>
+                            <button type="button" onclick="open = false; document.getElementById('modalKosongkanNilai').classList.remove('hidden')"
+                                    class="w-full text-left flex items-center px-4 py-2 text-rose-700 hover:bg-rose-50 font-medium">
+                                <i class="fa-solid fa-trash-can w-5 text-rose-600 mr-2 text-center"></i> Kosongkan Nilai
+                            </button>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 
@@ -215,19 +291,27 @@
                     $kkmVal = $kelas->getKkmForMapel($m);
                     $hasCustom = $kelas->mapelKkm->firstWhere('mapel_id', $m->id) !== null;
                 @endphp
-                <div class="p-2.5 rounded-xl {{ $hasCustom ? 'bg-purple-50/70 border-purple-200' : 'bg-slate-50 border-slate-200/70' }} border flex flex-col justify-between">
-                    <div class="truncate text-xs font-bold text-slate-800" title="{{ $m->nama }}">
-                        {{ $m->nama }}
+                <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $m->id]) }}"
+                   class="p-3 rounded-xl {{ $hasCustom ? 'bg-purple-50/70 border-purple-200' : 'bg-slate-50 border-slate-200/70' }} hover:border-indigo-400 hover:shadow-xs transition group border flex flex-col justify-between"
+                   title="Buka 4 Lembar Nilai untuk {{ $m->nama }}">
+                    <div>
+                        <div class="truncate text-xs font-bold text-slate-800 group-hover:text-indigo-600 transition" title="{{ $m->nama }}">
+                            {{ $m->nama }}
+                        </div>
+                        <div class="mt-1.5 flex items-baseline justify-between">
+                            <span class="text-[10px] {{ $hasCustom ? 'text-purple-600 font-bold' : 'text-slate-400 font-medium' }}">
+                                {{ $hasCustom ? 'Khusus Kelas' : 'Master' }}
+                            </span>
+                            <span class="text-sm font-black {{ $hasCustom ? 'text-purple-700' : 'text-slate-800' }}">
+                                {{ $kkmVal }}
+                            </span>
+                        </div>
                     </div>
-                    <div class="mt-2 flex items-baseline justify-between">
-                        <span class="text-[10px] {{ $hasCustom ? 'text-purple-600 font-bold' : 'text-slate-400 font-medium' }}">
-                            {{ $hasCustom ? 'Khusus Kelas' : 'Master' }}
-                        </span>
-                        <span class="text-sm font-black {{ $hasCustom ? 'text-purple-700' : 'text-slate-800' }}">
-                            {{ $kkmVal }}
-                        </span>
+                    <div class="mt-2 pt-1.5 border-t border-slate-200/60 flex items-center justify-between text-[10px] font-bold text-indigo-600 group-hover:text-indigo-800">
+                        <span>4 Lembar Nilai</span>
+                        <i class="fa-solid fa-arrow-right text-[9px] group-hover:translate-x-0.5 transition-transform"></i>
                     </div>
-                </div>
+                </a>
             @endforeach
         </div>
     </div>
@@ -290,13 +374,23 @@
                                 </span>
                             </td>
                             <td class="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
-                                @if(auth()->user()->isAdmin())
-                                    <a href="{{ route('nilai.input.siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]) }}"
-                                        class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition"
-                                        title="Input Nilai Siswa">
-                                        <i class="fa-solid fa-pen-to-square mr-1"></i> Input Nilai
-                                    </a>
-                                @endif
+                                <a href="{{ route('kelas.input-nilai', ['kelas' => $kelas->id, 'tab' => 'rapor', 'kelas_siswa_id' => $ks->id]) }}"
+                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition"
+                                    title="Input Nilai & Catatan Rapor Siswa (Otomatis Semua Mapel)">
+                                    <i class="fa-solid fa-pen-to-square mr-1"></i> Nilai Rapor
+                                </a>
+                                <a href="{{ route('kelas.nilai-formatif.rekap-semester-siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]) }}"
+                                    target="_blank"
+                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition shadow-2xs"
+                                    title="Cetak Rekap Nilai Semester 1 Siswa Ini (Pas 1 Lembar F4 Otomatis)">
+                                    <i class="fa-solid fa-print mr-1 text-blue-600"></i> Rekap F4
+                                </a>
+                                <a href="{{ route('kelas.nilai-formatif.raport', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id]) }}"
+                                    target="_blank"
+                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition shadow-2xs"
+                                    title="Cetak Lembar Nilai Formatif Bulanan Siswa Ini (F4)">
+                                    <i class="fa-solid fa-calendar-day mr-1 text-purple-600"></i> Bulanan
+                                </a>
                                 <a href="{{ route('raport.preview', $ks->id) }}"
                                     class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
                                     title="Pratinjau Raport">
@@ -319,11 +413,13 @@
                             <td colspan="6" class="py-8 text-center text-slate-400">
                                 <i class="fa-solid fa-user-xmark text-3xl mb-2 block text-slate-300"></i>
                                 Belum ada peserta didik di kelas ini.
-                                <div class="mt-2">
-                                    <a href="{{ route('penempatan.index', $kelas->id) }}" class="inline-flex items-center text-xs font-bold text-emerald-600 hover:underline">
-                                        <i class="fa-solid fa-user-plus mr-1"></i> Tempatkan Siswa ke Kelas Ini Sekarang
-                                    </a>
-                                </div>
+                                @if(auth()->user()->isAdmin())
+                                    <div class="mt-2">
+                                        <a href="{{ route('penempatan.index', $kelas->id) }}" class="inline-flex items-center text-xs font-bold text-emerald-600 hover:underline">
+                                            <i class="fa-solid fa-user-plus mr-1"></i> Tempatkan Siswa ke Kelas Ini Sekarang
+                                        </a>
+                                    </div>
+                                @endif
                             </td>
                         </tr>
                     @endforelse
@@ -640,6 +736,195 @@
         </div>
     @endif
 
+    <!-- Modal Dialog Cetak Nilai Bulanan -->
+    <div id="modalCetakBulanan" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl p-6 border border-slate-100">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
+                        <i class="fa-solid fa-calendar-days text-purple-600 mr-2 text-base"></i> Cetak Nilai Bulanan
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Kelas {{ $kelas->nama }} &bull; TP {{ $kelas->tahunAjaran->nama_lengkap ?? '-' }}</p>
+                </div>
+                <button type="button" onclick="document.getElementById('modalCetakBulanan').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+            </div>
+
+            <div class="space-y-4 mt-4 text-xs">
+                <!-- 1. Pilih Bulan -->
+                <div>
+                    <label class="block font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        1. Pilih Bulan Penilaian (Juli – Desember)
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        @php
+                            $bulanGanjil = [
+                                7 => 'Juli',
+                                8 => 'Agustus',
+                                9 => 'September',
+                                10 => 'Oktober',
+                                11 => 'November',
+                                12 => 'Desember'
+                            ];
+                            $currBulan = now()->month;
+                        @endphp
+                        @foreach($bulanGanjil as $bNum => $bNama)
+                            <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-purple-50 hover:border-purple-300 transition text-center select-none font-bold text-slate-700 has-[:checked]:bg-purple-600 has-[:checked]:text-white has-[:checked]:border-purple-600 has-[:checked]:shadow-xs">
+                                <input type="radio" name="pilih_bulan_cetak" value="{{ $bNum }}" {{ ($currBulan == $bNum || ($currBulan < 7 && $bNum == 10)) ? 'checked' : '' }} class="sr-only" onchange="updateLinkCetakBulanan()">
+                                <span>{{ $bNama }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <div class="mt-2.5 flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-200/60">
+                        <span>Pilihan semester genap:</span>
+                        <select id="selectBulanGenap" onchange="pilihBulanGenap(this.value)" class="text-xs border border-slate-300 rounded-lg px-2 py-1 font-semibold bg-white text-slate-700">
+                            <option value="">-- Bulan Genap (Jan - Jun) --</option>
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 2. Pilih Format Dokumen Cetak -->
+                <div>
+                    <label class="block font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        2. Pilih Format Dokumen Cetak
+                    </label>
+                    <div class="space-y-2.5">
+                        <!-- Opsi A: Rapor Bulanan Sekelas (1 Siswa 1 Halaman F4) -->
+                        <a id="btnCetakBulananSekelas" href="{{ route('kelas.nilai-formatif.cetak-sekelas', ['kelas' => $kelas->id, 'bulan' => ($currBulan >= 7 ? $currBulan : 10)]) }}" target="_blank"
+                           class="block p-3.5 rounded-xl border border-purple-200 bg-purple-50/60 hover:bg-purple-100/70 transition group">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center text-sm shrink-0 shadow-xs">
+                                    <i class="fa-solid fa-file-invoice"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-bold text-purple-950 text-sm flex items-center justify-between">
+                                        <span>Cetak Rapor Bulanan Sekelas (F4)</span>
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-purple-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                                    </div>
+                                    <p class="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                                        Format resmi <strong>1 Siswa 1 Halaman F4</strong> lengkap seluruh mapel, nilai, KKM, kehadiran, dan 3 kolom tanda tangan resmi untuk dibagikan ke orang tua siswa.
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Opsi B: Rekap Leger Bulanan (1 Lembar) -->
+                        <a id="btnCetakLegerBulanan" href="{{ route('kelas.nilai-formatif.cetak-rekap', ['kelas' => $kelas->id, 'bulan' => ($currBulan >= 7 ? $currBulan : 10)]) }}" target="_blank"
+                           class="block p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100 transition group">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-slate-800 text-white flex items-center justify-center text-sm shrink-0 shadow-xs">
+                                    <i class="fa-solid fa-table-cells"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-bold text-slate-900 text-sm flex items-center justify-between">
+                                        <span>Cetak Rekap Leger Bulanan (1 Lembar)</span>
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                                    </div>
+                                    <p class="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                                        Tabel rekapitulasi nilai seluruh siswa x semua mata pelajaran dalam 1 halaman untuk arsip bulanan sekolah.
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 mt-4 border-t border-slate-100 flex justify-end">
+                <button type="button" onclick="document.getElementById('modalCetakBulanan').classList.add('hidden')"
+                        class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Dialog Cetak Rekap Semester Otomatis -->
+    <div id="modalCetakRekapSemester" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl p-6 border border-slate-100">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
+                        <i class="fa-solid fa-print text-blue-600 mr-2 text-base"></i> Cetak Rekap Semester Otomatis
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Kelas {{ $kelas->nama }} &bull; Semester {{ ucfirst($kelas->tahunAjaran->semester ?? 'Ganjil') }} &bull; TP {{ $kelas->tahunAjaran->nama_lengkap ?? '-' }}</p>
+                </div>
+                <button type="button" onclick="document.getElementById('modalCetakRekapSemester').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+            </div>
+
+            <div class="space-y-4 mt-4 text-xs">
+                <!-- Informasi Otomatisasi -->
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-blue-900 leading-relaxed flex items-start space-x-2.5">
+                    <i class="fa-solid fa-circle-check text-blue-600 text-sm mt-0.5 shrink-0"></i>
+                    <div>
+                        <span class="font-bold">Otomatis dari Database:</span>
+                        <p class="text-[11px] text-blue-800 mt-0.5">
+                            Sistem otomatis menghitung rata-rata nilai setiap mata pelajaran berdasarkan nilai bulanan yang sudah diisi. <strong>Bulan yang kosong tidak ikut dihitung</strong>. Guru tidak perlu memasukkan ulang nilai atau menghitung rata-rata secara manual.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Pilihan Format Cetak -->
+                <div>
+                    <label class="block font-bold uppercase tracking-wider text-slate-700 mb-2">
+                        Pilih Format Dokumen Cetak Rekap Semester:
+                    </label>
+                    <div class="space-y-2.5">
+                        <!-- Opsi A: Rekap Semester Sekelas (1 Siswa 1 Lembar F4) -->
+                        <a href="{{ route('kelas.nilai-formatif.rekap-semester-sekelas', $kelas->id) }}" target="_blank"
+                           class="block p-3.5 rounded-xl border border-blue-300 bg-blue-50/60 hover:bg-blue-100/70 transition group">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm shrink-0 shadow-xs">
+                                    <i class="fa-solid fa-file-lines"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-bold text-blue-950 text-sm flex items-center justify-between">
+                                        <span>1 Siswa 1 Lembar F4 Sekelas (Rekomendasi)</span>
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-blue-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                                    </div>
+                                    <p class="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                                        Menampilkan semua mata pelajaran, nilai bulanan Juli–Desember, nilai akhir rata-rata, predikat, ketidakhadiran, catatan guru, dan tanda tangan resmi. Pas 1 lembar F4 portrait per siswa untuk seluruh siswa sekelas sekaligus.
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Opsi B: Buku Leger Rekapitulasi Nilai Semester (Landscape) -->
+                        <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
+                           class="block p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100 transition group">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-slate-800 text-white flex items-center justify-center text-sm shrink-0 shadow-xs">
+                                    <i class="fa-solid fa-book"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-bold text-slate-900 text-sm flex items-center justify-between">
+                                        <span>Buku Leger Rekapitulasi Nilai (Landscape)</span>
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                                    </div>
+                                    <p class="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                                        Buku leger nilai kelas resmi memuat rekapitulasi nilai seluruh siswa, peringkat/ranking kelas, total nilai, dan rata-rata kelas.
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 mt-4 border-t border-slate-100 flex justify-end">
+                <button type="button" onclick="document.getElementById('modalCetakRekapSemester').classList.add('hidden')"
+                        class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Atur KKM Per Rombel -->
     @include('kelas.modal_kkm')
 
@@ -683,6 +968,40 @@
             }
         });
     }
+    // Update Link Cetak Bulanan berdasarkan bulan yang dipilih
+    const urlCetakBulananSekelasBase = "{{ route('kelas.nilai-formatif.cetak-sekelas', $kelas->id) }}";
+    const urlCetakLegerBulananBase = "{{ route('kelas.nilai-formatif.cetak-rekap', $kelas->id) }}";
+
+    function updateLinkCetakBulanan() {
+        let checkedBulan = document.querySelector('input[name="pilih_bulan_cetak"]:checked');
+        let bulan = checkedBulan ? checkedBulan.value : 10;
+        
+        let btnSekelas = document.getElementById('btnCetakBulananSekelas');
+        let btnLeger = document.getElementById('btnCetakLegerBulanan');
+        if (btnSekelas) {
+            btnSekelas.href = urlCetakBulananSekelasBase + '?bulan=' + bulan;
+        }
+        if (btnLeger) {
+            btnLeger.href = urlCetakLegerBulananBase + '?bulan=' + bulan;
+        }
+    }
+
+    function pilihBulanGenap(val) {
+        if (!val) return;
+        document.querySelectorAll('input[name="pilih_bulan_cetak"]').forEach(r => r.checked = false);
+        let btnSekelas = document.getElementById('btnCetakBulananSekelas');
+        let btnLeger = document.getElementById('btnCetakLegerBulanan');
+        if (btnSekelas) {
+            btnSekelas.href = urlCetakBulananSekelasBase + '?bulan=' + val;
+        }
+        if (btnLeger) {
+            btnLeger.href = urlCetakLegerBulananBase + '?bulan=' + val;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateLinkCetakBulanan();
+    });
 </script>
 @endpush
 @endsection
