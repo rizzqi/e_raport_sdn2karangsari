@@ -7,7 +7,9 @@ use App\Models\KehadiranBulanan;
 use App\Models\Kelas;
 use App\Models\NilaiPembiasaan;
 use App\Models\Pembiasaan;
+use App\Models\Sekolah;
 use App\Models\User;
+use App\Services\HitungNilaiService;
 use Dompdf\Dompdf;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\UploadedFile;
@@ -227,5 +229,101 @@ class SiaPembiasaanTest extends TestCase
         $this->assertEquals(3, $kh->sakit);
         $this->assertEquals(3, $kh->izin);
         $this->assertEquals(1, $kh->alpa);
+    }
+
+    public function test_sekolah_settings_kehadiran_can_be_configured_by_admin(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $sekolah = Sekolah::first();
+        $this->assertNotNull($sekolah);
+
+        $response = $this->actingAs($admin)->post(route('sekolah.update'), [
+            'nama' => $sekolah->nama,
+            'pemda' => $sekolah->pemda ?? 'PEMERINTAH KABUPATEN BANYUWANGI',
+            'dinas' => $sekolah->dinas ?? 'DINAS PENDIDIKAN',
+            'kota' => $sekolah->kota ?? 'Banyuwangi',
+            'alamat' => $sekolah->alamat,
+            'kepsek' => $sekolah->kepsek,
+            'nip' => $sekolah->nip,
+            'hari_efektif_semester' => 110,
+            'persen_kehadiran_minimal' => 80,
+            'batas_alpa_maksimal' => 2,
+            'batas_izin_maksimal' => 5,
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $sekolah->refresh();
+        $this->assertEquals(110, $sekolah->getHariEfektif());
+        $this->assertEquals(80, $sekolah->getPersenKehadiranMinimal());
+        $this->assertEquals(2, $sekolah->getBatasAlpaMaksimal());
+        $this->assertEquals(5, $sekolah->getBatasIzinMaksimal());
+    }
+
+    public function test_sia_integration_calculates_kehadiran_info_and_threshold_warnings(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $ks = $kelas->kelasSiswa()->first();
+
+        // Buat data kehadiran yang melampaui batas alpa (misal 5 hari alpa)
+        Kehadiran::updateOrCreate([
+            'kelas_siswa_id' => $ks->id,
+            'periode' => 'sas',
+        ], [
+            'sakit' => 2,
+            'izin' => 1,
+            'alpa' => 5,
+        ]);
+
+        $service = app(HitungNilaiService::class);
+        $hasilNilai = $service->hitungNilaiSiswa($ks, 'sas');
+
+        $this->assertArrayHasKey('kehadiran_info', $hasilNilai);
+        $this->assertTrue($hasilNilai['is_peringatan_kehadiran']);
+        $this->assertEquals(5, $hasilNilai['kehadiran_info']['alpa']);
+        $this->assertStringContainsString('Alpa', implode(' ', $hasilNilai['pesan_kehadiran']));
+        $this->assertStringContainsString('alpa', strtolower($hasilNilai['catatan_wali_otomatis']));
+
+        // Pratinjau rapor harus menampilkan peringatan kehadiran & kotak informasi kehadiran
+        $preview = $this->actingAs($admin)->get(route('raport.preview', [
+            'kelasSiswa' => $ks->id,
+            'periode' => 'sas',
+        ]));
+        $preview->assertStatus(200);
+        $preview->assertSee('Peringatan: Ambang Batas Kehadiran Terlampaui!');
+        $preview->assertSee('Hari Efektif');
+        $preview->assertSee('Alpa (Tanpa Ket.)');
+        $preview->assertSee('Catatan Wali Kelas');
+    }
+
+    public function test_academic_grades_are_not_deducted_by_attendance(): void
+    {
+        $kelas = Kelas::first();
+        $ks = $kelas->kelasSiswa()->first();
+        $service = app(HitungNilaiService::class);
+
+        // Hitung nilai saat kehadiran 100% (0 alpa)
+        Kehadiran::updateOrCreate([
+            'kelas_siswa_id' => $ks->id,
+            'periode' => 'sas',
+        ], ['sakit' => 0, 'izin' => 0, 'alpa' => 0]);
+        $hasilNolAlpa = $service->hitungNilaiSiswa($ks, 'sas');
+
+        // Hitung nilai saat alpa tinggi (misal 10 hari alpa)
+        Kehadiran::updateOrCreate([
+            'kelas_siswa_id' => $ks->id,
+            'periode' => 'sas',
+        ], ['sakit' => 0, 'izin' => 0, 'alpa' => 10]);
+        $hasilBanyakAlpa = $service->hitungNilaiSiswa($ks, 'sas');
+
+        // Nilai akademik tidak boleh terpotong atau berbeda karena absensi
+        $this->assertEquals($hasilNolAlpa['total_akhir'], $hasilBanyakAlpa['total_akhir']);
+        $this->assertEquals($hasilNolAlpa['rata_akhir'], $hasilBanyakAlpa['rata_akhir']);
+
+        // Tetapi kehadiran_info dan catatan otomatis harus berubah sesuai fakta absensi
+        $this->assertFalse($hasilNolAlpa['is_peringatan_kehadiran']);
+        $this->assertTrue($hasilBanyakAlpa['is_peringatan_kehadiran']);
+        $this->assertNotEquals($hasilNolAlpa['catatan_wali_otomatis'], $hasilBanyakAlpa['catatan_wali_otomatis']);
     }
 }

@@ -83,19 +83,37 @@
         </div>
     </div>
 
-    <!-- Kotak Bantuan & Tombol Aksi Cepat Formulir -->
-    <div class="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div class="flex items-start space-x-3 text-xs text-amber-950">
-            <i class="fa-solid fa-lightbulb text-amber-500 text-lg mt-0.5 shrink-0"></i>
+    <!-- Standar Kebijakan Sekolah & SIA -->
+    @php
+        $stdHariEfektif = $sekolah ? $sekolah->getHariEfektif() : 108;
+        $stdBatasAlpa = $sekolah ? $sekolah->getBatasAlpaMaksimal() : 3;
+        $stdBatasIzin = $sekolah ? $sekolah->getBatasIzinMaksimal() : 7;
+        $stdMinHadir = $sekolah ? $sekolah->getPersenKehadiranMinimal() : 75;
+    @endphp
+    <div class="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="flex items-start space-x-3 text-xs text-blue-950">
+            <i class="fa-solid fa-shield-halved text-blue-600 text-lg mt-0.5 shrink-0"></i>
             <div>
-                <p class="font-bold">Tips Pengisian Cepat SIA & Pembiasaan</p>
-                <p class="text-amber-900 text-[11px] mt-0.5">
-                    Gunakan tombol cepat di sebelah kanan untuk menyamakan predikat pembiasaan atau mereset kehadiran seluruh siswa sekaligus. Anda juga bisa mengunggah file spreadsheet Excel (.xlsx/.csv) atau file laporan cetak PDF (.pdf).
+                <p class="font-bold flex items-center gap-2">
+                    <span>Standar Kehadiran Sekolah</span>
+                    <span class="text-[10px] bg-blue-200/70 text-blue-800 font-semibold px-2 py-0.5 rounded-full">Aturan Kenaikan Kelas</span>
+                </p>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-blue-900 text-[11px] mt-1 font-medium">
+                    <span><i class="fa-regular fa-calendar-check text-blue-600 mr-1"></i>Hari Efektif: <strong>{{ $stdHariEfektif }} Hari</strong></span>
+                    <span><i class="fa-solid fa-user-check text-emerald-600 mr-1"></i>Syarat Minimal Hadir: <strong>{{ $stdMinHadir }}%</strong></span>
+                    <span><i class="fa-solid fa-circle-exclamation text-rose-600 mr-1"></i>Batas Alpa: <strong>Maks. {{ $stdBatasAlpa }} Hari</strong></span>
+                    <span><i class="fa-regular fa-clock text-amber-600 mr-1"></i>Batas Wajar Izin: <strong>Maks. {{ $stdBatasIzin }} Hari</strong></span>
+                </div>
+                <p class="text-[10px] text-blue-700 mt-1 italic">
+                    <i class="fa-solid fa-circle-info mr-1"></i>Nilai mata pelajaran murni mengukur capaian kompetensi dan tidak dipotong absensi. SIA memengaruhi predikat karakter (Kemandirian/Disiplin), syarat kenaikan kelas, dan narasi wali kelas.
                 </p>
             </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+            <button type="button" onclick="sinkronRekomendasiSiaKePembiasaan()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition shadow-xs flex items-center" title="Rekomendasikan predikat Kemandirian / Disiplin otomatis dari SIA (Wali kelas berhak menyesuaikan/override)">
+                <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Rekomendasi dari SIA
+            </button>
             <button type="button" onclick="setSemuaPredikat('Baik')" class="px-2.5 py-1.5 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition shadow-2xs flex items-center">
                 <i class="fa-solid fa-check mr-1 text-emerald-600"></i> Semua Baik (B)
             </button>
@@ -136,8 +154,8 @@
                             <th rowspan="2" class="py-3 px-3 w-12 text-center border-r border-slate-200">No</th>
                             <th rowspan="2" class="py-3 px-4 min-w-[200px] border-r border-slate-200 sticky left-0 bg-slate-100 z-10">Nama Siswa</th>
                             <th rowspan="2" class="py-3 px-3 w-24 border-r border-slate-200 text-center">NIS</th>
-                            <th colspan="4" class="py-2 px-2 text-center bg-blue-50/80 border-r border-slate-200 text-blue-900">
-                                <i class="fa-solid fa-calendar-xmark mr-1 text-blue-600"></i> Ketidakhadiran (Hari)
+                            <th colspan="5" class="py-2 px-2 text-center bg-blue-50/80 border-r border-slate-200 text-blue-900">
+                                <i class="fa-solid fa-calendar-xmark mr-1 text-blue-600"></i> Ketidakhadiran (Hari) & Kehadiran
                             </th>
                             <th colspan="{{ $pembiasaans->count() }}" class="py-2 px-3 text-center bg-amber-50/80 text-amber-900">
                                 <i class="fa-solid fa-star mr-1 text-amber-600"></i> Aspek Karakter & Pembiasaan
@@ -149,6 +167,7 @@
                             <th class="py-2 px-2 w-16 text-center bg-blue-50/40 border-r border-slate-200 text-blue-800" title="Izin">Izin (I)</th>
                             <th class="py-2 px-2 w-16 text-center bg-blue-50/40 border-r border-slate-200 text-blue-800" title="Alpa / Tanpa Keterangan">Alpa (A)</th>
                             <th class="py-2 px-2 w-14 text-center bg-blue-100/50 border-r border-slate-200 text-blue-950" title="Total Ketidakhadiran">Total</th>
+                            <th class="py-2 px-2 w-16 text-center bg-blue-100/70 border-r border-slate-200 text-blue-950" title="Persentase Kehadiran terhadap Hari Efektif">% Hadir</th>
 
                             <!-- Kolom Pembiasaan -->
                             @foreach($pembiasaans as $p)
@@ -211,6 +230,18 @@
                                 <td class="py-2 px-1.5 text-center bg-blue-100/30 border-r border-slate-100 font-bold text-xs text-blue-900 total-sia-cell">
                                     {{ $totalSia }}
                                 </td>
+                                @php
+                                    $rowHadir = max(0, $stdHariEfektif - $totalSia);
+                                    $rowPersen = $stdHariEfektif > 0 ? round(($rowHadir / $stdHariEfektif) * 100, 1) : 100.0;
+                                    $isWarnRow = ($alpaVal > $stdBatasAlpa) || ($rowPersen < $stdMinHadir);
+                                @endphp
+                                <td class="py-2 px-1 text-center border-r border-slate-100 text-xs font-black persen-hadir-cell {{ $isWarnRow ? 'bg-rose-50 text-rose-700' : 'bg-blue-50/30 text-blue-900' }}"
+                                    title="Hadir {{ $rowHadir }} dari {{ $stdHariEfektif }} hari efektif">
+                                    <span class="persen-text">{{ $rowPersen }}%</span>
+                                    @if($isWarnRow)
+                                        <i class="fa-solid fa-triangle-exclamation text-rose-500 ml-0.5" title="Melebihi batas alpa atau di bawah minimal hadir"></i>
+                                    @endif
+                                </td>
 
                                 <!-- Select Pembiasaan -->
                                 @foreach($pembiasaans as $p)
@@ -220,6 +251,7 @@
                                     @endphp
                                     <td class="py-2 px-1.5 text-center bg-amber-50/10 border-r border-slate-100 last:border-r-0">
                                         <select name="predikat[{{ $ks->id }}][{{ $p->id }}]"
+                                            data-pembiasaan-nama="{{ $p->nama }}"
                                             class="select-pembiasaan w-full text-xs font-semibold py-1.5 px-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 {{ $predAktif === 'Sangat Baik' ? 'bg-emerald-50 text-emerald-900 border-emerald-300' : ($predAktif === 'Baik' ? 'bg-white text-slate-800' : ($predAktif === 'Cukup' ? 'bg-amber-50 text-amber-900 border-amber-300' : 'bg-rose-50 text-rose-900 border-rose-300')) }}"
                                             onchange="updateSelectColor(this)">
                                             <option value="Sangat Baik" {{ $predAktif === 'Sangat Baik' ? 'selected' : '' }}>Sangat Baik (SB)</option>
@@ -232,7 +264,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ 7 + $pembiasaans->count() }}" class="py-8 text-center text-slate-400">
+                                <td colspan="{{ 8 + $pembiasaans->count() }}" class="py-8 text-center text-slate-400">
                                     Belum ada siswa yang terdaftar di kelas ini.
                                 </td>
                             </tr>
@@ -371,6 +403,10 @@
 
 @push('scripts')
 <script>
+    const HARI_EFEKTIF = {{ $stdHariEfektif }};
+    const MIN_PERSEN_HADIR = {{ $stdMinHadir }};
+    const BATAS_ALPA = {{ $stdBatasAlpa }};
+
     function updateSiaRowTotal(input) {
         const row = input.closest('tr');
         if (!row) return;
@@ -378,11 +414,63 @@
         const s = parseInt(row.querySelector('.input-sakit')?.value) || 0;
         const i = parseInt(row.querySelector('.input-izin')?.value) || 0;
         const a = parseInt(row.querySelector('.input-alpa')?.value) || 0;
+        const total = s + i + a;
 
         const totalCell = row.querySelector('.total-sia-cell');
         if (totalCell) {
-            totalCell.textContent = (s + i + a);
+            totalCell.textContent = total;
         }
+
+        const persenCell = row.querySelector('.persen-hadir-cell');
+        if (persenCell) {
+            const hadir = Math.max(0, HARI_EFEKTIF - total);
+            const persen = HARI_EFEKTIF > 0 ? ((hadir / HARI_EFEKTIF) * 100).toFixed(1) : '100.0';
+            const isWarn = (a > BATAS_ALPA) || (parseFloat(persen) < MIN_PERSEN_HADIR);
+
+            let warnHtml = '';
+            if (isWarn) {
+                persenCell.className = 'py-2 px-1 text-center border-r border-slate-100 text-xs font-black persen-hadir-cell bg-rose-50 text-rose-700';
+                warnHtml = ' <i class="fa-solid fa-triangle-exclamation text-rose-500 ml-0.5" title="Melebihi batas alpa atau di bawah minimal kehadiran"></i>';
+            } else {
+                persenCell.className = 'py-2 px-1 text-center border-r border-slate-100 text-xs font-black persen-hadir-cell bg-blue-50/30 text-blue-900';
+            }
+            persenCell.innerHTML = `<span class="persen-text">${persen}%</span>${warnHtml}`;
+        }
+    }
+
+    function sinkronRekomendasiSiaKePembiasaan() {
+        let updatedCount = 0;
+        document.querySelectorAll('#formSiaPembiasaan tbody tr[data-siswa-id]').forEach(row => {
+            const s = parseInt(row.querySelector('.input-sakit')?.value) || 0;
+            const i = parseInt(row.querySelector('.input-izin')?.value) || 0;
+            const a = parseInt(row.querySelector('.input-alpa')?.value) || 0;
+            const total = s + i + a;
+            const hadir = Math.max(0, HARI_EFEKTIF - total);
+            const persen = HARI_EFEKTIF > 0 ? (hadir / HARI_EFEKTIF) * 100 : 100;
+
+            // Logika usulan predikat karakter kemandirian / kedisiplinan berbasis SIA
+            let usulan = 'Baik';
+            if (a === 0 && persen >= 90) {
+                usulan = 'Sangat Baik';
+            } else if (a <= 2 && persen >= MIN_PERSEN_HADIR) {
+                usulan = 'Baik';
+            } else if (a <= BATAS_ALPA || persen >= 60) {
+                usulan = 'Cukup';
+            } else {
+                usulan = 'Perlu Bimbingan';
+            }
+
+            row.querySelectorAll('.select-pembiasaan').forEach(sel => {
+                const nama = (sel.getAttribute('data-pembiasaan-nama') || '').toLowerCase();
+                if (nama.includes('mandiri') || nama.includes('disiplin') || nama.includes('tertib') || nama.includes('tanggung jawab')) {
+                    sel.value = usulan;
+                    updateSelectColor(sel);
+                    updatedCount++;
+                }
+            });
+        });
+
+        alert('Rekomendasi karakter (Kemandirian & Kedisiplinan) berhasil disinkronkan dari data SIA pada ' + updatedCount + ' kolom siswa.\n\nSebagai wali kelas, Anda berhak mengubah (override) nilai tersebut jika ada pertimbangan khusus sebelum menyimpan.');
     }
 
     function updateSelectColor(select) {

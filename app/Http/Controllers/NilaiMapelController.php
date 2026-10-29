@@ -113,6 +113,9 @@ class NilaiMapelController extends Controller
         $bobotUas = $sekolah ? $sekolah->getBobotUas() : 30;
 
         $kkm = $mapel ? $kelas->getKkmForMapel($mapel) : 75;
+        $jenisFormatif = $mapel ? $mapel->getJenisFormatif() : 'reguler';
+        $isAgama = $jenisFormatif === 'agama';
+        $isPjok = $jenisFormatif === 'pjok';
 
         // Susun Data Lengkap Per Siswa untuk Tab 1, 2, 3
         $siswaData = [];
@@ -123,10 +126,13 @@ class NilaiMapelController extends Controller
 
         foreach ($kelasSiswaList as $ks) {
             $formatifSiswa = $allFormatif->where('kelas_siswa_id', $ks->id)->keyBy('bulan');
+            $recRapor = $nilaiRaporList->get($ks->id);
 
             // Nilai bulanan
             $bulanNilai = [];
+            $bulanPraktik = []; // Khusus PJOK (formatif & praktikum setiap bulan)
             $terisiFormatif = [];
+
             foreach ($bulanSemester as $bNum => $bNama) {
                 $rec = $formatifSiswa->get($bNum);
                 $val = ($rec && $rec->nilai !== null) ? (float) $rec->nilai : null;
@@ -134,9 +140,31 @@ class NilaiMapelController extends Controller
                 if ($val !== null) {
                     $terisiFormatif[] = $val;
                 }
+
+                if ($isPjok) {
+                    $valPrak = ($rec && $rec->nilai_praktik !== null) ? (float) $rec->nilai_praktik : null;
+                    $bulanPraktik[$bNum] = $valPrak;
+                    if ($valPrak !== null) {
+                        $terisiFormatif[] = $valPrak;
+                    }
+                }
             }
 
-            // Rata-rata formatif (hanya dari bulan yang sudah terisi)
+            // Praktik untuk Pendidikan Agama (2 kali: 1 sebelum UTS dan 1 sebelum ujian akhir)
+            $valPrak1 = null;
+            $valPrak2 = null;
+            if ($isAgama) {
+                $valPrak1 = ($recRapor && $recRapor->praktik_1 !== null) ? (float) $recRapor->praktik_1 : null;
+                $valPrak2 = ($recRapor && $recRapor->praktik_2 !== null) ? (float) $recRapor->praktik_2 : null;
+                if ($valPrak1 !== null) {
+                    $terisiFormatif[] = $valPrak1;
+                }
+                if ($valPrak2 !== null) {
+                    $terisiFormatif[] = $valPrak2;
+                }
+            }
+
+            // Rata-rata formatif (hanya dari komponen yang sudah terisi)
             $rataFormatif = count($terisiFormatif) > 0 ? round(array_sum($terisiFormatif) / count($terisiFormatif), 1) : null;
 
             // UTS
@@ -146,9 +174,6 @@ class NilaiMapelController extends Controller
             // UAS
             $recUas = $nilaiUasList->get($ks->id);
             $valUas = ($recUas && $recUas->sumatif !== null) ? (float) $recUas->sumatif : null;
-
-            // Rapor & Catatan
-            $recRapor = $nilaiRaporList->get($ks->id);
 
             // Jika nilai UTS/UAS ada di recRapor tapi belum di Nilai (atau sebaliknya)
             if ($valUts === null && $recRapor && $recRapor->nilai_uts !== null) {
@@ -179,6 +204,9 @@ class NilaiMapelController extends Controller
                 'kelasSiswa' => $ks,
                 'siswa' => $ks->siswa,
                 'bulanNilai' => $bulanNilai,
+                'bulanPraktik' => $bulanPraktik,
+                'praktik_1' => $valPrak1,
+                'praktik_2' => $valPrak2,
                 'rataFormatif' => $rataFormatif,
                 'nilaiUts' => $valUts,
                 'keteranganUts' => $valUts !== null ? ($valUts >= $kkm ? 'Tuntas' : 'Belum Tuntas') : '-',
@@ -274,7 +302,7 @@ class NilaiMapelController extends Controller
                     $countMapelValid++;
                 }
 
-                $saran = $this->generateSaranCatatan($m->nama, $pred);
+                $saran = $this->generateSaranCatatan($m->nama, $pred, $kelas->fase ?? 'A', $nRap);
 
                 $raporSemuaMapelData[$m->id] = [
                     'mapel' => $m,
@@ -369,7 +397,10 @@ class NilaiMapelController extends Controller
             'kehadiranActiveSiswa',
             'prevSiswaId',
             'nextSiswaId',
-            'rekapSekelasRapor'
+            'rekapSekelasRapor',
+            'jenisFormatif',
+            'isAgama',
+            'isPjok'
         ));
     }
 
@@ -383,6 +414,13 @@ class NilaiMapelController extends Controller
         $tahun = (int) $request->input('tahun', now()->year);
         $semester = strtolower($request->input('semester', 'ganjil'));
         $formatifData = $request->input('formatif', []);
+        $praktikData = $request->input('praktik', []); // Khusus PJOK (formatif & praktikum setiap bulan)
+        $praktik1Data = $request->input('praktik_1', []); // Khusus Agama (Pra-UTS)
+        $praktik2Data = $request->input('praktik_2', []); // Khusus Agama (Pra-UAS)
+
+        $jenisFormatif = $mapel->getJenisFormatif();
+        $isAgama = $jenisFormatif === 'agama';
+        $isPjok = $jenisFormatif === 'pjok';
 
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $bobotFormatif = $sekolah ? $sekolah->getBobotFormatif() : 40;
@@ -390,15 +428,28 @@ class NilaiMapelController extends Controller
         $bobotUas = $sekolah ? $sekolah->getBobotUas() : 30;
 
         $bulanSemester = $this->getBulanSemester($semester);
+        $allKsIds = $kelas->kelasSiswa()->pluck('id');
 
-        foreach ($formatifData as $ksId => $bulans) {
+        foreach ($allKsIds as $ksId) {
+            $bulans = $formatifData[$ksId] ?? [];
+            $prakBulans = $praktikData[$ksId] ?? [];
             $terisi = [];
+
             foreach ($bulanSemester as $bNum => $bNama) {
                 $rawVal = $bulans[$bNum] ?? null;
                 $val = null;
                 if ($rawVal !== null && trim((string) $rawVal) !== '') {
                     $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
                     $terisi[] = $val;
+                }
+
+                $valPrak = null;
+                if ($isPjok) {
+                    $rawPrak = $prakBulans[$bNum] ?? null;
+                    if ($rawPrak !== null && trim((string) $rawPrak) !== '') {
+                        $valPrak = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawPrak))));
+                        $terisi[] = $valPrak;
+                    }
                 }
 
                 NilaiFormatifBulanan::updateOrCreate([
@@ -408,10 +459,27 @@ class NilaiMapelController extends Controller
                     'bulan' => $bNum,
                 ], [
                     'nilai' => $val,
+                    'nilai_praktik' => $valPrak,
                 ]);
             }
 
-            // Hitung rata-rata formatif baru
+            // Praktik 1 & 2 untuk Pendidikan Agama
+            $valPrak1 = null;
+            $valPrak2 = null;
+            if ($isAgama) {
+                $rawPrak1 = $praktik1Data[$ksId] ?? null;
+                if ($rawPrak1 !== null && trim((string) $rawPrak1) !== '') {
+                    $valPrak1 = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawPrak1))));
+                    $terisi[] = $valPrak1;
+                }
+                $rawPrak2 = $praktik2Data[$ksId] ?? null;
+                if ($rawPrak2 !== null && trim((string) $rawPrak2) !== '') {
+                    $valPrak2 = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawPrak2))));
+                    $terisi[] = $valPrak2;
+                }
+            }
+
+            // Hitung rata-rata formatif baru dari semua komponen yang sudah terisi
             $rataFormatif = count($terisi) > 0 ? round(array_sum($terisi) / count($terisi), 1) : null;
 
             // Sinkronisasi ke NilaiRaporMapel
@@ -424,6 +492,10 @@ class NilaiMapelController extends Controller
 
             if (! $rapor->is_locked) {
                 $rapor->rata_formatif = $rataFormatif;
+                if ($isAgama) {
+                    $rapor->praktik_1 = $valPrak1;
+                    $rapor->praktik_2 = $valPrak2;
+                }
                 $rapor->nilai_rapor = $this->hitungNilaiRapor(
                     $rataFormatif,
                     $rapor->nilai_uts,
@@ -734,22 +806,20 @@ class NilaiMapelController extends Controller
     }
 
     /**
-     * Generator template saran catatan otomatis berdasarkan predikat dan nama mapel.
+     * Generator template saran catatan otomatis berdasarkan CP Kurikulum Merdeka resmi, Fase kelas, dan Nilai.
      */
-    public function generateSaranCatatan(string $namaMapel, ?string $predikat): string
+    public function generateSaranCatatan(string $namaMapel, ?string $predikat, string $fase = 'A', ?float $nilai = null): string
     {
-        switch ($predikat) {
-            case 'A':
-                return "Menunjukkan penguasaan materi yang sangat istimewa dan luar biasa dalam seluruh capaian pembelajaran {$namaMapel}.";
-            case 'B':
-                return "Menunjukkan pemahaman yang baik dan mampu menguasai tujuan pembelajaran {$namaMapel} dengan optimal.";
-            case 'C':
-                return "Cukup memahami materi pokok {$namaMapel}, perlu sedikit peningkatan ketekunan dan bimbingan belajar.";
-            case 'D':
-                return "Memerlukan bimbingan intensif dan pendampingan lebih lanjut dalam memahami materi pokok {$namaMapel}.";
-            default:
-                return "Perlu melengkapi evaluasi pembelajaran {$namaMapel} untuk menentukan capaian kompetensi.";
+        if ($nilai === null && $predikat !== null) {
+            switch ($predikat) {
+                case 'A': $nilai = 90.0; break;
+                case 'B': $nilai = 82.0; break;
+                case 'C': $nilai = 70.0; break;
+                case 'D': $nilai = 55.0; break;
+            }
         }
+
+        return HitungNilaiService::generateDeskripsiCpKurikulumMerdeka($namaMapel, $nilai, $fase);
     }
 
     /**
@@ -841,11 +911,24 @@ class NilaiMapelController extends Controller
             ->get()
             ->keyBy('bulan');
 
+        $rapor = NilaiRaporMapel::where('kelas_siswa_id', $kelasSiswa->id)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->where('semester', $semester)
+            ->first();
+        $catatanGuru = $rapor ? $rapor->catatan : '';
+
+        $jenisFormatif = $mapel->getJenisFormatif();
+        $isAgama = $jenisFormatif === 'agama';
+        $isPjok = $jenisFormatif === 'pjok';
+
         $baris = [];
         $terisi = [];
         $countTuntas = 0;
 
+        $bIdx = 0;
         foreach ($bulanSemester as $bNum => $bNama) {
+            $bIdx++;
             $rec = $nilaiBulananList->get($bNum);
             $val = ($rec && $rec->nilai !== null) ? (float) $rec->nilai : null;
             if ($val !== null) {
@@ -855,28 +938,90 @@ class NilaiMapelController extends Controller
                 }
             }
 
-            $baris[] = [
-                'bulan_nomor' => $bNum,
-                'bulan_nama' => $bNama,
-                'lingkup_materi' => $rec->lingkup_materi ?? 'Ulangan Formatif ' . $bNama,
-                'kkm' => $kkm,
-                'nilai' => $val,
-                'nilai_format' => $val !== null ? HitungNilaiService::formatAngka($val) : '-',
-                'keterangan' => $val !== null ? ($val >= $kkm ? 'Tuntas' : 'Belum Tuntas') : 'Belum Diisi',
-            ];
+            if ($isPjok) {
+                // PJOK: Formatif Teori & Praktikum per bulan
+                $baris[] = [
+                    'bulan_nomor' => $bNum,
+                    'bulan_nama' => $bNama . ' (Formatif)',
+                    'lingkup_materi' => 'Formatif Teori & Pengetahuan ' . $bNama,
+                    'kkm' => $kkm,
+                    'nilai' => $val,
+                    'nilai_format' => $val !== null ? HitungNilaiService::formatAngka($val) : '-',
+                    'keterangan' => $val !== null ? ($val >= $kkm ? 'Tuntas' : 'Belum Tuntas') : 'Belum Diisi',
+                ];
+
+                $valPrak = ($rec && $rec->nilai_praktik !== null) ? (float) $rec->nilai_praktik : null;
+                if ($valPrak !== null) {
+                    $terisi[] = $valPrak;
+                    if ($valPrak >= $kkm) {
+                        $countTuntas++;
+                    }
+                }
+                $baris[] = [
+                    'bulan_nomor' => $bNum,
+                    'bulan_nama' => $bNama . ' (Praktik)',
+                    'lingkup_materi' => 'Praktikum Gerak, Kebugaran & Olahraga ' . $bNama,
+                    'kkm' => $kkm,
+                    'nilai' => $valPrak,
+                    'nilai_format' => $valPrak !== null ? HitungNilaiService::formatAngka($valPrak) : '-',
+                    'keterangan' => $valPrak !== null ? ($valPrak >= $kkm ? 'Tuntas' : 'Belum Tuntas') : 'Belum Diisi',
+                ];
+            } else {
+                $baris[] = [
+                    'bulan_nomor' => $bNum,
+                    'bulan_nama' => $bNama,
+                    'lingkup_materi' => $rec->lingkup_materi ?? 'Ulangan Formatif ' . $bNama,
+                    'kkm' => $kkm,
+                    'nilai' => $val,
+                    'nilai_format' => $val !== null ? HitungNilaiService::formatAngka($val) : '-',
+                    'keterangan' => $val !== null ? ($val >= $kkm ? 'Tuntas' : 'Belum Tuntas') : 'Belum Diisi',
+                ];
+
+                // Agama: Sisipkan Praktik 1 sebelum UTS (setelah bulan ke-3)
+                if ($isAgama && $bIdx === 3) {
+                    $valPrak1 = ($rapor && $rapor->praktik_1 !== null) ? (float) $rapor->praktik_1 : null;
+                    if ($valPrak1 !== null) {
+                        $terisi[] = $valPrak1;
+                        if ($valPrak1 >= $kkm) {
+                            $countTuntas++;
+                        }
+                    }
+                    $baris[] = [
+                        'bulan_nomor' => 991,
+                        'bulan_nama' => 'Praktik 1 (Pra-UTS)',
+                        'lingkup_materi' => 'Uji Praktik Ibadah / Kinerja Keagamaan Pra-UTS',
+                        'kkm' => $kkm,
+                        'nilai' => $valPrak1,
+                        'nilai_format' => $valPrak1 !== null ? HitungNilaiService::formatAngka($valPrak1) : '-',
+                        'keterangan' => $valPrak1 !== null ? ($valPrak1 >= $kkm ? 'Tuntas' : 'Belum Tuntas') : 'Belum Diisi',
+                    ];
+                }
+
+                // Agama: Sisipkan Praktik 2 sebelum ujian akhir (setelah bulan ke-6)
+                if ($isAgama && $bIdx === count($bulanSemester)) {
+                    $valPrak2 = ($rapor && $rapor->praktik_2 !== null) ? (float) $rapor->praktik_2 : null;
+                    if ($valPrak2 !== null) {
+                        $terisi[] = $valPrak2;
+                        if ($valPrak2 >= $kkm) {
+                            $countTuntas++;
+                        }
+                    }
+                    $baris[] = [
+                        'bulan_nomor' => 992,
+                        'bulan_nama' => 'Praktik 2 (Pra-UAS)',
+                        'lingkup_materi' => 'Uji Praktik Ibadah / Kinerja Keagamaan Pra-UAS',
+                        'kkm' => $kkm,
+                        'nilai' => $valPrak2,
+                        'nilai_format' => $valPrak2 !== null ? HitungNilaiService::formatAngka($valPrak2) : '-',
+                        'keterangan' => $valPrak2 !== null ? ($valPrak2 >= $kkm ? 'Tuntas' : 'Belum Tuntas') : 'Belum Diisi',
+                    ];
+                }
+            }
         }
 
         $rataFormatif = count($terisi) > 0 ? round(array_sum($terisi) / count($terisi), 1) : null;
         $rataFormat = $rataFormatif !== null ? HitungNilaiService::formatAngka($rataFormatif) : '-';
         $statusAkhir = $rataFormatif !== null ? ($rataFormatif >= $kkm ? 'Tuntas' : 'Perlu Pendampingan') : 'Belum Lengkap';
-
-        // Ambil catatan jika ada di nilai_rapor_mapel
-        $rapor = NilaiRaporMapel::where('kelas_siswa_id', $kelasSiswa->id)
-            ->where('mapel_id', $mapel->id)
-            ->where('tahun', $tahun)
-            ->where('semester', $semester)
-            ->first();
-        $catatanGuru = $rapor ? $rapor->catatan : '';
 
         $tanggalCetak = Carbon::now();
 

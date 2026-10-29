@@ -43,6 +43,10 @@ class SekolahController extends Controller
             'bobot_formatif' => 'nullable|integer|min:0|max:100',
             'bobot_uts' => 'nullable|integer|min:0|max:100',
             'bobot_uas' => 'nullable|integer|min:0|max:100',
+            'hari_efektif_semester' => 'nullable|integer|min:1|max:200',
+            'persen_kehadiran_minimal' => 'nullable|integer|min:1|max:100',
+            'batas_alpa_maksimal' => 'nullable|integer|min:0|max:50',
+            'batas_izin_maksimal' => 'nullable|integer|min:0|max:50',
         ]);
 
         $sekolah = Sekolah::first();
@@ -50,7 +54,11 @@ class SekolahController extends Controller
             $sekolah = new Sekolah;
         }
 
-        $data = $request->only(['nama', 'pemda', 'dinas', 'kota', 'alamat', 'kontak', 'kepsek', 'nip', 'bobot_formatif', 'bobot_uts', 'bobot_uas']);
+        $data = $request->only([
+            'nama', 'pemda', 'dinas', 'kota', 'alamat', 'kontak', 'kepsek', 'nip',
+            'bobot_formatif', 'bobot_uts', 'bobot_uas',
+            'hari_efektif_semester', 'persen_kehadiran_minimal', 'batas_alpa_maksimal', 'batas_izin_maksimal',
+        ]);
 
         // Hapus logo jika diminta
         if ($request->boolean('hapus_logo') && $sekolah->logo) {

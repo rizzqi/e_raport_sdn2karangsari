@@ -46,6 +46,9 @@
                    SAS (Semester)
                 </a>
             </div>
+            <span class="hidden md:inline-flex items-center px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-semibold">
+                <i class="fa-solid fa-graduation-cap mr-1 text-emerald-600"></i> Kurikulum Merdeka
+            </span>
             <span class="hidden md:inline-flex items-center px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-semibold">
                 <i class="fa-solid fa-ruler-combined mr-1 text-amber-600"></i> F4 (215 × 330 mm)
             </span>
@@ -112,6 +115,31 @@
         </div>
     @endif
 
+    <!-- Peringatan Ambang Batas Kehadiran (SIA) (No-Print) -->
+    @if(!empty($hasilNilai['is_peringatan_kehadiran']))
+        <div class="bg-rose-50 border-l-4 border-rose-500 p-4 rounded-2xl text-rose-900 shadow-sm no-print flex items-start space-x-3">
+            <i class="fa-solid fa-circle-exclamation text-rose-600 text-xl mt-0.5 shrink-0"></i>
+            <div class="flex-1 text-xs">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="font-bold text-sm text-rose-950">Peringatan: Ambang Batas Kehadiran Terlampaui!</p>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-200 text-rose-900">
+                        {{ $hasilNilai['status_kelayakan'] ?? 'Perlu Tindak Lanjut' }}
+                    </span>
+                </div>
+                <div class="mt-1.5 space-y-1">
+                    @foreach($hasilNilai['pesan_kehadiran'] as $pesan)
+                        <p class="flex items-center text-rose-800">
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5 text-rose-600"></i> {{ $pesan }}
+                        </p>
+                    @endforeach
+                </div>
+                <p class="mt-2 text-rose-700 italic text-[11px]">
+                    Nilai mata pelajaran tidak dipotong absensi. Peringatan ini untuk koordinasi wali kelas dan kepala sekolah mengenai syarat kenaikan kelas dan pembinaan disiplin peserta didik.
+                </p>
+            </div>
+        </div>
+    @endif
+
     <!-- Official Report Card Sheet (Standard F4 / Folio: 215 x 330 mm) -->
     <div class="page-sheet max-w-[850px] mx-auto bg-white p-8 sm:p-12 rounded-2xl border border-slate-200 shadow-xl print:shadow-none print:border-none print:p-0 print:m-0 text-slate-900">
 
@@ -161,7 +189,7 @@
                 LAPORAN HASIL BELAJAR PESERTA DIDIK
             </h1>
             <p class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 mt-1">
-                {{ $periode === 'sts' ? 'SUMATIF TENGAH SEMESTER (STS)' : 'SUMATIF AKHIR SEMESTER (SAS)' }}
+                KURIKULUM MERDEKA &bull; {{ $periode === 'sts' ? 'SUMATIF TENGAH SEMESTER (STS)' : 'SUMATIF AKHIR SEMESTER (SAS)' }}
             </p>
         </div>
 
@@ -189,17 +217,17 @@
             </div>
         </div>
 
-        <!-- 4. TABEL NILAI RAPOR (RINGKAS & RESMI: MATA PELAJARAN, KKM, NILAI RAPOR, PREDIKAT, CAPAIAN KOMPETENSI) -->
+        <!-- 4. TABEL NILAI RAPOR (FORMAT RESMI KURIKULUM MERDEKA) -->
         <div class="mb-6">
             <table class="w-full text-xs sm:text-sm border-collapse border border-slate-900">
                 <thead>
                     <tr class="bg-slate-100 font-bold text-center">
-                        <th class="border border-slate-900 py-2 px-2 w-10">No</th>
-                        <th class="border border-slate-900 py-2 px-3 text-left">Mata Pelajaran</th>
-                        <th class="border border-slate-900 py-2 px-2 w-16">KKM</th>
-                        <th class="border border-slate-900 py-2 px-2 w-24">Nilai Rapor</th>
-                        <th class="border border-slate-900 py-2 px-2 w-16">Predikat</th>
-                        <th class="border border-slate-900 py-2 px-3 text-left">Capaian Kompetensi</th>
+                        <th class="border border-slate-900 py-2.5 px-2 w-10">No</th>
+                        <th class="border border-slate-900 py-2.5 px-3 text-left">Muatan Pelajaran</th>
+                        <th class="border border-slate-900 py-2.5 px-2 w-14">KKM</th>
+                        <th class="border border-slate-900 py-2.5 px-2 w-20">Nilai Rapor</th>
+                        <th class="border border-slate-900 py-2.5 px-2 w-14">Predikat</th>
+                        <th class="border border-slate-900 py-2.5 px-3 text-left">Capaian Kompetensi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -214,7 +242,7 @@
                             <td class="border border-slate-900 py-2 px-2 text-center font-bold align-top">
                                 {{ $b['predikat'] }}
                             </td>
-                            <td class="border border-slate-900 py-2 px-3 text-xs leading-relaxed align-top">
+                            <td class="border border-slate-900 py-2 px-3 text-xs leading-relaxed text-justify align-top">
                                 {{ $b['capaian_kompetensi'] }}
                             </td>
                         </tr>
@@ -225,8 +253,16 @@
                         <td colspan="3" class="border border-slate-900 py-2 px-3 text-right uppercase">Jumlah Nilai</td>
                         <td class="border border-slate-900 py-2 px-2 text-center font-mono font-black">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_akhir']) }}</td>
                         <td class="border border-slate-900 py-2 px-2 text-center font-mono font-black">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
-                        <td class="border border-slate-900 py-2 px-3 text-xs text-slate-500 font-normal">
-                            Rata-rata: <strong>{{ $hasilNilai['rata_akhir_format'] }}</strong> &bull; Predikat Keseluruhan: <strong>{{ $hasilNilai['predikat_rata'] ?? '-' }}</strong>
+                        <td class="border border-slate-900 py-2 px-3 text-xs text-slate-600 font-normal">
+                            Total nilai dari <strong>{{ $hasilNilai['total_mapel'] }}</strong> muatan pelajaran
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="border border-slate-900 py-2 px-3 text-right uppercase">Rata-rata Nilai</td>
+                        <td class="border border-slate-900 py-2 px-2 text-center font-mono font-black">{{ $hasilNilai['rata_akhir_format'] }}</td>
+                        <td class="border border-slate-900 py-2 px-2 text-center font-mono font-black">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
+                        <td class="border border-slate-900 py-2 px-3 text-xs text-slate-600 font-normal">
+                            Predikat Keseluruhan: <strong>{{ $hasilNilai['predikat_rata'] ?? '-' }}</strong>
                         </td>
                     </tr>
                 </tfoot>
@@ -234,7 +270,7 @@
         </div>
 
         <!-- 5. TABEL PEMBIASAAN DAN KEHADIRAN -->
-        <div class="mb-8">
+        <div class="mb-6">
             <h4 class="text-xs sm:text-sm font-bold uppercase tracking-wider mb-2 text-slate-800">
                 Perkembangan Karakter & Ketidakhadiran
             </h4>
@@ -243,7 +279,7 @@
                     <tr class="bg-slate-100 font-bold text-center">
                         <th class="border border-slate-900 py-2 px-3 text-left w-3/5">Aspek Pembiasaan / Karakter</th>
                         <th class="border border-slate-900 py-2 px-3 w-1/5">Predikat</th>
-                        <th class="border border-slate-900 py-2 px-3 w-1/5">Ketidakhadiran</th>
+                        <th class="border border-slate-900 py-2 px-3 w-1/5">Ketidakhadiran & Kehadiran</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -251,20 +287,56 @@
                         @php
                             $pemVal = $nilaiPemList->get($pem->id);
                             $predikat = $pemVal ? $pemVal->predikat : 'Baik';
+                            $alpaCount = $kehadiran ? (int)$kehadiran->alpa : 0;
                         @endphp
                         <tr>
                             <td class="border border-slate-900 py-1.5 px-3">
-                                {{ $pIdx + 1 }}. {{ $pem->nama }}
+                                <div class="font-bold text-slate-900">{{ $pIdx + 1 }}. {{ $pem->nama }}</div>
+                                <div class="text-[10px] text-slate-600 leading-snug mt-0.5">
+                                    {{ \App\Services\HitungNilaiService::generateDeskripsiPembiasaan($pem->nama, $predikat, $alpaCount) }}
+                                </div>
                             </td>
                             <td class="border border-slate-900 py-1.5 px-3 text-center font-bold">
                                 {{ $predikat }}
                             </td>
                             @if($pIdx === 0)
-                                <td class="border border-slate-900 py-1.5 px-3 text-center align-top space-y-1" rowspan="{{ $pembiasaanList->count() }}">
-                                    <div class="text-xs space-y-1 pt-1">
-                                        <p>Sakit : <strong>{{ $kehadiran->sakit }}</strong> hari</p>
-                                        <p>Izin : <strong>{{ $kehadiran->izin }}</strong> hari</p>
-                                        <p>Tanpa Ket. : <strong>{{ $kehadiran->alpa }}</strong> hari</p>
+                                <td class="border border-slate-900 py-2 px-2.5 align-top text-xs" rowspan="{{ $pembiasaanList->count() }}">
+                                    <div class="space-y-1.5 pt-0.5">
+                                        <div class="border-b border-slate-300 pb-1 text-[11px] space-y-0.5">
+                                            <div class="flex justify-between text-slate-600">
+                                                <span>Hari Efektif:</span>
+                                                <strong>{{ $hasilNilai['kehadiran_info']['hari_efektif'] ?? 108 }} hari</strong>
+                                            </div>
+                                            <div class="flex justify-between text-slate-800">
+                                                <span>Kehadiran:</span>
+                                                <strong>{{ $hasilNilai['kehadiran_info']['hari_hadir'] ?? 108 }} hari ({{ $hasilNilai['kehadiran_info']['persen_kehadiran_format'] ?? '100%' }})</strong>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-1 text-slate-800 text-[11px]">
+                                            <div class="flex justify-between">
+                                                <span>Sakit (S):</span>
+                                                <strong>{{ $kehadiran->sakit }} hari</strong>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span>Izin (I):</span>
+                                                <strong>{{ $kehadiran->izin }} hari</strong>
+                                            </div>
+                                            <div class="flex justify-between {{ $kehadiran->alpa > 0 ? 'text-rose-700 font-bold' : '' }}">
+                                                <span>Alpa (Tanpa Ket.):</span>
+                                                <strong>{{ $kehadiran->alpa }} hari</strong>
+                                            </div>
+                                        </div>
+                                        <div class="border-t border-slate-300 pt-1 text-[10px] text-center font-bold">
+                                            @if(($hasilNilai['kehadiran_info']['is_peringatan'] ?? false))
+                                                <span class="inline-block px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">
+                                                    {{ $hasilNilai['kehadiran_info']['status_kelayakan'] ?? 'Perlu Pertimbangan' }}
+                                                </span>
+                                            @else
+                                                <span class="inline-block px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                                    Memenuhi Syarat
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </td>
                             @endif
@@ -272,6 +344,16 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+
+        <!-- CATATAN WALI KELAS -->
+        <div class="mb-6">
+            <h4 class="text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-800">
+                Catatan Wali Kelas
+            </h4>
+            <div class="border border-slate-900 p-3 rounded text-xs sm:text-sm bg-slate-50/20 min-h-[48px] leading-relaxed">
+                {{ $hasilNilai['catatan_wali_otomatis'] ?? 'Peserta didik menunjukkan perkembangan yang baik dan terus didorong untuk berprestasi.' }}
+            </div>
         </div>
 
         <!-- 6. BLOK TANDA TANGAN RESMI (3 PIHAK: ORANG TUA, KEPALA SEKOLAH, WALI KELAS) -->

@@ -87,6 +87,16 @@ class Kelas extends Model
         return MataPelajaran::forKelas($this);
     }
 
+    public function getMapelAgama(): ?MataPelajaran
+    {
+        return $this->mataPelajaran()->first(fn (MataPelajaran $m) => $m->isAgama());
+    }
+
+    public function getMapelPjok(): ?MataPelajaran
+    {
+        return $this->mataPelajaran()->first(fn (MataPelajaran $m) => $m->isPjok());
+    }
+
     public function sekolah(): BelongsTo
     {
         return $this->belongsTo(Sekolah::class);

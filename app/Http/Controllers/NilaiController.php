@@ -959,13 +959,16 @@ class NilaiController extends Controller
             ->get()
             ->groupBy('kelas_siswa_id');
 
+        $sekolah = $kelas->sekolah ?? \App\Models\Sekolah::first();
+
         return view('nilai.input_sia_pembiasaan', compact(
             'kelas',
             'kelasSiswaList',
             'pembiasaans',
             'kehadiranList',
             'nilaiPemGroup',
-            'periode'
+            'periode',
+            'sekolah'
         ));
     }
 

@@ -138,7 +138,7 @@
             <!-- JUDUL -->
             <div class="judul">
                 <h1 class="uppercase font-bold">LAPORAN HASIL BELAJAR PESERTA DIDIK</h1>
-                <p class="uppercase">{{ $periode === 'sts' ? 'SUMATIF TENGAH SEMESTER (STS)' : 'SUMATIF AKHIR SEMESTER (SAS)' }}</p>
+                <p class="uppercase">KURIKULUM MERDEKA &bull; {{ $periode === 'sts' ? 'SUMATIF TENGAH SEMESTER (STS)' : 'SUMATIF AKHIR SEMESTER (SAS)' }}</p>
             </div>
 
             <!-- IDENTITAS -->
@@ -157,41 +157,35 @@
                 </tr>
             </table>
 
-            <!-- TABEL NILAI -->
+            <!-- TABEL NILAI (KURIKULUM MERDEKA) -->
             <table class="data">
                 <thead>
                     <tr>
                         <th style="width: 5%;">No</th>
-                        <th style="width: 27%; text-align: left;">Mata Pelajaran</th>
-                        <th style="width: 8%;">KKM</th>
-                        <th style="width: 12%;">Nilai Rapor</th>
-                        <th style="width: 10%;">Predikat</th>
-                        <th style="width: 38%; text-align: left;">Capaian Kompetensi</th>
+                        <th style="width: 25%; text-align: left;">Muatan Pelajaran</th>
+                        <th style="width: 12%;">Nilai Akhir</th>
+                        <th style="width: 58%; text-align: left;">Capaian Kompetensi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($hasilNilai['baris'] as $b)
                         <tr>
-                            <td class="text-center">{{ $b['no'] }}</td>
-                            <td class="font-bold">{{ $b['mapel_nama'] }}</td>
-                            <td class="text-center font-bold">{{ $b['kkm'] }}</td>
-                            <td class="text-center font-bold">{{ $b['nilai_rapor_format'] }}</td>
-                            <td class="text-center font-bold">{{ $b['predikat'] }}</td>
-                            <td style="font-size: 8pt; line-height: 1.15; text-align: justify;">{{ $b['capaian_kompetensi'] }}</td>
+                            <td class="text-center" style="vertical-align: top;">{{ $b['no'] }}</td>
+                            <td class="font-bold" style="vertical-align: top;">{{ $b['mapel_nama'] }}</td>
+                            <td class="text-center font-bold" style="vertical-align: top;">{{ $b['nilai_rapor_format'] }}</td>
+                            <td style="font-size: 8pt; line-height: 1.2; text-align: justify; vertical-align: top;">{{ $b['capaian_kompetensi'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr style="background-color: #f9f9f9;" class="font-bold">
-                        <td colspan="3" class="text-right uppercase">Jumlah Nilai</td>
+                        <td colspan="2" class="text-right uppercase">Jumlah Nilai</td>
                         <td class="text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_akhir']) }}</td>
-                        <td class="text-center">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
-                        <td style="font-size: 8pt; color: #444;">Total dari {{ $hasilNilai['total_mapel'] }} mata pelajaran</td>
+                        <td style="font-size: 8pt; color: #444;">Total nilai dari {{ $hasilNilai['total_mapel'] }} muatan pelajaran</td>
                     </tr>
                     <tr style="background-color: #f9f9f9;" class="font-bold">
-                        <td colspan="3" class="text-right uppercase">Rata-rata Nilai</td>
+                        <td colspan="2" class="text-right uppercase">Rata-rata Nilai</td>
                         <td class="text-center">{{ $hasilNilai['rata_akhir_format'] }}</td>
-                        <td class="text-center">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
                         <td style="font-size: 8pt; color: #444;">Predikat Rata-rata: <b>{{ $hasilNilai['predikat_rata'] ?? '-' }}</b></td>
                     </tr>
                 </tfoot>
@@ -204,9 +198,9 @@
             <table class="data">
                 <thead>
                     <tr>
-                        <th style="width: 60%; text-align: left;">Aspek Pembiasaan / Karakter</th>
-                        <th style="width: 20%;">Predikat</th>
-                        <th style="width: 20%;">Ketidakhadiran</th>
+                        <th style="width: 58%; text-align: left;">Aspek Pembiasaan / Karakter</th>
+                        <th style="width: 17%;">Predikat</th>
+                        <th style="width: 25%;">Ketidakhadiran & Kehadiran</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -214,21 +208,40 @@
                         @php
                             $pemVal = $nilaiPemList->get($pem->id);
                             $predikat = $pemVal ? $pemVal->predikat : 'Baik';
+                            $alpaCount = $kehadiran ? (int)$kehadiran->alpa : 0;
                         @endphp
                         <tr>
-                            <td>{{ $pIdx + 1 }}. {{ $pem->nama }}</td>
+                            <td>
+                                <b>{{ $pIdx + 1 }}. {{ $pem->nama }}</b><br>
+                                <span style="font-size: 7.5pt; color: #555;">{{ \App\Services\HitungNilaiService::generateDeskripsiPembiasaan($pem->nama, $predikat, $alpaCount) }}</span>
+                            </td>
                             <td class="text-center font-bold">{{ $predikat }}</td>
                             @if($pIdx === 0)
-                                <td rowspan="{{ $pembiasaanList->count() }}" style="vertical-align: top; text-align: center; padding-top: 8px;">
-                                    Sakit : <b>{{ $kehadiran ? $kehadiran->sakit : 0 }}</b> hari<br>
-                                    Izin : <b>{{ $kehadiran ? $kehadiran->izin : 0 }}</b> hari<br>
-                                    Tanpa Ket. : <b>{{ $kehadiran ? $kehadiran->alpa : 0 }}</b> hari
+                                <td rowspan="{{ $pembiasaanList->count() }}" style="vertical-align: top; font-size: 7.5pt; line-height: 1.3; padding: 4px;">
+                                    <div style="border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-bottom: 3px;">
+                                        Hari Efektif: <b>{{ $hasilNilai['kehadiran_info']['hari_efektif'] ?? 108 }} hari</b><br>
+                                        Kehadiran: <b>{{ $hasilNilai['kehadiran_info']['hari_hadir'] ?? 108 }} hari ({{ $hasilNilai['kehadiran_info']['persen_kehadiran_format'] ?? '100%' }})</b>
+                                    </div>
+                                    Sakit (S) : <b>{{ $kehadiran ? $kehadiran->sakit : 0 }}</b> hari<br>
+                                    Izin (I) : <b>{{ $kehadiran ? $kehadiran->izin : 0 }}</b> hari<br>
+                                    Alpa (A) : <b>{{ $kehadiran ? $kehadiran->alpa : 0 }}</b> hari
+                                    <div style="border-top: 1px solid #ccc; padding-top: 3px; margin-top: 3px; text-align: center; font-weight: bold;">
+                                        {{ $hasilNilai['kehadiran_info']['status_kelayakan'] ?? 'Memenuhi Syarat' }}
+                                    </div>
                                 </td>
                             @endif
                         </tr>
                     @endforeach
                 </tbody>
             </table>
+
+            <!-- CATATAN WALI KELAS -->
+            <div style="font-weight: bold; margin-top: 6px; margin-bottom: 3px; font-size: 8.5pt; text-transform: uppercase;">
+                Catatan Wali Kelas
+            </div>
+            <div style="border: 1px solid #000; padding: 4px 6px; font-size: 7.5pt; line-height: 1.3; margin-bottom: 6px; min-height: 25px;">
+                {{ $hasilNilai['catatan_wali_otomatis'] ?? 'Peserta didik menunjukkan perkembangan yang baik dan terus didorong untuk berprestasi.' }}
+            </div>
 
             <!-- TANDA TANGAN -->
             <table class="ttd">

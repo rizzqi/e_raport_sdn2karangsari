@@ -259,7 +259,7 @@
     </div>
 
     <!-- Visualisasi & Analisis Grafik Nilai (Khusus Layar / No-Print) -->
-    <div id="section-grafik" class="no-print space-y-4" x-data="{ showGrafik: true, activeTab: 'semua', rankLimit: 10 }">
+    <div id="section-grafik" class="no-print space-y-4" x-data="{ showGrafik: true, activeTab: 'semua', rankLimit: 10, jenisNilai: '{{ $jenisNilai ?? 'rapor' }}', bulanFormatif: '{{ $bulan ?? '' }}' }">
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             <!-- Header Kartu Visualisasi -->
             <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gradient-to-r from-white via-slate-50/50 to-blue-50/30">
@@ -276,7 +276,7 @@
                         </span>
                     </div>
                     <p class="text-xs text-slate-500 mt-1">
-                        Grafik interaktif performa mata pelajaran terhadap KKM, distribusi capaian siswa, dan peringkat kelas.
+                        Grafik interaktif performa mata pelajaran terhadap KKM, distribusi capaian siswa, perbandingan nilai, kehadiran, dan pembiasaan.
                     </p>
                 </div>
 
@@ -306,6 +306,12 @@
                                 class="px-2.5 py-1 rounded-lg transition flex items-center gap-1">
                             <i class="fa-solid fa-chart-simple text-[11px] text-blue-600"></i>
                             <span>Rentang Nilai</span>
+                        </button>
+                        <button type="button" @click="activeTab = 'perbandingan'; window.switchRekapTab && window.switchRekapTab('perbandingan')"
+                                :class="activeTab === 'perbandingan' ? 'bg-white text-indigo-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
+                                class="px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                            <i class="fa-solid fa-code-compare text-[11px] text-indigo-600"></i>
+                            <span>Perbandingan Nilai</span>
                         </button>
                         <button type="button" @click="activeTab = 'kehadiran'; window.switchRekapTab && window.switchRekapTab('kehadiran')"
                                 :class="activeTab === 'kehadiran' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
@@ -372,6 +378,67 @@
             <!-- Konten Grafik -->
             <div x-show="showGrafik" class="p-4 sm:p-5 space-y-5">
                 @if($rekapData['chart_data']['has_data'] ?? false)
+                    <!-- Filter Jenis Nilai Akademik (Formatif Bulanan Jul-Des, STS/UTS, Semesteran/UAS, Nilai Rapor) -->
+                    <div x-show="activeTab === 'semua' || activeTab === 'mapel' || activeTab === 'distribusi' || activeTab === 'ranking'"
+                         class="p-3 bg-gradient-to-r from-slate-50 via-blue-50/40 to-slate-50 rounded-2xl border border-blue-200/80 shadow-2xs flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-slate-600 font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5 mr-1">
+                                <i class="fa-solid fa-filter text-blue-600"></i> Jenis Nilai:
+                            </span>
+
+                            <button type="button" @click="jenisNilai = 'rapor'; bulanFormatif = ''; switchJenisNilai('rapor')"
+                                    :class="jenisNilai === 'rapor' ? 'bg-blue-600 text-white font-black shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                    class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold shadow-2xs">
+                                <i class="fa-solid fa-file-invoice"></i>
+                                <span>Nilai Rapor (Akhir)</span>
+                            </button>
+
+                            <button type="button" @click="jenisNilai = 'uts'; bulanFormatif = ''; switchJenisNilai('uts')"
+                                    :class="jenisNilai === 'uts' ? 'bg-amber-500 text-white font-black shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                    class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold shadow-2xs">
+                                <i class="fa-solid fa-file-pen"></i>
+                                <span>STS / UTS</span>
+                            </button>
+
+                            <button type="button" @click="jenisNilai = 'uas'; bulanFormatif = ''; switchJenisNilai('uas')"
+                                    :class="jenisNilai === 'uas' ? 'bg-purple-600 text-white font-black shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                    class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold shadow-2xs">
+                                <i class="fa-solid fa-award"></i>
+                                <span>Semesteran / UAS</span>
+                            </button>
+
+                            <button type="button" @click="jenisNilai = 'formatif'; if(!bulanFormatif) switchJenisNilai('formatif')"
+                                    :class="jenisNilai === 'formatif' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                    class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold shadow-2xs">
+                                <i class="fa-solid fa-calendar-check"></i>
+                                <span>Formatif Bulanan</span>
+                            </button>
+
+                            <!-- Sub-Select Bulan Formatif (Jul-Des) -->
+                            <div x-show="jenisNilai === 'formatif'" class="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-emerald-300 shadow-2xs">
+                                <label for="selectBulanFormatif" class="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
+                                    <i class="fa-regular fa-calendar-days text-emerald-600"></i> Bulan:
+                                </label>
+                                <select id="selectBulanFormatif" x-model="bulanFormatif"
+                                        @change="switchJenisNilai('formatif', $event.target.value)"
+                                        class="text-xs font-black text-emerald-900 bg-transparent border-none focus:ring-0 p-0 pr-4 cursor-pointer">
+                                    <option value="">📊 Rata-rata 6 Bulan (JUL - DES)</option>
+                                    <option value="7">📅 Juli (Bulan 7)</option>
+                                    <option value="8">📅 Agustus (Bulan 8)</option>
+                                    <option value="9">📅 September (Bulan 9)</option>
+                                    <option value="10">📅 Oktober (Bulan 10)</option>
+                                    <option value="11">📅 November (Bulan 11)</option>
+                                    <option value="12">📅 Desember (Bulan 12)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="text-[11px] text-slate-500 flex items-center gap-1.5 font-medium">
+                            <i class="fa-solid fa-circle-info text-blue-500"></i>
+                            <span id="active-jenis-label">Menampilkan grafik: <strong>Nilai Rapor Akhir</strong></span>
+                        </div>
+                    </div>
+
                     <!-- Ringkasan Cepat Analisis Nilai -->
                     @php
                         $sum = $rekapData['chart_data']['summary'];
@@ -386,8 +453,8 @@
                             <div class="min-w-0">
                                 <span class="text-[10px] uppercase font-bold text-emerald-700 block truncate">Mapel Tertinggi</span>
                                 <span class="font-extrabold text-slate-900 truncate block">
-                                    {{ $sum['mapel_tertinggi']['nama_singkat'] ?? '-' }}
-                                    <span class="text-emerald-700 font-mono">({{ $sum['mapel_tertinggi']['rata_rata_format'] ?? '-' }})</span>
+                                    <span id="kpi-mapel-tertinggi-nama">{{ $sum['mapel_tertinggi']['nama_singkat'] ?? '-' }}</span>
+                                    <span class="text-emerald-700 font-mono" id="kpi-mapel-tertinggi-val">({{ $sum['mapel_tertinggi']['rata_rata_format'] ?? '-' }})</span>
                                 </span>
                             </div>
                         </div>
@@ -399,8 +466,8 @@
                             <div class="min-w-0">
                                 <span class="text-[10px] uppercase font-bold text-rose-700 block truncate">Perlu Perhatian</span>
                                 <span class="font-extrabold text-slate-900 truncate block">
-                                    {{ $sum['mapel_terendah']['nama_singkat'] ?? '-' }}
-                                    <span class="text-rose-700 font-mono">({{ $sum['mapel_terendah']['rata_rata_format'] ?? '-' }})</span>
+                                    <span id="kpi-mapel-terendah-nama">{{ $sum['mapel_terendah']['nama_singkat'] ?? '-' }}</span>
+                                    <span class="text-rose-700 font-mono" id="kpi-mapel-terendah-val">({{ $sum['mapel_terendah']['rata_rata_format'] ?? '-' }})</span>
                                 </span>
                             </div>
                         </div>
@@ -411,9 +478,9 @@
                             </div>
                             <div class="min-w-0">
                                 <span class="text-[10px] uppercase font-bold text-amber-800 block truncate">Rata² Tertinggi</span>
-                                <span class="font-extrabold text-slate-900 truncate block" title="{{ $sum['siswa_tertinggi']['nama'] ?? '-' }}">
-                                    {{ $sum['siswa_tertinggi']['nama'] ?? '-' }}
-                                    <span class="text-amber-800 font-mono">({{ $sum['siswa_tertinggi']['nilai_format'] ?? '-' }})</span>
+                                <span class="font-extrabold text-slate-900 truncate block" id="kpi-siswa-tertinggi-container" title="{{ $sum['siswa_tertinggi']['nama'] ?? '-' }}">
+                                    <span id="kpi-siswa-tertinggi-nama">{{ $sum['siswa_tertinggi']['nama'] ?? '-' }}</span>
+                                    <span class="text-amber-800 font-mono" id="kpi-siswa-tertinggi-val">({{ $sum['siswa_tertinggi']['nilai_format'] ?? '-' }})</span>
                                 </span>
                             </div>
                         </div>
@@ -425,8 +492,8 @@
                             <div class="min-w-0">
                                 <span class="text-[10px] uppercase font-bold text-blue-700 block truncate">Tuntas KKM</span>
                                 <span class="font-extrabold text-slate-900 truncate block">
-                                    {{ $sum['persen_tuntas_kkm'] }}% Siswa
-                                    <span class="text-slate-500 font-normal text-[11px]">(~{{ $sum['rata_kkm_kelas'] }})</span>
+                                    <span id="kpi-tuntas-kkm-pct">{{ $sum['persen_tuntas_kkm'] }}</span>% Siswa
+                                    <span class="text-slate-500 font-normal text-[11px]">(~<span id="kpi-kkm-kelas">{{ $sum['rata_kkm_kelas'] }}</span>)</span>
                                 </span>
                             </div>
                         </div>
@@ -439,7 +506,7 @@
                                 <span class="text-[10px] uppercase font-bold text-sky-700 block truncate">Kehadiran (SIA)</span>
                                 <span class="font-extrabold text-slate-900 truncate block">
                                     S:{{ $khSummary['total_sakit'] ?? 0 }} I:{{ $khSummary['total_izin'] ?? 0 }} A:{{ $khSummary['total_alpa'] ?? 0 }}
-                                    <span class="text-sky-700 font-normal text-[10px]">({{ $khSummary['siswa_hadir_penuh'] ?? 0 }}/{{ $rekapData['jumlah_siswa'] }} siswa hadir 100%)</span>
+                                    <span class="text-sky-700 font-normal text-[10px]">({{ $khSummary['siswa_hadir_penuh'] ?? 0 }}/{{ $rekapData['jumlah_siswa'] }} hadir 100%)</span>
                                 </span>
                             </div>
                         </div>
@@ -452,7 +519,7 @@
                                 <span class="text-[10px] uppercase font-bold text-teal-700 block truncate">Pembiasaan</span>
                                 <span class="font-extrabold text-slate-900 truncate block">
                                     {{ $pemSummary['percentages']['sangat_baik'] ?? 0 }}% Sangat Baik
-                                    <span class="text-teal-700 font-normal text-[10px]">({{ $rekapData['jumlah_siswa'] }} siswa &bull; {{ $pemSummary['totals']['total'] ?? 0 }} nilai)</span>
+                                    <span class="text-teal-700 font-normal text-[10px]">({{ $rekapData['jumlah_siswa'] }} siswa)</span>
                                 </span>
                             </div>
                         </div>
@@ -532,25 +599,25 @@
                                     <span class="flex items-center gap-1.5 text-slate-700 font-semibold truncate">
                                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span> Sangat Baik
                                     </span>
-                                    <span class="font-bold text-slate-900 ml-1">{{ $dist['counts'][0] }} ({{ $dist['percentages'][0] }}%)</span>
+                                    <span class="font-bold text-slate-900 ml-1" id="dist-sb-count">{{ $dist['counts'][0] }} ({{ $dist['percentages'][0] }}%)</span>
                                 </div>
                                 <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/70">
                                     <span class="flex items-center gap-1.5 text-slate-700 font-semibold truncate">
                                         <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></span> Baik
                                     </span>
-                                    <span class="font-bold text-slate-900 ml-1">{{ $dist['counts'][1] }} ({{ $dist['percentages'][1] }}%)</span>
+                                    <span class="font-bold text-slate-900 ml-1" id="dist-b-count">{{ $dist['counts'][1] }} ({{ $dist['percentages'][1] }}%)</span>
                                 </div>
                                 <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/70">
                                     <span class="flex items-center gap-1.5 text-slate-700 font-semibold truncate">
                                         <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span> Cukup
                                     </span>
-                                    <span class="font-bold text-slate-900 ml-1">{{ $dist['counts'][2] }} ({{ $dist['percentages'][2] }}%)</span>
+                                    <span class="font-bold text-slate-900 ml-1" id="dist-c-count">{{ $dist['counts'][2] }} ({{ $dist['percentages'][2] }}%)</span>
                                 </div>
                                 <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/70">
                                     <span class="flex items-center gap-1.5 text-slate-700 font-semibold truncate">
                                         <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span> Perlu Bimbingan
                                     </span>
-                                    <span class="font-bold text-slate-900 ml-1">{{ $dist['counts'][3] }} ({{ $dist['percentages'][3] }}%)</span>
+                                    <span class="font-bold text-slate-900 ml-1" id="dist-pb-count">{{ $dist['counts'][3] }} ({{ $dist['percentages'][3] }}%)</span>
                                 </div>
                             </div>
                         </div>
@@ -680,125 +747,361 @@
                             @endif
                         </div>
 
-                        <!-- Grafik 4: Rekapitulasi Kehadiran Siswa (SIA) -->
-                        <div class="bg-slate-50/60 rounded-2xl p-4 border border-slate-200/80 flex flex-col justify-between"
-                             :class="(activeTab === 'semua') ? 'lg:col-span-5' : 'col-span-12'"
-                             x-show="activeTab === 'semua' || activeTab === 'kehadiran'">
+                        <!-- Grafik Baru: Perbandingan Nilai (Formatif, UTS, UAS, Nilai Rapor Berdampingan) -->
+                        <div class="col-span-12 bg-slate-50/60 rounded-2xl p-4 sm:p-5 border border-indigo-200/80 flex flex-col justify-between"
+                             x-show="activeTab === 'semua' || activeTab === 'perbandingan'">
                             <div>
-                                <div class="flex items-center justify-between mb-2">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                                     <div>
                                         <h3 class="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider flex items-center flex-wrap gap-2">
-                                            <span class="flex items-center"><i class="fa-solid fa-clipboard-user text-sky-600 mr-2"></i> Rekapitulasi Kehadiran (SIA)</span>
-                                            <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-sky-100 text-sky-800 border border-sky-200">{{ $kelas->nama }}</span>
+                                            <span class="flex items-center"><i class="fa-solid fa-code-compare text-indigo-600 mr-2"></i> Perbandingan Nilai: Formatif vs UTS vs Semesteran vs Nilai Rapor</span>
+                                            <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-indigo-100 text-indigo-800 border border-indigo-200">{{ $kelas->nama }}</span>
                                         </h3>
                                         <p class="text-[11px] text-slate-500 mt-0.5">
-                                            Perbandingan total hari Sakit (S), Izin (I), dan Tanpa Keterangan / Alpa (A) khusus peserta didik {{ $kelas->nama }}.
+                                            Komparasi capaian nilai peserta didik per mata pelajaran dari asesmen Formatif, UTS (STS), Semesteran (SAS), hingga Nilai Rapor Akhir secara berdampingan.
                                         </p>
                                     </div>
-                                    <button type="button" onclick="downloadChart('chartKehadiran', 'Grafik_Kehadiran_{{ Str::slug($kelas->nama) }}_{{ $periode }}')"
-                                            class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition flex items-center gap-1.5"
-                                            title="Unduh grafik kehadiran siswa lengkap dengan keterangan">
-                                        <i class="fa-solid fa-download text-sky-600"></i>
+                                    <button type="button" onclick="downloadChart('chartPerbandingan', 'Grafik_Perbandingan_Nilai_{{ Str::slug($kelas->nama) }}_{{ $periode }}')"
+                                            class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition flex items-center gap-1.5 self-start sm:self-auto"
+                                            title="Unduh grafik perbandingan nilai lengkap dengan keterangan">
+                                        <i class="fa-solid fa-download text-indigo-600"></i>
                                         <span>Unduh Gambar</span>
                                     </button>
                                 </div>
-                                <div class="relative h-48 sm:h-56 w-full flex items-center justify-center mt-1">
-                                    <canvas id="chartKehadiran"></canvas>
+
+                                <!-- Ringkasan Metrik Overall Perbandingan -->
+                                @php
+                                    $pb = $rekapData['chart_data']['perbandingan'] ?? null;
+                                @endphp
+                                @if($pb)
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs">
+                                        <div class="p-2 rounded-xl bg-blue-50/80 border border-blue-200 text-center">
+                                            <span class="text-[10px] font-bold uppercase text-blue-700 block">Rata² Formatif</span>
+                                            <span class="font-black text-slate-900 text-sm font-mono">{{ $pb['overall']['formatif'] }}</span>
+                                        </div>
+                                        <div class="p-2 rounded-xl bg-amber-50/80 border border-amber-200 text-center">
+                                            <span class="text-[10px] font-bold uppercase text-amber-700 block">Rata² UTS / STS</span>
+                                            <span class="font-black text-slate-900 text-sm font-mono">{{ $pb['overall']['uts'] }}</span>
+                                        </div>
+                                        <div class="p-2 rounded-xl bg-purple-50/80 border border-purple-200 text-center">
+                                            <span class="text-[10px] font-bold uppercase text-purple-700 block">Rata² SAS / UAS</span>
+                                            <span class="font-black text-slate-900 text-sm font-mono">{{ $pb['overall']['uas'] }}</span>
+                                        </div>
+                                        <div class="p-2 rounded-xl bg-emerald-50/80 border border-emerald-200 text-center">
+                                            <span class="text-[10px] font-bold uppercase text-emerald-700 block">Rata² Nilai Rapor</span>
+                                            <span class="font-black text-slate-900 text-sm font-mono">{{ $pb['overall']['rapor'] }}</span>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <div class="relative h-72 sm:h-80 w-full mt-2">
+                                    <canvas id="chartPerbandingan"></canvas>
                                 </div>
                             </div>
 
-                            @php
-                                $kh = $rekapData['chart_data']['kehadiran'] ?? null;
-                            @endphp
-                            @if($kh)
-                                <div class="grid grid-cols-3 gap-2 text-[11px] pt-3 mt-2 border-t border-slate-200/60">
-                                    <div class="flex flex-col p-2 rounded-lg bg-white border border-slate-200/70 text-center">
-                                        <span class="flex items-center justify-center gap-1 text-slate-600 font-bold truncate">
-                                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></span> Sakit (S)
-                                        </span>
-                                        <span class="font-extrabold text-slate-900 mt-0.5 text-xs">{{ $kh['total_sakit'] }} Hari</span>
-                                        <span class="text-[10px] text-slate-400">({{ $kh['percentages'][0] }}%)</span>
-                                    </div>
-                                    <div class="flex flex-col p-2 rounded-lg bg-white border border-slate-200/70 text-center">
-                                        <span class="flex items-center justify-center gap-1 text-slate-600 font-bold truncate">
-                                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span> Izin (I)
-                                        </span>
-                                        <span class="font-extrabold text-slate-900 mt-0.5 text-xs">{{ $kh['total_izin'] }} Hari</span>
-                                        <span class="text-[10px] text-slate-400">({{ $kh['percentages'][1] }}%)</span>
-                                    </div>
-                                    <div class="flex flex-col p-2 rounded-lg bg-white border border-slate-200/70 text-center">
-                                        <span class="flex items-center justify-center gap-1 text-slate-600 font-bold truncate">
-                                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span> Alpa (A)
-                                        </span>
-                                        <span class="font-extrabold text-slate-900 mt-0.5 text-xs">{{ $kh['total_alpa'] }} Hari</span>
-                                        <span class="text-[10px] text-slate-400">({{ $kh['percentages'][2] }}%)</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between text-[11px] mt-2 pt-2 border-t border-slate-100 text-slate-600">
-                                    <span>Hadir 100%: <strong class="text-emerald-700">{{ $kh['siswa_hadir_penuh'] }} Siswa ({{ $kh['persen_hadir_penuh'] }}%)</strong></span>
-                                    <span>Total: <strong class="text-slate-900">{{ $kh['total_tidak_hadir'] }} Hari</strong></span>
-                                </div>
-                            @endif
+                            <div class="flex flex-wrap items-center justify-center gap-4 text-[11px] pt-3 mt-2 border-t border-slate-200/60 text-slate-600">
+                                <span class="inline-flex items-center gap-1.5 font-semibold">
+                                    <span class="w-3 h-3 rounded-sm bg-blue-500 inline-block"></span> Formatif (Rata-rata)
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 font-semibold">
+                                    <span class="w-3 h-3 rounded-sm bg-amber-500 inline-block"></span> STS / UTS
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 font-semibold">
+                                    <span class="w-3 h-3 rounded-sm bg-purple-500 inline-block"></span> SAS / UAS
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 font-semibold">
+                                    <span class="w-3 h-3 rounded-sm bg-emerald-500 inline-block"></span> Nilai Rapor (Akhir)
+                                </span>
+                            </div>
                         </div>
 
-                        <!-- Grafik 5: Capaian Karakter & Pembiasaan Siswa -->
-                        <div class="bg-slate-50/60 rounded-2xl p-4 border border-slate-200/80 flex flex-col justify-between"
-                             :class="(activeTab === 'semua') ? 'lg:col-span-7' : 'col-span-12'"
-                             x-show="activeTab === 'semua' || activeTab === 'pembiasaan'">
+                        <!-- Grafik 4: Rekapitulasi Kehadiran Siswa (SIA - Non-Akademik) -->
+                        <div class="col-span-12 bg-slate-50/60 rounded-2xl p-4 sm:p-5 border border-sky-200/80 flex flex-col justify-between"
+                             x-show="activeTab === 'semua' || activeTab === 'kehadiran'">
                             <div>
-                                <div class="flex items-center justify-between mb-2">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                                     <div>
                                         <h3 class="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider flex items-center flex-wrap gap-2">
-                                            <span class="flex items-center"><i class="fa-solid fa-hands-praying text-emerald-600 mr-2"></i> Capaian Aspek Karakter &amp; Pembiasaan</span>
-                                            <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">{{ $kelas->nama }}</span>
+                                            <span class="flex items-center"><i class="fa-solid fa-clipboard-user text-sky-600 mr-2"></i> Rekapitulasi Kehadiran Siswa (SIA)</span>
+                                            <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-sky-100 text-sky-800 border border-sky-200">{{ $kelas->nama }}</span>
+                                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 text-slate-600 border border-slate-200">Non-Akademik</span>
                                         </h3>
                                         <p class="text-[11px] text-slate-500 mt-0.5">
-                                            Distribusi perolehan predikat pembiasaan per aspek dimensi profil pelajar khusus peserta didik {{ $kelas->nama }}.
+                                            Analisis mandiri absensi: donat komposisi S/I/A, tren ketidakhadiran per bulan (Juli–Desember), dan peringkat alpa siswa.
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" onclick="downloadChart('chartKehadiran', 'Grafik_Kehadiran_Donat_{{ Str::slug($kelas->nama) }}_{{ $periode }}')"
+                                                class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition flex items-center gap-1.5"
+                                                title="Unduh grafik donat kehadiran">
+                                            <i class="fa-solid fa-download text-sky-600"></i>
+                                            <span>Unduh Donat</span>
+                                        </button>
+                                        <button type="button" onclick="downloadChart('chartKehadiranSiswa', 'Grafik_Presensi_Siswa_{{ Str::slug($kelas->nama) }}_{{ $periode }}')"
+                                                class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition flex items-center gap-1.5"
+                                                title="Unduh grafik bar kehadiran per siswa">
+                                            <i class="fa-solid fa-download text-sky-600"></i>
+                                            <span>Unduh Bar Siswa</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                @php
+                                    $kh = $rekapData['chart_data']['kehadiran'] ?? null;
+                                    $siswaAlpaTinggi = $kh ? collect($kh['siswa_bar'] ?? [])->filter(fn ($s) => $s['is_peringatan_alpa'])->values() : collect();
+                                @endphp
+
+                                <!-- Peringatan Siswa Alpa Tinggi jika ada -->
+                                @if($siswaAlpaTinggi->isNotEmpty())
+                                    <div class="mb-4 p-3 bg-rose-50 border-2 border-rose-300 rounded-xl text-xs text-rose-900 shadow-2xs flex items-start gap-2.5">
+                                        <div class="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center shrink-0 text-sm mt-0.5">
+                                            <i class="fa-solid fa-triangle-exclamation"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-black text-rose-800 text-xs uppercase tracking-wide">
+                                                🚨 Peringatan: Terdapat {{ $siswaAlpaTinggi->count() }} Siswa dengan Alpa Melebihi Batas Sekolah (Batas: {{ $kh['batas_alpa'] ?? 3 }} Hari)
+                                            </div>
+                                            <div class="mt-1 flex flex-wrap gap-2">
+                                                @foreach($siswaAlpaTinggi as $sat)
+                                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white border border-rose-300 font-bold text-rose-700 text-[11px]">
+                                                        <span>{{ $sat['nama'] }}</span>
+                                                        <span class="px-1 py-0.2 rounded bg-rose-600 text-white text-[10px] font-black">{{ $sat['alpa'] }} Alpa</span>
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <!-- Grid Visualisasi SIA: Donat & Tren Bulanan -->
+                                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+                                    <!-- Donut Komposisi S/I/A -->
+                                    <div class="lg:col-span-5 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                                        <div>
+                                            <div class="text-xs font-bold text-slate-800 flex items-center justify-between mb-2">
+                                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-chart-pie text-sky-600"></i> Komposisi S/I/A</span>
+                                                <span class="text-[10px] text-slate-400">Total: {{ $kh['total_tidak_hadir'] ?? 0 }} Hari</span>
+                                            </div>
+                                            <div class="relative h-44 sm:h-48 w-full flex items-center justify-center">
+                                                <canvas id="chartKehadiran"></canvas>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-1.5 text-[11px] pt-3 mt-2 border-t border-slate-100">
+                                            <div class="p-1.5 rounded-lg bg-blue-50 border border-blue-100 text-center">
+                                                <span class="text-[10px] text-blue-700 font-bold block">Sakit (S)</span>
+                                                <span class="font-black text-slate-900 text-xs">{{ $kh['total_sakit'] ?? 0 }} Hari</span>
+                                                <span class="text-[9px] text-slate-400">({{ $kh['percentages'][0] ?? 0 }}%)</span>
+                                            </div>
+                                            <div class="p-1.5 rounded-lg bg-amber-50 border border-amber-100 text-center">
+                                                <span class="text-[10px] text-amber-700 font-bold block">Izin (I)</span>
+                                                <span class="font-black text-slate-900 text-xs">{{ $kh['total_izin'] ?? 0 }} Hari</span>
+                                                <span class="text-[9px] text-slate-400">({{ $kh['percentages'][1] ?? 0 }}%)</span>
+                                            </div>
+                                            <div class="p-1.5 rounded-lg bg-rose-50 border border-rose-100 text-center">
+                                                <span class="text-[10px] text-rose-700 font-bold block">Alpa (A)</span>
+                                                <span class="font-black text-slate-900 text-xs">{{ $kh['total_alpa'] ?? 0 }} Hari</span>
+                                                <span class="text-[9px] text-slate-400">({{ $kh['percentages'][2] ?? 0 }}%)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tren Bulanan Juli - Desember -->
+                                    <div class="lg:col-span-7 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                                        <div>
+                                            <div class="text-xs font-bold text-slate-800 flex items-center justify-between mb-2">
+                                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-chart-line text-blue-600"></i> Tren Ketidakhadiran per Bulan (Juli - Desember)</span>
+                                                <button type="button" onclick="downloadChart('chartKehadiranTren', 'Grafik_Tren_Kehadiran_{{ Str::slug($kelas->nama) }}_{{ $periode }}')"
+                                                        class="text-[10px] text-blue-600 hover:underline font-bold flex items-center gap-1">
+                                                    <i class="fa-solid fa-download"></i> Unduh Tren
+                                                </button>
+                                            </div>
+                                            <div class="relative h-44 sm:h-48 w-full">
+                                                <canvas id="chartKehadiranTren"></canvas>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-center gap-4 text-[10px] font-semibold pt-2 border-t border-slate-100 text-slate-600">
+                                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Sakit</span>
+                                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Izin</span>
+                                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Alpa</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bar Chart per Siswa Diurutkan dari Alpa Terbanyak -->
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+                                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                                        <div>
+                                            <div class="text-xs font-bold text-slate-900 flex items-center gap-2">
+                                                <i class="fa-solid fa-chart-bar text-sky-600"></i>
+                                                <span>Presensi Seluruh Siswa (Diurutkan dari Alpa Terbanyak)</span>
+                                            </div>
+                                            <p class="text-[10px] text-slate-500 mt-0.5">
+                                                Siswa di urutan atas memiliki frekuensi alpa tertinggi. Siswa dengan alpa ≥ {{ $kh['batas_alpa'] ?? 3 }} hari diberi penanda merah tegas.
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center gap-3 text-[11px] font-bold">
+                                            <span class="flex items-center gap-1 text-rose-600">
+                                                <span class="w-3 h-3 rounded-sm bg-rose-500"></span> Alpa (A)
+                                            </span>
+                                            <span class="flex items-center gap-1 text-amber-600">
+                                                <span class="w-3 h-3 rounded-sm bg-amber-500"></span> Izin (I)
+                                            </span>
+                                            <span class="flex items-center gap-1 text-blue-600">
+                                                <span class="w-3 h-3 rounded-sm bg-blue-500"></span> Sakit (S)
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    @php
+                                        $barHeight = max(240, count($kh['siswa_bar'] ?? []) * 24);
+                                    @endphp
+                                    <div class="relative w-full overflow-hidden" style="height: {{ $barHeight }}px;">
+                                        <canvas id="chartKehadiranSiswa"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grafik 5: Capaian Karakter & Pembiasaan Siswa (Non-Akademik) -->
+                        <div class="col-span-12 bg-slate-50/60 rounded-2xl p-4 sm:p-5 border border-emerald-200/80 flex flex-col justify-between"
+                             x-show="activeTab === 'semua' || activeTab === 'pembiasaan'">
+                            <div>
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                                    <div>
+                                        <h3 class="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider flex items-center flex-wrap gap-2">
+                                            <span class="flex items-center"><i class="fa-solid fa-hands-praying text-emerald-600 mr-2"></i> Capaian Karakter &amp; Pembiasaan</span>
+                                            <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">{{ $kelas->nama }}</span>
+                                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 text-slate-600 border border-slate-200">Non-Angka / Predikat</span>
+                                        </h3>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">
+                                            Visualisasi berbasis predikat kualitatif (Sangat Baik, Baik, Cukup, Perlu Bimbingan) per dimensi profil pelajar dan monitoring siswa yang memerlukan bimbingan.
                                         </p>
                                     </div>
                                     <button type="button" onclick="downloadChart('chartPembiasaan', 'Grafik_Pembiasaan_{{ Str::slug($kelas->nama) }}_{{ $periode }}')"
                                             class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition flex items-center gap-1.5"
-                                            title="Unduh grafik capaian pembiasaan lengkap dengan keterangan">
+                                            title="Unduh grafik capaian pembiasaan lengkap">
                                         <i class="fa-solid fa-download text-emerald-600"></i>
                                         <span>Unduh Gambar</span>
                                     </button>
                                 </div>
-                                <div class="relative h-64 sm:h-72 w-full mt-2">
-                                    <canvas id="chartPembiasaan"></canvas>
+
+                                @php
+                                    $pem = $rekapData['chart_data']['pembiasaan'] ?? null;
+                                    $siswaPB = $pem['siswa_perlu_bimbingan'] ?? [];
+                                @endphp
+
+                                <!-- Grid: Donat Distribusi Predikat & Bar per Aspek Pembiasaan -->
+                                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+                                    <!-- Donut Distribusi Predikat Total -->
+                                    <div class="lg:col-span-5 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                                        <div>
+                                            <div class="text-xs font-bold text-slate-800 flex items-center justify-between mb-2">
+                                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-chart-pie text-emerald-600"></i> Distribusi Predikat Seluruh Aspek</span>
+                                                <span class="text-[10px] text-slate-400">Total: {{ $pem['totals']['total'] ?? 0 }} Nilai</span>
+                                            </div>
+                                            <div class="relative h-44 sm:h-48 w-full flex items-center justify-center">
+                                                <canvas id="chartPembiasaanDonut"></canvas>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] pt-3 mt-2 border-t border-slate-100">
+                                            <div class="p-1.5 rounded-lg bg-emerald-50 border border-emerald-100 text-center">
+                                                <span class="text-[9px] text-emerald-800 font-bold block">Sangat Baik</span>
+                                                <span class="font-black text-slate-900 text-xs">{{ $pem['totals']['sangat_baik'] ?? 0 }}</span>
+                                                <span class="text-[9px] text-slate-400">({{ $pem['percentages']['sangat_baik'] ?? 0 }}%)</span>
+                                            </div>
+                                            <div class="p-1.5 rounded-lg bg-blue-50 border border-blue-100 text-center">
+                                                <span class="text-[9px] text-blue-800 font-bold block">Baik</span>
+                                                <span class="font-black text-slate-900 text-xs">{{ $pem['totals']['baik'] ?? 0 }}</span>
+                                                <span class="text-[9px] text-slate-400">({{ $pem['percentages']['baik'] ?? 0 }}%)</span>
+                                            </div>
+                                            <div class="p-1.5 rounded-lg bg-amber-50 border border-amber-100 text-center">
+                                                <span class="text-[9px] text-amber-800 font-bold block">Cukup</span>
+                                                <span class="font-black text-slate-900 text-xs">{{ $pem['totals']['cukup'] ?? 0 }}</span>
+                                                <span class="text-[9px] text-slate-400">({{ $pem['percentages']['cukup'] ?? 0 }}%)</span>
+                                            </div>
+                                            <div class="p-1.5 rounded-lg bg-rose-50 border border-rose-100 text-center">
+                                                <span class="text-[9px] text-rose-800 font-bold block">Perlu Bimbingan</span>
+                                                <span class="font-black text-slate-900 text-xs">{{ $pem['totals']['perlu_bimbingan'] ?? 0 }}</span>
+                                                <span class="text-[9px] text-slate-400">({{ $pem['percentages']['perlu_bimbingan'] ?? 0 }}%)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bar Chart per Aspek Dimensi Pembiasaan -->
+                                    <div class="lg:col-span-7 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                                        <div>
+                                            <div class="text-xs font-bold text-slate-800 flex items-center justify-between mb-2">
+                                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-chart-column text-emerald-600"></i> Sebaran Predikat per Dimensi Profil Pelajar</span>
+                                            </div>
+                                            <div class="relative h-44 sm:h-48 w-full">
+                                                <canvas id="chartPembiasaan"></canvas>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-center gap-3 text-[10px] font-semibold pt-2 border-t border-slate-100 text-slate-600">
+                                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Sangat Baik</span>
+                                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Baik</span>
+                                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Cukup</span>
+                                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Perlu Bimbingan</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Box Khusus: Daftar Siswa "Perlu Bimbingan" -->
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+                                    <div class="flex items-center justify-between mb-2.5">
+                                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                                            <i class="fa-solid fa-user-pen text-rose-600"></i>
+                                            <span>Daftar Siswa "Perlu Bimbingan" (Monitoring Intervensi Karakter)</span>
+                                        </h4>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ count($siswaPB) > 0 ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200' }}">
+                                            {{ count($siswaPB) }} Siswa Memerlukan Bimbingan
+                                        </span>
+                                    </div>
+
+                                    @if(count($siswaPB) > 0)
+                                        <div class="overflow-x-auto">
+                                            <table class="w-full text-xs text-left">
+                                                <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
+                                                    <tr>
+                                                        <th class="py-2 px-2.5 w-10 text-center">No</th>
+                                                        <th class="py-2 px-3 w-48">Nama Siswa</th>
+                                                        <th class="py-2 px-3">Dimensi Pembiasaan yang Perlu Dibimbing</th>
+                                                        <th class="py-2 px-3">Rekomendasi Tindak Lanjut Wali Kelas</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-100">
+                                                    @foreach($siswaPB as $idx => $spb)
+                                                        <tr class="hover:bg-rose-50/40 transition">
+                                                            <td class="py-2 px-2.5 text-center font-mono text-slate-500">{{ $idx + 1 }}</td>
+                                                            <td class="py-2 px-3 font-bold text-slate-900">
+                                                                {{ $spb['nama'] }}
+                                                                <span class="block text-[10px] font-normal text-slate-400 font-mono">NIS: {{ $spb['nis'] }}</span>
+                                                            </td>
+                                                            <td class="py-2 px-3">
+                                                                <div class="flex flex-wrap gap-1">
+                                                                    @foreach($spb['aspek'] as $asp)
+                                                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                                                            {{ $asp }}
+                                                                        </span>
+                                                                    @endforeach
+                                                                </div>
+                                                            </td>
+                                                            <td class="py-2 px-3 text-slate-600 text-[11px] leading-relaxed">
+                                                                {{ $spb['saran'] }}
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @else
+                                        <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-medium">
+                                            <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+                                            <span>Seluruh siswa pada kelas ini telah mencapai predikat <strong>Baik</strong> atau <strong>Sangat Baik</strong> pada semua dimensi pembiasaan. Tidak ada peserta didik yang memerlukan bimbingan khusus.</span>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
-
-                            @php
-                                $pem = $rekapData['chart_data']['pembiasaan'] ?? null;
-                            @endphp
-                            @if($pem)
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-3 mt-2 border-t border-slate-200/60">
-                                    <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/70">
-                                        <span class="flex items-center gap-1.5 text-slate-700 font-semibold truncate">
-                                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span> Sangat Baik
-                                        </span>
-                                        <span class="font-bold text-slate-900 ml-1">{{ $pem['totals']['sangat_baik'] }} ({{ $pem['percentages']['sangat_baik'] }}%)</span>
-                                    </div>
-                                    <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/70">
-                                        <span class="flex items-center gap-1.5 text-slate-700 font-semibold truncate">
-                                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></span> Baik
-                                        </span>
-                                        <span class="font-bold text-slate-900 ml-1">{{ $pem['totals']['baik'] }} ({{ $pem['percentages']['baik'] }}%)</span>
-                                    </div>
-                                    <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/70">
-                                        <span class="flex items-center gap-1.5 text-slate-700 font-semibold truncate">
-                                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span> Cukup
-                                        </span>
-                                        <span class="font-bold text-slate-900 ml-1">{{ $pem['totals']['cukup'] }} ({{ $pem['percentages']['cukup'] }}%)</span>
-                                    </div>
-                                    <div class="flex items-center justify-between p-1.5 rounded-lg bg-white border border-slate-200/70">
-                                        <span class="flex items-center gap-1.5 text-slate-700 font-semibold truncate">
-                                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span> Perlu Bimbingan
-                                        </span>
-                                        <span class="font-bold text-slate-900 ml-1">{{ $pem['totals']['perlu_bimbingan'] }} ({{ $pem['percentages']['perlu_bimbingan'] }}%)</span>
-                                    </div>
-                                </div>
-                            @endif
                         </div>
                     </div>
                 @else
@@ -1185,8 +1488,13 @@
     let chartMapelInstance = null;
     let chartDistribusiInstance = null;
     let chartRankingInstance = null;
+    let chartPerbandinganInstance = null;
     let chartKehadiranInstance = null;
+    let chartKehadiranTrenInstance = null;
+    let chartKehadiranSiswaInstance = null;
+    let chartPembiasaanDonutInstance = null;
     let chartPembiasaanInstance = null;
+    let currentActiveAkademik = (rawChartData && rawChartData.akademik && rawChartData.akademik.rapor) ? rawChartData.akademik.rapor : rawChartData;
 
     function initRekapCharts() {
         if (!rawChartData || !rawChartData.has_data || typeof Chart === 'undefined') {
@@ -1355,10 +1663,16 @@
         // 3. Inisialisasi Grafik Rentang Nilai Siswa (0-25, 26-50, 51-75, 76-100)
         renderRankingChart();
 
-        // 4. Inisialisasi Grafik Kehadiran Siswa (SIA)
-        initKehadiranChart();
+        // 4. Inisialisasi Grafik Perbandingan Nilai (Formatif, UTS, UAS, Nilai Rapor Berdampingan)
+        initPerbandinganChart();
 
-        // 5. Inisialisasi Grafik Capaian Pembiasaan Siswa
+        // 5. Inisialisasi Grafik Kehadiran Siswa (SIA) - Donut, Tren Bulanan, Presensi Siswa
+        initKehadiranChart();
+        initKehadiranTrenChart();
+        initKehadiranSiswaChart();
+
+        // 6. Inisialisasi Grafik Capaian Pembiasaan Siswa - Donut & Bar per Aspek
+        initPembiasaanDonutChart();
         initPembiasaanChart();
     }
 
@@ -1928,12 +2242,482 @@
         });
     }
 
+    // -------------------------------------------------------------
+    // Inisialisasi Grafik Baru: Perbandingan Nilai (Formatif, UTS, UAS, Rapor)
+    // -------------------------------------------------------------
+    function initPerbandinganChart() {
+        const ctx = document.getElementById('chartPerbandingan');
+        if (!ctx || !rawChartData || !rawChartData.perbandingan) return;
+
+        const pb = rawChartData.perbandingan;
+        if (chartPerbandinganInstance) {
+            chartPerbandinganInstance.destroy();
+        }
+
+        chartPerbandinganInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: pb.labels,
+                datasets: [
+                    {
+                        label: 'Formatif (Rata-rata)',
+                        data: pb.datasets.formatif,
+                        backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                        borderColor: '#2563eb',
+                        borderWidth: 1.2,
+                        borderRadius: 4,
+                        maxBarThickness: 28,
+                    },
+                    {
+                        label: 'STS / UTS',
+                        data: pb.datasets.uts,
+                        backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                        borderColor: '#d97706',
+                        borderWidth: 1.2,
+                        borderRadius: 4,
+                        maxBarThickness: 28,
+                    },
+                    {
+                        label: 'SAS / UAS',
+                        data: pb.datasets.uas,
+                        backgroundColor: 'rgba(147, 51, 234, 0.85)',
+                        borderColor: '#7e22ce',
+                        borderWidth: 1.2,
+                        borderRadius: 4,
+                        maxBarThickness: 28,
+                    },
+                    {
+                        label: 'Nilai Rapor (Akhir)',
+                        data: pb.datasets.rapor,
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                        borderColor: '#059669',
+                        borderWidth: 1.2,
+                        borderRadius: 4,
+                        maxBarThickness: 28,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: 'bold' } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { stepSize: 20 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleFont: { size: 12, weight: 'bold' },
+                        bodyFont: { size: 11 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            title: function(items) {
+                                const idx = items[0].dataIndex;
+                                return (pb.full_names && pb.full_names[idx]) ? pb.full_names[idx] : pb.labels[idx];
+                            },
+                            label: function(item) {
+                                return ` ${item.dataset.label}: ${item.parsed.y}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // Inisialisasi Grafik Kehadiran Tren Bulanan (Juli - Desember)
+    // -------------------------------------------------------------
+    function initKehadiranTrenChart() {
+        const ctx = document.getElementById('chartKehadiranTren');
+        if (!ctx || !rawChartData || !rawChartData.kehadiran || !rawChartData.kehadiran.tren_bulanan) return;
+
+        const tren = rawChartData.kehadiran.tren_bulanan;
+        if (chartKehadiranTrenInstance) {
+            chartKehadiranTrenInstance.destroy();
+        }
+
+        chartKehadiranTrenInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: tren.labels,
+                datasets: [
+                    {
+                        label: 'Sakit (S)',
+                        data: tren.sakit,
+                        backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                        borderColor: '#2563eb',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        maxBarThickness: 16,
+                    },
+                    {
+                        label: 'Izin (I)',
+                        data: tren.izin,
+                        backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                        borderColor: '#d97706',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        maxBarThickness: 16,
+                    },
+                    {
+                        label: 'Alpa (A)',
+                        data: tren.alpa,
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                        borderColor: '#dc2626',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        maxBarThickness: 16,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10, weight: 'bold' } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0,
+                            callback: function(val) { return val + ' hr'; }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        padding: 8,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: function(item) {
+                                return ` ${item.dataset.label}: ${item.parsed.y} Hari`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // Inisialisasi Bar Presensi Seluruh Siswa (Diurutkan dari Alpa Terbanyak)
+    // Siswa dengan Alpa >= batas alpa diberi penanda merah tegas
+    // -------------------------------------------------------------
+    function initKehadiranSiswaChart() {
+        const ctx = document.getElementById('chartKehadiranSiswa');
+        if (!ctx || !rawChartData || !rawChartData.kehadiran || !rawChartData.kehadiran.siswa_bar) return;
+
+        const siswaBar = rawChartData.kehadiran.siswa_bar;
+        if (chartKehadiranSiswaInstance) {
+            chartKehadiranSiswaInstance.destroy();
+        }
+
+        const labels = siswaBar.map(s => s.nama + (s.is_peringatan_alpa ? ' ⚠️' : ''));
+        const alpaData = siswaBar.map(s => s.alpa);
+        const izinData = siswaBar.map(s => s.izin);
+        const sakitData = siswaBar.map(s => s.sakit);
+
+        const alpaBg = siswaBar.map(s => s.is_peringatan_alpa ? 'rgba(239, 68, 68, 0.95)' : 'rgba(239, 68, 68, 0.7)');
+        const alpaBorder = siswaBar.map(s => s.is_peringatan_alpa ? '#991b1b' : '#dc2626');
+
+        chartKehadiranSiswaInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Alpa (Tanpa Keterangan)',
+                        data: alpaData,
+                        backgroundColor: alpaBg,
+                        borderColor: alpaBorder,
+                        borderWidth: 1.5,
+                        borderRadius: 4,
+                        maxBarThickness: 16,
+                    },
+                    {
+                        label: 'Izin (I)',
+                        data: izinData,
+                        backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                        borderColor: '#d97706',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        maxBarThickness: 16,
+                    },
+                    {
+                        label: 'Sakit (S)',
+                        data: sakitData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                        borderColor: '#2563eb',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        maxBarThickness: 16,
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0,
+                            callback: function(val) { return val + ' Hari'; }
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 10, weight: 'bold' },
+                            color: function(c) {
+                                const idx = c.index;
+                                return (siswaBar[idx] && siswaBar[idx].is_peringatan_alpa) ? '#b91c1c' : '#334155';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        padding: 8,
+                        cornerRadius: 6,
+                        callbacks: {
+                            title: function(items) {
+                                const idx = items[0].dataIndex;
+                                const s = siswaBar[idx];
+                                return `${s.nama} (NIS: ${s.nis})${s.is_peringatan_alpa ? ' - ⚠️ PERINGATAN ALPA TINGGI' : ''}`;
+                            },
+                            label: function(item) {
+                                return ` ${item.dataset.label}: ${item.parsed.x} Hari`;
+                            },
+                            afterBody: function(items) {
+                                const idx = items[0].dataIndex;
+                                const s = siswaBar[idx];
+                                return [`Total Tidak Hadir: ${s.total} Hari`];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // Inisialisasi Donut Capaian Pembiasaan (Sangat Baik, Baik, Cukup, PB)
+    // -------------------------------------------------------------
+    function initPembiasaanDonutChart() {
+        const ctx = document.getElementById('chartPembiasaanDonut');
+        if (!ctx || !rawChartData || !rawChartData.pembiasaan || !rawChartData.pembiasaan.totals) return;
+
+        const pem = rawChartData.pembiasaan;
+        const totals = pem.totals;
+        if (chartPembiasaanDonutInstance) {
+            chartPembiasaanDonutInstance.destroy();
+        }
+
+        const counts = [
+            totals.sangat_baik || 0,
+            totals.baik || 0,
+            totals.cukup || 0,
+            totals.perlu_bimbingan || 0
+        ];
+
+        const isZero = (totals.total === 0);
+
+        chartPembiasaanDonutInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Sangat Baik', 'Baik', 'Cukup', 'Perlu Bimbingan'],
+                datasets: [{
+                    data: isZero ? [1, 0, 0, 0] : counts,
+                    backgroundColor: isZero ? ['#cbd5e1'] : ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                    borderColor: '#ffffff',
+                    borderWidth: 2,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '66%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(item) {
+                                if (isZero) return ' Belum ada data penilaian pembiasaan';
+                                const val = item.raw || 0;
+                                const total = totals.total || 1;
+                                const pct = ((val / total) * 100).toFixed(1);
+                                return ` ${val} Nilai (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // Filter Dinamis Jenis Nilai (Rapor, UTS, UAS, Formatif Bulanan)
+    // Bekerja secara instan tanpa reload halaman
+    // -------------------------------------------------------------
+    const namaBulanMap = {
+        '7': 'Juli',
+        '8': 'Agustus',
+        '9': 'September',
+        '10': 'Oktober',
+        '11': 'November',
+        '12': 'Desember'
+    };
+
+    window.switchJenisNilai = function(type, bulan = '') {
+        if (!rawChartData || !rawChartData.akademik) return;
+
+        let key = 'rapor';
+        let labelText = 'Nilai Rapor Akhir';
+
+        if (type === 'formatif') {
+            if (bulan && rawChartData.akademik['formatif_' + bulan]) {
+                key = 'formatif_' + bulan;
+                labelText = 'Formatif Bulan: ' + (namaBulanMap[bulan] || ('Bulan ' + bulan));
+            } else {
+                key = 'formatif';
+                labelText = 'Formatif Bulanan: Rata-rata 6 Bulan (JUL - DES)';
+            }
+        } else if (type === 'uts') {
+            key = 'uts';
+            labelText = 'Sumatif Tengah Semester (STS / UTS)';
+        } else if (type === 'uas') {
+            key = 'uas';
+            labelText = 'Sumatif Akhir Semester (SAS / UAS)';
+        } else {
+            key = 'rapor';
+            labelText = 'Nilai Rapor Akhir';
+        }
+
+        const labelEl = document.getElementById('active-jenis-label');
+        if (labelEl) {
+            labelEl.innerHTML = 'Menampilkan grafik: <strong>' + labelText + '</strong>';
+        }
+
+        const dataset = rawChartData.akademik[key] || rawChartData;
+        currentActiveAkademik = dataset;
+
+        // 1. Update Grafik Mapel vs KKM
+        if (chartMapelInstance && dataset.mapel) {
+            const mapelData = dataset.mapel;
+            const bgColors = mapelData.averages.map((avg, i) => {
+                const kkm = mapelData.kkm[i] || 70;
+                return avg >= kkm ? 'rgba(16, 185, 129, 0.85)' : 'rgba(239, 68, 68, 0.85)';
+            });
+            const borderColors = mapelData.averages.map((avg, i) => {
+                const kkm = mapelData.kkm[i] || 70;
+                return avg >= kkm ? '#059669' : '#dc2626';
+            });
+
+            chartMapelInstance.data.labels = mapelData.labels;
+            chartMapelInstance.data.datasets[0].data = mapelData.kkm;
+            chartMapelInstance.data.datasets[1].data = mapelData.averages;
+            chartMapelInstance.data.datasets[1].backgroundColor = bgColors;
+            chartMapelInstance.data.datasets[1].borderColor = borderColors;
+            chartMapelInstance.update();
+        }
+
+        // 2. Update Grafik Distribusi Capaian Siswa
+        if (chartDistribusiInstance && dataset.distribusi) {
+            const distData = dataset.distribusi;
+            chartDistribusiInstance.data.datasets[0].data = distData.counts;
+            chartDistribusiInstance.update();
+
+            const elDistSb = document.getElementById('dist-sb-count');
+            if (elDistSb) elDistSb.textContent = `${distData.counts[0] || 0} (${distData.percentages[0] || 0}%)`;
+            const elDistB = document.getElementById('dist-b-count');
+            if (elDistB) elDistB.textContent = `${distData.counts[1] || 0} (${distData.percentages[1] || 0}%)`;
+            const elDistC = document.getElementById('dist-c-count');
+            if (elDistC) elDistC.textContent = `${distData.counts[2] || 0} (${distData.percentages[2] || 0}%)`;
+            const elDistPb = document.getElementById('dist-pb-count');
+            if (elDistPb) elDistPb.textContent = `${distData.counts[3] || 0} (${distData.percentages[3] || 0}%)`;
+        }
+
+        // 3. Update Rentang Nilai (0-25, 26-50, 51-75, 76-100)
+        if (dataset.rentang_nilai) {
+            rawChartData.rentang_nilai = dataset.rentang_nilai;
+            renderRankingChart();
+        }
+
+        // 4. Update Kartu KPI Ringkasan
+        const sum = dataset.summary || {};
+        const topM = sum.mapel_tertinggi;
+        const botM = sum.mapel_terendah;
+        const topS = sum.siswa_tertinggi;
+
+        const elTopMName = document.getElementById('kpi-mapel-tertinggi-nama');
+        const elTopMVal = document.getElementById('kpi-mapel-tertinggi-val');
+        if (elTopMName) elTopMName.textContent = topM ? topM.nama_singkat : '-';
+        if (elTopMVal) elTopMVal.textContent = topM ? `(${topM.rata_rata_format})` : '(-)';
+
+        const elBotMName = document.getElementById('kpi-mapel-terendah-nama');
+        const elBotMVal = document.getElementById('kpi-mapel-terendah-val');
+        if (elBotMName) elBotMName.textContent = botM ? botM.nama_singkat : '-';
+        if (elBotMVal) elBotMVal.textContent = botM ? `(${botM.rata_rata_format})` : '(-)';
+
+        const elTopSName = document.getElementById('kpi-siswa-tertinggi-nama');
+        const elTopSVal = document.getElementById('kpi-siswa-tertinggi-val');
+        if (elTopSName) elTopSName.textContent = topS ? topS.nama : '-';
+        if (elTopSVal) elTopSVal.textContent = topS ? `(${topS.nilai_format})` : '(-)';
+
+        const elTuntasPct = document.getElementById('kpi-tuntas-kkm-pct');
+        if (elTuntasPct) elTuntasPct.textContent = sum.persen_tuntas_kkm ?? 0;
+
+        const elKkmKelas = document.getElementById('kpi-kkm-kelas');
+        if (elKkmKelas) elKkmKelas.textContent = sum.rata_kkm_kelas ?? 70;
+    };
+
     window.switchRekapTab = function(tab) {
         setTimeout(() => {
             if (chartMapelInstance) chartMapelInstance.resize();
             if (chartDistribusiInstance) chartDistribusiInstance.resize();
             if (chartRankingInstance) chartRankingInstance.resize();
+            if (chartPerbandinganInstance) chartPerbandinganInstance.resize();
             if (chartKehadiranInstance) chartKehadiranInstance.resize();
+            if (chartKehadiranTrenInstance) chartKehadiranTrenInstance.resize();
+            if (chartKehadiranSiswaInstance) chartKehadiranSiswaInstance.resize();
+            if (chartPembiasaanDonutInstance) chartPembiasaanDonutInstance.resize();
             if (chartPembiasaanInstance) chartPembiasaanInstance.resize();
         }, 50);
     };
@@ -2224,7 +3008,40 @@
                 chartHeight: 380,
                 extraHeight: 60
             };
-        } else if (canvasId === 'chartPembiasaan') {
+        } else if (canvasId === 'chartPerbandingan') {
+            config = {
+                title: 'GRAFIK PERBANDINGAN NILAI ASESMEN • ' + metaSekolah.namaKelas.toUpperCase(),
+                subtitle: 'Komparasi nilai Formatif, UTS (STS), Semesteran (SAS), dan Nilai Rapor Akhir per mata pelajaran',
+                badge: 'PERBANDINGAN NILAI',
+                badgeColor: '#4f46e5',
+                badgeBg: '#eef2ff',
+                badgeBorder: '#c7d2fe',
+                chartHeight: 380,
+                extraHeight: 80
+            };
+        } else if (canvasId === 'chartKehadiranTren') {
+            config = {
+                title: 'GRAFIK TREN KETIDAKHADIRAN PER BULAN (JULI - DESEMBER) • ' + metaSekolah.namaKelas.toUpperCase(),
+                subtitle: 'Tren frekuensi Sakit, Izin, dan Alpa peserta didik per bulan selama satu semester',
+                badge: 'TREN KEHADIRAN',
+                badgeColor: '#0284c7',
+                badgeBg: '#f0f9ff',
+                badgeBorder: '#bae6fd',
+                chartHeight: 380,
+                extraHeight: 80
+            };
+        } else if (canvasId === 'chartKehadiranSiswa') {
+            config = {
+                title: 'GRAFIK PRESENSI SISWA (DIURUTKAN DARI ALPA TERBANYAK) • ' + metaSekolah.namaKelas.toUpperCase(),
+                subtitle: 'Rekapitulasi ketidakhadiran per siswa dengan prioritas monitoring siswa alpa tinggi',
+                badge: 'PRESENSI SISWA',
+                badgeColor: '#e11d48',
+                badgeBg: '#fff1f2',
+                badgeBorder: '#fecdd3',
+                chartHeight: Math.min(750, Math.max(340, canvas.height)),
+                extraHeight: 80
+            };
+        } else if (canvasId === 'chartPembiasaan' || canvasId === 'chartPembiasaanDonut') {
             config = {
                 title: 'GRAFIK CAPAIAN ASPEK KARAKTER & PEMBIASAAN • ' + metaSekolah.namaKelas.toUpperCase(),
                 subtitle: 'Distribusi capaian predikat pembiasaan per aspek dimensi profil pelajar khusus peserta didik ' + metaSekolah.namaKelas,
@@ -2610,6 +3427,12 @@
             drawExportMetricCard(ctx, PADDING + (cardW + 14) * 3, currY, cardW, cardH, 'Perlu Bimbingan', pem.totals.perlu_bimbingan + ' (' + pem.percentages.perlu_bimbingan + '%)', 'Perlu pendampingan wali/guru', '#dc2626', '#fef2f2', '#fecaca');
 
             currY += cardH + 24;
+        } else {
+            // Wadah default untuk chart lainnya (chartPerbandingan, chartKehadiranTren, chartKehadiranSiswa, chartPembiasaanDonut)
+            const contH = config.chartHeight + 40;
+            drawExportRoundedRect(ctx, PADDING, currY, CONTENT_WIDTH, contH, 16, '#f8fafc', '#e2e8f0', 1);
+            ctx.drawImage(canvas, PADDING + 20, currY + 20, CONTENT_WIDTH - 40, config.chartHeight);
+            currY += contH + 24;
         }
 
         // 4. Gambar Footer Resmi

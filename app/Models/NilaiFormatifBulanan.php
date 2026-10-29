@@ -18,6 +18,7 @@ class NilaiFormatifBulanan extends Model
         'tahun',
         'bulan',
         'nilai',
+        'nilai_praktik',
         'lingkup_materi',
         'catatan',
     ];
@@ -31,6 +32,7 @@ class NilaiFormatifBulanan extends Model
             'tahun' => 'integer',
             'bulan' => 'integer',
             'nilai' => 'float',
+            'nilai_praktik' => 'float',
         ];
     }
 

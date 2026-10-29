@@ -27,6 +27,10 @@ class Sekolah extends Model
         'bobot_formatif',
         'bobot_uts',
         'bobot_uas',
+        'hari_efektif_semester',
+        'persen_kehadiran_minimal',
+        'batas_alpa_maksimal',
+        'batas_izin_maksimal',
     ];
 
     protected function casts(): array
@@ -35,7 +39,31 @@ class Sekolah extends Model
             'bobot_formatif' => 'integer',
             'bobot_uts' => 'integer',
             'bobot_uas' => 'integer',
+            'hari_efektif_semester' => 'integer',
+            'persen_kehadiran_minimal' => 'integer',
+            'batas_alpa_maksimal' => 'integer',
+            'batas_izin_maksimal' => 'integer',
         ];
+    }
+
+    public function getHariEfektif(): int
+    {
+        return $this->hari_efektif_semester ? (int) $this->hari_efektif_semester : 108;
+    }
+
+    public function getPersenKehadiranMinimal(): int
+    {
+        return $this->persen_kehadiran_minimal ? (int) $this->persen_kehadiran_minimal : 75;
+    }
+
+    public function getBatasAlpaMaksimal(): int
+    {
+        return $this->batas_alpa_maksimal !== null ? (int) $this->batas_alpa_maksimal : 3;
+    }
+
+    public function getBatasIzinMaksimal(): int
+    {
+        return $this->batas_izin_maksimal !== null ? (int) $this->batas_izin_maksimal : 7;
     }
 
     public function getBobotFormatif(): int

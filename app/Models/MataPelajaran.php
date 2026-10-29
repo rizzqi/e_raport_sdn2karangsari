@@ -135,6 +135,39 @@ class MataPelajaran extends Model
         return strlen($nama) > 14 ? mb_substr($nama, 0, 12).'..' : $nama;
     }
 
+    /**
+     * Cek apakah mata pelajaran merupakan Pendidikan Agama (Islam / lainnya).
+     */
+    public function isAgama(): bool
+    {
+        return (bool) preg_match('/agama/i', $this->nama);
+    }
+
+    /**
+     * Cek apakah mata pelajaran merupakan PJOK (Pendidikan Jasmani, Olahraga, dan Kesehatan).
+     */
+    public function isPjok(): bool
+    {
+        return (bool) preg_match('/pjok|jasmani|olahraga/i', $this->nama);
+    }
+
+    /**
+     * Identifikasi jenis format penilaian harian/formatif:
+     * - 'agama': formatif harian bulanan + 2 praktikum (pra-UTS & pra-UAS)
+     * - 'pjok': formatif harian & praktikum setiap bulan
+     * - 'reguler': formatif harian satu nilai per bulan
+     */
+    public function getJenisFormatif(): string
+    {
+        if ($this->isAgama()) {
+            return 'agama';
+        }
+        if ($this->isPjok()) {
+            return 'pjok';
+        }
+        return 'reguler';
+    }
+
     public function nilai(): HasMany
     {
         return $this->hasMany(Nilai::class, 'mapel_id');

@@ -103,9 +103,14 @@
                         <span>Dashboard</span>
                     </a>
 
-                    <a href="{{ route('kelas.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('kelas.*') || request()->routeIs('nilai.*') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        <i class="fa-solid fa-chalkboard-user w-4 text-center {{ request()->routeIs('kelas.*') || request()->routeIs('nilai.*') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
+                    <a href="{{ route('kelas.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        <i class="fa-solid fa-chalkboard-user w-4 text-center {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
                         <span>Kelas & Nilai</span>
+                    </a>
+
+                    <a href="{{ route('absensi-harian.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        <i class="fa-solid fa-calendar-check w-4 text-center {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
+                        <span>Absensi Harian</span>
                     </a>
 
                     <a href="{{ route('siswa.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('siswa.*') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
@@ -229,8 +234,11 @@
             <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl transition {{ request()->routeIs('dashboard') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
                 <i class="fa-solid fa-house w-5 mr-2 text-emerald-400"></i> Dashboard
             </a>
-            <a href="{{ route('kelas.index') }}" class="block px-3 py-2 rounded-xl transition {{ request()->routeIs('kelas.*') || request()->routeIs('nilai.*') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
+            <a href="{{ route('kelas.index') }}" class="block px-3 py-2 rounded-xl transition {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
                 <i class="fa-solid fa-chalkboard-user w-5 mr-2 text-emerald-400"></i> Kelas & Nilai
+            </a>
+            <a href="{{ route('absensi-harian.index') }}" class="block px-3 py-2 rounded-xl transition {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
+                <i class="fa-solid fa-calendar-check w-5 mr-2 text-emerald-400"></i> Absensi Harian
             </a>
             <a href="{{ route('siswa.index') }}" class="block px-3 py-2 rounded-xl transition {{ request()->routeIs('siswa.*') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
                 <i class="fa-solid fa-user-graduate w-5 mr-2 text-emerald-400"></i> Data Siswa

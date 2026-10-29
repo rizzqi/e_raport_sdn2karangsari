@@ -20,6 +20,8 @@ class RekapController extends Controller
     {
         $periode = $request->input('periode', 'sts');
         $sortBy = $request->input('sort', 'ranking');
+        $jenisNilai = $request->input('jenis_nilai', 'rapor');
+        $bulan = $request->input('bulan');
         $kelas->load(['tahunAjaran', 'wali', 'sekolah', 'mapelKkm']);
 
         $rawTanggal = $request->input('tanggal') ?? $kelas->getTanggalRaport($periode);
@@ -43,7 +45,7 @@ class RekapController extends Controller
             return $k->tingkat ?? 999;
         })->values();
 
-        return view('rekap.index', compact('kelas', 'periode', 'sortBy', 'rekapData', 'tanggal', 'tanggalObj', 'kelasList'));
+        return view('rekap.index', compact('kelas', 'periode', 'sortBy', 'rekapData', 'tanggal', 'tanggalObj', 'kelasList', 'jenisNilai', 'bulan'));
     }
 
     /**

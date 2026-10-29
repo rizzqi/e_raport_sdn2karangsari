@@ -150,19 +150,59 @@
     <!-- ========================================================================================= -->
     @if($tab === 'formatif')
         <div class="space-y-4">
-            <!-- Petunjuk Ringkas & Tertata -->
-            <div class="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-blue-900">
-                <div class="flex items-start space-x-3">
-                    <i class="fa-solid fa-circle-info text-blue-600 text-base mt-0.5 shrink-0"></i>
-                    <div>
-                        <p class="font-bold text-sm text-blue-950">Lembar 1: Nilai Formatif Bulanan — {{ $mapel->nama }}</p>
-                        <p class="text-blue-800 mt-0.5">
-                            Isikan nilai ulangan sebulan sekali. <strong>Rata-rata formatif dihitung otomatis dari bulan yang sudah terisi</strong> (bulan kosong tidak ikut dihitung).
-                            Untuk mencetak, gunakan tombol <strong>"Cetak Siswa"</strong> di setiap baris siswa (1 siswa 1 lembar F4).
-                        </p>
+            <!-- Petunjuk Sesuai Karakteristik Mata Pelajaran -->
+            @if($isAgama)
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-emerald-950">
+                    <div class="flex items-start space-x-3">
+                        <i class="fa-solid fa-mosque text-emerald-600 text-lg mt-0.5 shrink-0"></i>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="font-bold text-sm text-emerald-950">Lembar 1: Nilai Formatif & Praktikum — {{ $mapel->nama }}</p>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-200 text-emerald-900">Format Khusus Pendidikan Agama</span>
+                            </div>
+                            <p class="text-emerald-800 mt-1">
+                                Formatif harian tetap diisi per bulan (<strong>JUL – DES</strong>), ditambah <strong>2 kali praktikum</strong>:
+                                <span class="font-bold text-emerald-900 bg-emerald-100/90 border border-emerald-300 px-1.5 py-0.5 rounded">Praktik 1 (Pra-UTS)</span> dan
+                                <span class="font-bold text-teal-900 bg-teal-100/90 border border-teal-300 px-1.5 py-0.5 rounded">Praktik 2 (Pra-UAS)</span>.
+                                Rata-rata formatif dihitung otomatis dari seluruh ulangan harian dan praktikum yang terisi.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            @elseif($isPjok)
+                <div class="bg-cyan-50 border border-cyan-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-cyan-950">
+                    <div class="flex items-start space-x-3">
+                        <i class="fa-solid fa-person-running text-cyan-600 text-lg mt-0.5 shrink-0"></i>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="font-bold text-sm text-cyan-950">Lembar 1: Nilai Formatif & Praktik Jasmani — {{ $mapel->nama }}</p>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-cyan-200 text-cyan-900">Format Khusus PJOK</span>
+                            </div>
+                            <p class="text-cyan-800 mt-1">
+                                Setiap bulan (<strong>JUL – DES</strong>) memuat <strong>dua nilai</strong>:
+                                <span class="font-bold text-blue-900 bg-blue-100/80 border border-blue-200 px-1.5 py-0.5 rounded">Fmt (Formatif Teori)</span> dan
+                                <span class="font-bold text-emerald-900 bg-emerald-100/80 border border-emerald-200 px-1.5 py-0.5 rounded">Prak (Praktikum Jasmani)</span>.
+                                Rata-rata akhir dihitung otomatis dari seluruh nilai teori dan uji gerak yang terisi.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-blue-900">
+                    <div class="flex items-start space-x-3">
+                        <i class="fa-solid fa-circle-info text-blue-600 text-base mt-0.5 shrink-0"></i>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="font-bold text-sm text-blue-950">Lembar 1: Nilai Formatif Bulanan — {{ $mapel->nama }}</p>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">Mapel Reguler (1 Nilai/Bulan)</span>
+                            </div>
+                            <p class="text-blue-800 mt-1">
+                                Isikan nilai ulangan sebulan sekali (<strong>JUL – DES</strong>). Rata-rata formatif dihitung otomatis dari bulan yang sudah terisi.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <!-- Formulir Nilai Formatif Bulanan -->
             <form action="{{ route('kelas.mapel.nilai.formatif', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="POST">
@@ -174,21 +214,78 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs border-collapse">
                             <thead>
-                                <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
-                                    <th class="py-3.5 px-3 w-10 text-center border-r border-slate-200">No</th>
-                                    <th class="py-3.5 px-4 min-w-[200px] border-r border-slate-200">Nama Peserta Didik</th>
-                                    @foreach($bulanSemester as $bNum => $bNama)
-                                        <th class="py-3.5 px-2 text-center border-r border-slate-200 w-16">
-                                            {{ substr($bNama, 0, 3) }}
+                                @if($isPjok)
+                                    <!-- Header Bertingkat untuk PJOK: 2 Nilai Per Bulan -->
+                                    <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+                                        <th rowspan="2" class="py-3 px-3 w-10 text-center border-r border-slate-200">No</th>
+                                        <th rowspan="2" class="py-3 px-4 min-w-[190px] border-r border-slate-200">Nama Peserta Didik</th>
+                                        @foreach($bulanSemester as $bNum => $bNama)
+                                            <th colspan="2" class="py-2 px-1 text-center border-r border-slate-200 bg-cyan-50/70 text-cyan-950 font-black">
+                                                {{ substr($bNama, 0, 3) }}
+                                            </th>
+                                        @endforeach
+                                        <th rowspan="2" class="py-3.5 px-3 text-center border-r border-emerald-200 bg-emerald-50 text-emerald-950 font-black w-24">
+                                            Rata-rata
                                         </th>
-                                    @endforeach
-                                    <th class="py-3.5 px-3 text-center border-r border-emerald-200 bg-emerald-50 text-emerald-950 font-black w-24">
-                                        Rata-rata
-                                    </th>
-                                    <th class="py-3.5 px-4 text-center w-56 bg-rose-50 text-rose-900 font-black">
-                                        Cetak Dokumen F4
-                                    </th>
-                                </tr>
+                                        <th rowspan="2" class="py-3.5 px-4 text-center w-52 bg-rose-50 text-rose-900 font-black">
+                                            Cetak Dokumen F4
+                                        </th>
+                                    </tr>
+                                    <tr class="bg-slate-100 text-[10px] font-extrabold uppercase text-slate-600 border-b border-slate-200">
+                                        @foreach($bulanSemester as $bNum => $bNama)
+                                            <th class="py-1 px-1 text-center border-r border-slate-200 bg-blue-50/50 text-blue-900" title="Formatif Teori {{ $bNama }}">Fmt</th>
+                                            <th class="py-1 px-1 text-center border-r border-slate-200 bg-emerald-50/60 text-emerald-900" title="Praktikum Jasmani {{ $bNama }}">Prak</th>
+                                        @endforeach
+                                    </tr>
+                                @elseif($isAgama)
+                                    <!-- Header untuk Agama: 6 Bulan + 2 Praktikum (Pra-UTS & Pra-UAS) -->
+                                    <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+                                        <th class="py-3.5 px-3 w-10 text-center border-r border-slate-200">No</th>
+                                        <th class="py-3.5 px-4 min-w-[190px] border-r border-slate-200">Nama Peserta Didik</th>
+                                        @php $bCount = 0; @endphp
+                                        @foreach($bulanSemester as $bNum => $bNama)
+                                            @php $bCount++; @endphp
+                                            <th class="py-3.5 px-2 text-center border-r border-slate-200 w-14">
+                                                {{ substr($bNama, 0, 3) }}
+                                            </th>
+                                            @if($bCount === 3)
+                                                <th class="py-3.5 px-2 text-center border-r border-emerald-300 bg-emerald-100/70 text-emerald-950 font-black w-20"
+                                                    title="Praktik 1 (Dilaksanakan sebelum UTS)">
+                                                    Prak 1<br><span class="text-[9px] font-bold text-emerald-800">(Pra-UTS)</span>
+                                                </th>
+                                            @endif
+                                            @if($bCount === count($bulanSemester))
+                                                <th class="py-3.5 px-2 text-center border-r border-teal-300 bg-teal-100/70 text-teal-950 font-black w-20"
+                                                    title="Praktik 2 (Dilaksanakan sebelum Ujian Akhir)">
+                                                    Prak 2<br><span class="text-[9px] font-bold text-teal-800">(Pra-UAS)</span>
+                                                </th>
+                                            @endif
+                                        @endforeach
+                                        <th class="py-3.5 px-3 text-center border-r border-emerald-200 bg-emerald-50 text-emerald-950 font-black w-24">
+                                            Rata-rata
+                                        </th>
+                                        <th class="py-3.5 px-4 text-center w-52 bg-rose-50 text-rose-900 font-black">
+                                            Cetak Dokumen F4
+                                        </th>
+                                    </tr>
+                                @else
+                                    <!-- Header untuk Mapel Biasa / Reguler: 1 Nilai Per Bulan -->
+                                    <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
+                                        <th class="py-3.5 px-3 w-10 text-center border-r border-slate-200">No</th>
+                                        <th class="py-3.5 px-4 min-w-[200px] border-r border-slate-200">Nama Peserta Didik</th>
+                                        @foreach($bulanSemester as $bNum => $bNama)
+                                            <th class="py-3.5 px-2 text-center border-r border-slate-200 w-16">
+                                                {{ substr($bNama, 0, 3) }}
+                                            </th>
+                                        @endforeach
+                                        <th class="py-3.5 px-3 text-center border-r border-emerald-200 bg-emerald-50 text-emerald-950 font-black w-24">
+                                            Rata-rata
+                                        </th>
+                                        <th class="py-3.5 px-4 text-center w-52 bg-rose-50 text-rose-900 font-black">
+                                            Cetak Dokumen F4
+                                        </th>
+                                    </tr>
+                                @endif
                             </thead>
                             <tbody class="divide-y divide-slate-100 font-medium">
                                 @forelse($kelasSiswaList as $idx => $ks)
@@ -203,23 +300,99 @@
                                             <div class="font-bold text-slate-900">{{ $ks->siswa->nama }}</div>
                                             <div class="text-[10px] text-slate-400 font-mono">NIS: {{ $ks->siswa->nis }} &bull; {{ $ks->siswa->nisn ?? '-' }}</div>
                                         </td>
-                                        @foreach($bulanSemester as $bNum => $bNama)
-                                            @php
-                                                $val = $d['bulanNilai'][$bNum] ?? '';
-                                            @endphp
-                                            <td class="py-2.5 px-1.5 text-center border-r border-slate-200">
-                                                <input type="number"
-                                                       step="0.1"
-                                                       min="0"
-                                                       max="100"
-                                                       name="formatif[{{ $ks->id }}][{{ $bNum }}]"
-                                                       value="{{ old('formatif.' . $ks->id . '.' . $bNum, $val) }}"
-                                                       placeholder="-"
-                                                       data-siswa-id="{{ $ks->id }}"
-                                                       {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
-                                                       class="input-formatif-bulan w-14 text-center font-mono font-bold text-xs py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
-                                            </td>
-                                        @endforeach
+
+                                        @if($isPjok)
+                                            <!-- PJOK: Formatif Teori & Praktikum per bulan -->
+                                            @foreach($bulanSemester as $bNum => $bNama)
+                                                @php
+                                                    $valFmt = $d['bulanNilai'][$bNum] ?? '';
+                                                    $valPrak = $d['bulanPraktik'][$bNum] ?? '';
+                                                @endphp
+                                                <td class="py-2.5 px-1 text-center border-r border-slate-200 bg-blue-50/20">
+                                                    <input type="number" step="0.1" min="0" max="100"
+                                                           name="formatif[{{ $ks->id }}][{{ $bNum }}]"
+                                                           value="{{ old('formatif.' . $ks->id . '.' . $bNum, $valFmt) }}"
+                                                           placeholder="-"
+                                                           title="Formatif Teori {{ $bNama }} - {{ $ks->siswa->nama }}"
+                                                           data-siswa-id="{{ $ks->id }}"
+                                                           {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
+                                                           class="input-formatif-bulan w-12 text-center font-mono font-bold text-xs py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                                                </td>
+                                                <td class="py-2.5 px-1 text-center border-r border-slate-200 bg-emerald-50/30">
+                                                    <input type="number" step="0.1" min="0" max="100"
+                                                           name="praktik[{{ $ks->id }}][{{ $bNum }}]"
+                                                           value="{{ old('praktik.' . $ks->id . '.' . $bNum, $valPrak) }}"
+                                                           placeholder="-"
+                                                           title="Praktik Jasmani {{ $bNama }} - {{ $ks->siswa->nama }}"
+                                                           data-siswa-id="{{ $ks->id }}"
+                                                           {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
+                                                           class="input-formatif-bulan w-12 text-center font-mono font-bold text-xs py-1.5 border border-emerald-300 bg-emerald-50/40 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
+                                                </td>
+                                            @endforeach
+
+                                        @elseif($isAgama)
+                                            <!-- Agama: 6 Bulan + 2 Praktikum (Pra-UTS & Pra-UAS) -->
+                                            @php $bCount = 0; @endphp
+                                            @foreach($bulanSemester as $bNum => $bNama)
+                                                @php
+                                                    $bCount++;
+                                                    $val = $d['bulanNilai'][$bNum] ?? '';
+                                                @endphp
+                                                <td class="py-2.5 px-1 text-center border-r border-slate-200">
+                                                    <input type="number" step="0.1" min="0" max="100"
+                                                           name="formatif[{{ $ks->id }}][{{ $bNum }}]"
+                                                           value="{{ old('formatif.' . $ks->id . '.' . $bNum, $val) }}"
+                                                           placeholder="-"
+                                                           title="Formatif {{ $bNama }} - {{ $ks->siswa->nama }}"
+                                                           data-siswa-id="{{ $ks->id }}"
+                                                           {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
+                                                           class="input-formatif-bulan w-14 text-center font-mono font-bold text-xs py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                                                </td>
+                                                @if($bCount === 3)
+                                                    <td class="py-2.5 px-1.5 text-center border-r border-emerald-300 bg-emerald-50/60">
+                                                        <input type="number" step="0.1" min="0" max="100"
+                                                               name="praktik_1[{{ $ks->id }}]"
+                                                               value="{{ old('praktik_1.' . $ks->id, $d['praktik_1'] ?? '') }}"
+                                                               placeholder="-"
+                                                               title="Praktik 1 (Pra-UTS) - {{ $ks->siswa->nama }}"
+                                                               data-siswa-id="{{ $ks->id }}"
+                                                               {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
+                                                               class="input-formatif-bulan w-14 text-center font-mono font-bold text-xs py-1.5 border border-emerald-400 bg-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
+                                                    </td>
+                                                @endif
+                                                @if($bCount === count($bulanSemester))
+                                                    <td class="py-2.5 px-1.5 text-center border-r border-teal-300 bg-teal-50/60">
+                                                        <input type="number" step="0.1" min="0" max="100"
+                                                               name="praktik_2[{{ $ks->id }}]"
+                                                               value="{{ old('praktik_2.' . $ks->id, $d['praktik_2'] ?? '') }}"
+                                                               placeholder="-"
+                                                               title="Praktik 2 (Pra-UAS) - {{ $ks->siswa->nama }}"
+                                                               data-siswa-id="{{ $ks->id }}"
+                                                               {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
+                                                               class="input-formatif-bulan w-14 text-center font-mono font-bold text-xs py-1.5 border border-teal-400 bg-white rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none transition">
+                                                    </td>
+                                                @endif
+                                            @endforeach
+
+                                        @else
+                                            <!-- Mapel Reguler: 1 Nilai Per Bulan -->
+                                            @foreach($bulanSemester as $bNum => $bNama)
+                                                @php
+                                                    $val = $d['bulanNilai'][$bNum] ?? '';
+                                                @endphp
+                                                <td class="py-2.5 px-1.5 text-center border-r border-slate-200">
+                                                    <input type="number" step="0.1" min="0" max="100"
+                                                           name="formatif[{{ $ks->id }}][{{ $bNum }}]"
+                                                           value="{{ old('formatif.' . $ks->id . '.' . $bNum, $val) }}"
+                                                           placeholder="-"
+                                                           title="Formatif {{ $bNama }} - {{ $ks->siswa->nama }}"
+                                                           data-siswa-id="{{ $ks->id }}"
+                                                           {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
+                                                           class="input-formatif-bulan w-14 text-center font-mono font-bold text-xs py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                                                </td>
+                                            @endforeach
+                                        @endif
+
                                         <td class="py-3 px-3 text-center font-mono font-black text-sm bg-emerald-50/50 text-emerald-800 border-r border-emerald-200" id="rata_formatif_{{ $ks->id }}">
                                             {{ ($d['rataFormatif'] ?? null) !== null ? $d['rataFormatif'] : '-' }}
                                         </td>
@@ -240,8 +413,11 @@
                                         </td>
                                     </tr>
                                 @empty
+                                    @php
+                                        $emptyColspan = $isPjok ? ((count($bulanSemester) * 2) + 4) : ($isAgama ? (count($bulanSemester) + 6) : (count($bulanSemester) + 4));
+                                    @endphp
                                     <tr>
-                                        <td colspan="{{ count($bulanSemester) + 4 }}" class="py-12 text-center text-slate-400">
+                                        <td colspan="{{ $emptyColspan }}" class="py-12 text-center text-slate-400">
                                             Belum ada data siswa di kelas ini.
                                         </td>
                                     </tr>
@@ -1092,7 +1268,7 @@
             let count = 0;
 
             rowInputs.forEach(inp => {
-                const val = inp.value.trim();
+                const val = inp.value.trim().replace(',', '.');
                 if (val !== '' && !isNaN(val)) {
                     total += parseFloat(val);
                     count++;

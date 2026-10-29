@@ -58,6 +58,11 @@ class KelasSiswa extends Model
         return $this->hasMany(NilaiRaporMapel::class);
     }
 
+    public function absensiHarian(): HasMany
+    {
+        return $this->hasMany(AbsensiHarian::class, 'kelas_siswa_id');
+    }
+
     public function raport(): HasMany
     {
         return $this->hasMany(Raport::class);

@@ -18,6 +18,9 @@ class NilaiRaporMapel extends Model
         'tahun',
         'semester',
         'rata_formatif',
+        'praktik_1',
+        'praktik_2',
+        'rata_praktik',
         'nilai_uts',
         'nilai_uas',
         'nilai_rapor',
@@ -32,6 +35,9 @@ class NilaiRaporMapel extends Model
     {
         return [
             'rata_formatif' => 'float',
+            'praktik_1' => 'float',
+            'praktik_2' => 'float',
+            'rata_praktik' => 'float',
             'nilai_uts' => 'float',
             'nilai_uas' => 'float',
             'nilai_rapor' => 'float',

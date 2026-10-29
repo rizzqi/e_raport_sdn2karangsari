@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AbsensiBulananController;
+use App\Http\Controllers\AbsensiHarianController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KelasController;
@@ -31,6 +32,7 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/absensi-harian', [AbsensiHarianController::class, 'index'])->name('absensi-harian.index');
 
     // Modul Rekap, Unduh Raport Kelas, Daftar Hadir Ujian, & Absensi Bulanan
     Route::prefix('kelas/{kelas}')->group(function () {
@@ -84,6 +86,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/sia-pembiasaan/template', [NilaiController::class, 'downloadTemplateSiaPembiasaan'])->name('kelas.sia-pembiasaan.template');
         Route::post('/sia-pembiasaan/import', [NilaiController::class, 'importSiaPembiasaan'])->name('kelas.sia-pembiasaan.import');
         Route::post('/sia-pembiasaan/tarik-absensi', [NilaiController::class, 'tarikDariAbsensiBulanan'])->name('kelas.sia-pembiasaan.tarik-absensi');
+
+        // Modul Absensi Harian (Wali Kelas, Guru Agama, Guru PJOK)
+        Route::get('/absensi-harian', [AbsensiHarianController::class, 'kelas'])->name('kelas.absensi-harian.index');
+        Route::post('/absensi-harian', [AbsensiHarianController::class, 'simpan'])->name('kelas.absensi-harian.simpan');
+        Route::post('/absensi-harian/sync-bulanan', [AbsensiHarianController::class, 'syncKehadiranBulanan'])->name('kelas.absensi-harian.sync-bulanan');
+        Route::get('/absensi-harian/cetak', [AbsensiHarianController::class, 'cetak'])->name('kelas.absensi-harian.cetak');
 
         // Modul Nilai Formatif Bulanan (Format Rapor UTS)
         Route::get('/nilai-formatif-bulanan', [NilaiFormatifBulananController::class, 'index'])->name('kelas.nilai-formatif.index');

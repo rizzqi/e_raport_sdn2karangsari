@@ -408,6 +408,80 @@
                 </div>
             </div>
 
+            <!-- 4. Pengaturan Standar Hari Efektif & Ambang Batas Kehadiran (SIA) -->
+            <div class="space-y-4 pt-4 border-t border-slate-100">
+                <div class="flex items-center space-x-2">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Standar Hari Efektif & Ambang Batas Kehadiran (SIA)</h3>
+                        <p class="text-[11px] text-slate-400">Menghubungkan SIA ke syarat kelayakan kenaikan kelas dan predikat karakter (Nilai akademik murni tidak dipotong)</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Hari Efektif Semester *
+                        </label>
+                        <div class="relative">
+                            <input type="number" min="30" max="200" name="hari_efektif_semester" id="hari_efektif_semester"
+                                value="{{ old('hari_efektif_semester', $sekolah->hari_efektif_semester ?? 108) }}" required
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-emerald-500">
+                            <span class="absolute right-3 top-2 text-xs font-bold text-slate-400">Hari</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Rata-rata 1 semester: 100 - 115 hari</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Minimal Hadir Kenaikan (%) *
+                        </label>
+                        <div class="relative">
+                            <input type="number" min="50" max="100" name="persen_kehadiran_minimal" id="persen_kehadiran_minimal"
+                                value="{{ old('persen_kehadiran_minimal', $sekolah->persen_kehadiran_minimal ?? 75) }}" required
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-emerald-500">
+                            <span class="absolute right-3 top-2 text-xs font-bold text-slate-400">%</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Standar sekolah: 75% kehadiran aktif</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Batas Toleransi Alpa *
+                        </label>
+                        <div class="relative">
+                            <input type="number" min="0" max="30" name="batas_alpa_maksimal" id="batas_alpa_maksimal"
+                                value="{{ old('batas_alpa_maksimal', $sekolah->batas_alpa_maksimal ?? 3) }}" required
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-emerald-500">
+                            <span class="absolute right-3 top-2 text-xs font-bold text-slate-400">Hari</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Maksimal tanpa keterangan sebelum peringatan</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Batas Wajar Izin *
+                        </label>
+                        <div class="relative">
+                            <input type="number" min="0" max="30" name="batas_izin_maksimal" id="batas_izin_maksimal"
+                                value="{{ old('batas_izin_maksimal', $sekolah->batas_izin_maksimal ?? 7) }}" required
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-emerald-500">
+                            <span class="absolute right-3 top-2 text-xs font-bold text-slate-400">Hari</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Sakit (dengan surat) tidak dibatasi</span>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-emerald-50/60 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-start space-x-2">
+                    <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5 shrink-0"></i>
+                    <div>
+                        <strong>Prinsip Penilaian Terpadu:</strong> Data absensi (SIA) akan otomatis memengaruhi usulan predikat karakter <em>Kemandirian/Disiplin</em> dan memicu indikator kelayakan kenaikan kelas pada pratinjau rapor, sedangkan nilai mata pelajaran akademik tetap 100% murni mengukur capaian kompetensi siswa.
+                    </div>
+                </div>
+            </div>
+
             <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <div class="text-xs text-slate-500 flex items-center">
                     <i class="fa-solid fa-circle-info text-blue-500 mr-1.5"></i>

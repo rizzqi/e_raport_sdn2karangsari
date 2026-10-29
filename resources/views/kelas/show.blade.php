@@ -70,6 +70,14 @@
                 <span>Input Nilai</span>
             </a>
 
+            <!-- Tombol Absensi Harian (Wali, Agama, PJOK) -->
+            <a href="{{ route('kelas.absensi-harian.index', $kelas->id) }}"
+               class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-sm flex items-center gap-1.5"
+               title="Absensi Harian Rombel (Wali Kelas, Guru Agama, Guru PJOK)">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span>Absensi Harian</span>
+            </a>
+
             <!-- Tombol Cetak Rekap Semester Otomatis -->
             <button type="button" onclick="document.getElementById('modalCetakRekapSemester').classList.remove('hidden')"
                class="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm flex items-center gap-1.5 cursor-pointer"
@@ -160,6 +168,10 @@
                                 <i class="fa-solid fa-pen-to-square w-5 text-emerald-600 mr-2 text-center"></i> Matriks Nilai Cepat
                             </a>
                         @endif
+                        <a href="{{ route('kelas.absensi-harian.index', $kelas->id) }}"
+                           class="flex items-center px-4 py-2 text-amber-700 hover:bg-amber-50 font-bold">
+                            <i class="fa-solid fa-calendar-check w-5 text-amber-600 mr-2 text-center"></i> Absensi Harian (Wali, Agama, PJOK)
+                        </a>
                         <a href="{{ route('kelas.absensi.index', $kelas->id) }}"
                            class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
                             <i class="fa-regular fa-calendar-check w-5 text-slate-500 mr-2 text-center"></i> Absensi Bulanan

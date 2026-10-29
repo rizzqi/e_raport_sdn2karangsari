@@ -180,7 +180,7 @@ class RaportDocxService
         $section->addTextBreak(1);
 
         // 2. JUDUL LAPORAN
-        $namaPeriode = $periode === 'sts' ? 'SUMATIF TENGAH SEMESTER (STS)' : 'SUMATIF AKHIR SEMESTER (SAS)';
+        $namaPeriode = 'KURIKULUM MERDEKA • ' . ($periode === 'sts' ? 'SUMATIF TENGAH SEMESTER (STS)' : 'SUMATIF AKHIR SEMESTER (SAS)');
         $section->addText('LAPORAN HASIL BELAJAR PESERTA DIDIK', 'judulRaport', ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
         $section->addText($namaPeriode, 'boldText', ['alignment' => Jc::CENTER, 'spaceAfter' => 100]);
 
@@ -210,38 +210,32 @@ class RaportDocxService
         ];
         $nilaiTable = $section->addTable($tableStyle);
 
-        // Header Tabel Nilai
+        // Header Tabel Nilai (Kurikulum Merdeka)
         $rowH = $nilaiTable->addRow(350);
         $rowH->addCell(500, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('No', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(2700, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Mata Pelajaran', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(800, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('KKM', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(1100, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Nilai Rapor', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(900, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Predikat', 'tableHeader', ['alignment' => Jc::CENTER]);
-        $rowH->addCell(3200, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Capaian Kompetensi', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(2700, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Muatan Pelajaran', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(1200, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Nilai Akhir', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $rowH->addCell(4800, ['bgColor' => 'EAEAEA', 'valign' => VerticalJc::CENTER])->addText('Capaian Kompetensi', 'tableHeader', ['alignment' => Jc::CENTER]);
 
         // Isi Tabel Nilai
         foreach ($hasilNilai['baris'] as $b) {
             $rowB = $nilaiTable->addRow(300);
             $rowB->addCell(500)->addText($b['no'], 'tableBody', ['alignment' => Jc::CENTER]);
             $rowB->addCell(2700)->addText($b['mapel_nama'], 'boldText');
-            $rowB->addCell(800)->addText((string) $b['kkm'], 'tableBody', ['alignment' => Jc::CENTER]);
-            $rowB->addCell(1100)->addText($b['nilai_rapor_format'], 'boldText', ['alignment' => Jc::CENTER]);
-            $rowB->addCell(900)->addText($b['predikat'], 'boldText', ['alignment' => Jc::CENTER]);
-            $rowB->addCell(3200)->addText($b['capaian_kompetensi'] ?? '-', 'tableBody');
+            $rowB->addCell(1200)->addText($b['nilai_rapor_format'], 'boldText', ['alignment' => Jc::CENTER]);
+            $rowB->addCell(4800)->addText($b['capaian_kompetensi'] ?? '-', 'tableBody');
         }
 
         // Baris Jumlah & Rata-rata
         $rowJumlah = $nilaiTable->addRow(300);
-        $rowJumlah->addCell(4000, ['gridSpan' => 3, 'bgColor' => 'F2F2F2'])->addText('Jumlah Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
-        $rowJumlah->addCell(1100, ['bgColor' => 'F2F2F2'])->addText(HitungNilaiService::formatAngka($hasilNilai['total_akhir']), 'boldText', ['alignment' => Jc::CENTER]);
-        $rowJumlah->addCell(900, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['predikat_rata'] ?? '-', 'boldText', ['alignment' => Jc::CENTER]);
-        $rowJumlah->addCell(3200, ['bgColor' => 'F2F2F2'])->addText("Total {$hasilNilai['total_mapel']} mata pelajaran", 'tableBody');
+        $rowJumlah->addCell(3200, ['gridSpan' => 2, 'bgColor' => 'F2F2F2'])->addText('Jumlah Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
+        $rowJumlah->addCell(1200, ['bgColor' => 'F2F2F2'])->addText(HitungNilaiService::formatAngka($hasilNilai['total_akhir']), 'boldText', ['alignment' => Jc::CENTER]);
+        $rowJumlah->addCell(4800, ['bgColor' => 'F2F2F2'])->addText("Total nilai dari {$hasilNilai['total_mapel']} muatan pelajaran", 'tableBody');
 
         $rowRata = $nilaiTable->addRow(300);
-        $rowRata->addCell(4000, ['gridSpan' => 3, 'bgColor' => 'F2F2F2'])->addText('Rata-rata Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
-        $rowRata->addCell(1100, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['rata_akhir_format'], 'boldText', ['alignment' => Jc::CENTER]);
-        $rowRata->addCell(900, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['predikat_rata'] ?? '-', 'boldText', ['alignment' => Jc::CENTER]);
-        $rowRata->addCell(3200, ['bgColor' => 'F2F2F2'])->addText("Predikat Rata-rata: " . ($hasilNilai['predikat_rata'] ?? '-'), 'tableBody');
+        $rowRata->addCell(3200, ['gridSpan' => 2, 'bgColor' => 'F2F2F2'])->addText('Rata-rata Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
+        $rowRata->addCell(1200, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['rata_akhir_format'], 'boldText', ['alignment' => Jc::CENTER]);
+        $rowRata->addCell(4800, ['bgColor' => 'F2F2F2'])->addText("Predikat Rata-rata: " . ($hasilNilai['predikat_rata'] ?? '-'), 'tableBody');
 
         $section->addTextBreak(1);
 
@@ -267,17 +261,26 @@ class RaportDocxService
         $izin = $kehadiran ? $kehadiran->izin : 0;
         $alpa = $kehadiran ? $kehadiran->alpa : 0;
 
+        $khInfo = $hasilNilai['kehadiran_info'] ?? [];
         $kehadiranLines = [
-            "Sakit  : {$sakit} hari",
-            "Izin    : {$izin} hari",
-            "Alpa   : {$alpa} hari",
+            'Hari Efektif: '.($khInfo['hari_efektif'] ?? 108).' hari',
+            'Kehadiran: '.($khInfo['hari_hadir'] ?? 108).' hari ('.($khInfo['persen_kehadiran_format'] ?? '100%').')',
+            "Sakit (S): {$sakit} hari",
+            "Izin (I): {$izin} hari",
+            "Alpa (A): {$alpa} hari",
+            'Status: '.($khInfo['status_kelayakan'] ?? 'Memenuhi Syarat'),
         ];
 
         foreach ($pembiasaanList as $pIdx => $pem) {
             $rowPem = $bottomTable->addRow(280);
-            $rowPem->addCell(5600)->addText(($pIdx + 1).'. '.$pem->nama, 'tableBody');
             $val = $nilaiPemList->get($pem->id);
             $pred = $val ? $val->predikat : 'Baik';
+            $deskripsiPem = HitungNilaiService::generateDeskripsiPembiasaan($pem->nama, $pred, (int) $alpa);
+
+            $cellPem = $rowPem->addCell(5600);
+            $cellPem->addText(($pIdx + 1).'. '.$pem->nama, 'boldText');
+            $cellPem->addText($deskripsiPem, 'smallText', ['color' => '555555']);
+
             $rowPem->addCell(1600)->addText($pred, 'tableBody', ['alignment' => Jc::CENTER]);
 
             if ($pIdx === 0) {
@@ -290,6 +293,15 @@ class RaportDocxService
                 $rowPem->addCell(1800, ['vMerge' => 'continue']);
             }
         }
+
+        $section->addTextBreak(1);
+
+        // CATATAN WALI KELAS
+        $section->addText('CATATAN WALI KELAS', 'boldText', ['spaceAfter' => 50]);
+        $catatanTable = $section->addTable($tableStyle);
+        $catatanRow = $catatanTable->addRow();
+        $catatanText = $hasilNilai['catatan_wali_otomatis'] ?? 'Peserta didik menunjukkan perkembangan yang baik dan terus didorong untuk berprestasi.';
+        $catatanRow->addCell(9000)->addText($catatanText, 'tableBody');
 
         $section->addTextBreak(1);
 
