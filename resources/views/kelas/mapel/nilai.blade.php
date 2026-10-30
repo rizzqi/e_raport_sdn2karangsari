@@ -111,32 +111,32 @@
         @endif
     </div>
 
-    <!-- 2. NAVIGASI 4 LEMBAR (TABS MODERN) -->
-    <div class="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm flex flex-wrap items-center gap-1.5 text-xs font-bold">
+    <!-- 2. NAVIGASI 4 LEMBAR (TABS MODERN - Geser Samping di HP) -->
+    <div class="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm flex overflow-x-auto pb-2 md:pb-2 md:flex-wrap items-center gap-1.5 text-xs font-bold scrollbar-thin">
         <!-- Lembar 1: Formatif -->
         <a href="{{ route('kelas.input-nilai', ['kelas' => $kelas->id, 'mapel_id' => $mapel->id ?? null, 'tab' => 'formatif', 'tahun' => $tahun]) }}"
-           class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 {{ $tab === 'formatif' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+           class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 shrink-0 {{ $tab === 'formatif' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
             <span class="w-5 h-5 rounded-full {{ $tab === 'formatif' ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-200 text-slate-700 font-bold' }} flex items-center justify-center text-[10px]">1</span>
             <span>Formatif (Ulangan Bulanan)</span>
         </a>
 
         <!-- Lembar 2: UTS -->
         <a href="{{ route('kelas.input-nilai', ['kelas' => $kelas->id, 'mapel_id' => $mapel->id ?? null, 'tab' => 'uts', 'tahun' => $tahun]) }}"
-           class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 {{ $tab === 'uts' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+           class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 shrink-0 {{ $tab === 'uts' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
             <span class="w-5 h-5 rounded-full {{ $tab === 'uts' ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-200 text-slate-700 font-bold' }} flex items-center justify-center text-[10px]">2</span>
             <span>UTS (Tengah Semester)</span>
         </a>
 
         <!-- Lembar 3: Semester (UAS) -->
         <a href="{{ route('kelas.input-nilai', ['kelas' => $kelas->id, 'mapel_id' => $mapel->id ?? null, 'tab' => 'uas', 'tahun' => $tahun]) }}"
-           class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 {{ $tab === 'uas' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+           class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 shrink-0 {{ $tab === 'uas' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
             <span class="w-5 h-5 rounded-full {{ $tab === 'uas' ? 'bg-amber-400 text-slate-950 font-black' : 'bg-slate-200 text-slate-700 font-bold' }} flex items-center justify-center text-[10px]">3</span>
             <span>Semester (UAS / SAS)</span>
         </a>
 
         <!-- Lembar 4: Nilai Rapor (Otomatis Semua Mapel) -->
         <a href="{{ route('kelas.input-nilai', ['kelas' => $kelas->id, 'tab' => 'rapor', 'tahun' => $tahun]) }}"
-           class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 {{ $tab === 'rapor' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-700 hover:text-indigo-900 hover:bg-indigo-50' }}">
+           class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 shrink-0 {{ $tab === 'rapor' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-700 hover:text-indigo-900 hover:bg-indigo-50' }}">
             <span class="w-5 h-5 rounded-full {{ $tab === 'rapor' ? 'bg-amber-400 text-slate-950 font-black' : 'bg-indigo-100 text-indigo-700 font-bold' }} flex items-center justify-center text-[10px]">4</span>
             <span>Nilai Rapor (Semua Mapel Otomatis)</span>
             <span class="text-[9px] px-1.5 py-0.5 rounded-md uppercase font-black {{ $tab === 'rapor' ? 'bg-indigo-700 text-white' : 'bg-indigo-100 text-indigo-800' }}">
@@ -168,6 +168,12 @@
                             </p>
                         </div>
                     </div>
+                    <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
+                       class="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+                       title="Buka rincian penilaian harian per bulan untuk {{ $mapel->nama }}">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>Rincian Nilai Harian</span>
+                    </a>
                 </div>
             @elseif($isPjok)
                 <div class="bg-cyan-50 border border-cyan-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-cyan-950">
@@ -186,6 +192,12 @@
                             </p>
                         </div>
                     </div>
+                    <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
+                       class="px-3.5 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+                       title="Buka rincian penilaian harian per bulan untuk {{ $mapel->nama }}">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>Rincian Nilai Harian</span>
+                    </a>
                 </div>
             @else
                 <div class="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-blue-900">
@@ -201,6 +213,12 @@
                             </p>
                         </div>
                     </div>
+                    <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
+                       class="px-3.5 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+                       title="Buka rincian penilaian harian per bulan untuk {{ $mapel->nama }}">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>Rincian Nilai Harian</span>
+                    </a>
                 </div>
             @endif
 
@@ -218,10 +236,21 @@
                                     <!-- Header Bertingkat untuk PJOK: 2 Nilai Per Bulan -->
                                     <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
                                         <th rowspan="2" class="py-3 px-3 w-10 text-center border-r border-slate-200">No</th>
-                                        <th rowspan="2" class="py-3 px-4 min-w-[190px] border-r border-slate-200">Nama Peserta Didik</th>
+                                        <th rowspan="2" class="py-3 px-4 min-w-[190px] border-r border-slate-200 sticky left-0 bg-slate-50 z-10 shadow-[1px_0_0_0_#e2e8f0]">Nama Peserta Didik</th>
                                         @foreach($bulanSemester as $bNum => $bNama)
+                                            @php $cntHarian = $harianCountPerBulan[$bNum] ?? 0; @endphp
                                             <th colspan="2" class="py-2 px-1 text-center border-r border-slate-200 bg-cyan-50/70 text-cyan-950 font-black">
-                                                {{ substr($bNama, 0, 3) }}
+                                                <div class="flex items-center justify-center gap-1">
+                                                    <span>{{ substr($bNama, 0, 3) }}</span>
+                                                    <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun, 'bulan' => $bNum]) }}"
+                                                       class="text-[9px] px-1 py-0.2 rounded font-bold transition flex items-center gap-0.5 {{ $cntHarian > 0 ? 'bg-cyan-600 text-white' : 'bg-cyan-200 text-cyan-900 hover:bg-cyan-300' }}"
+                                                       title="Kelola & Rincian Nilai Harian Bulan {{ $bNama }}">
+                                                        <i class="fa-solid fa-list-check text-[7.5px]"></i>
+                                                        @if($cntHarian > 0)
+                                                            <span>{{ $cntHarian }}</span>
+                                                        @endif
+                                                    </a>
+                                                </div>
                                             </th>
                                         @endforeach
                                         <th rowspan="2" class="py-3.5 px-3 text-center border-r border-emerald-200 bg-emerald-50 text-emerald-950 font-black w-24">
@@ -241,12 +270,23 @@
                                     <!-- Header untuk Agama: 6 Bulan + 2 Praktikum (Pra-UTS & Pra-UAS) -->
                                     <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
                                         <th class="py-3.5 px-3 w-10 text-center border-r border-slate-200">No</th>
-                                        <th class="py-3.5 px-4 min-w-[190px] border-r border-slate-200">Nama Peserta Didik</th>
+                                        <th class="py-3.5 px-4 min-w-[190px] border-r border-slate-200 sticky left-0 bg-slate-50 z-10 shadow-[1px_0_0_0_#e2e8f0]">Nama Peserta Didik</th>
                                         @php $bCount = 0; @endphp
                                         @foreach($bulanSemester as $bNum => $bNama)
-                                            @php $bCount++; @endphp
-                                            <th class="py-3.5 px-2 text-center border-r border-slate-200 w-14">
-                                                {{ substr($bNama, 0, 3) }}
+                                            @php
+                                                $bCount++;
+                                                $cntHarian = $harianCountPerBulan[$bNum] ?? 0;
+                                            @endphp
+                                            <th class="py-2.5 px-1.5 text-center border-r border-slate-200 w-16">
+                                                <div class="flex flex-col items-center justify-center">
+                                                    <span>{{ substr($bNama, 0, 3) }}</span>
+                                                    <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun, 'bulan' => $bNum]) }}"
+                                                       class="mt-0.5 text-[8.5px] px-1.5 py-0.2 rounded font-bold transition border flex items-center gap-0.5 {{ $cntHarian > 0 ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300' }}"
+                                                       title="Kelola & Rincian Nilai Harian Bulan {{ $bNama }}">
+                                                        <i class="fa-solid fa-list-check text-[7.5px]"></i>
+                                                        <span>{{ $cntHarian > 0 ? $cntHarian . ' Hrn' : 'Harian' }}</span>
+                                                    </a>
+                                                </div>
                                             </th>
                                             @if($bCount === 3)
                                                 <th class="py-3.5 px-2 text-center border-r border-emerald-300 bg-emerald-100/70 text-emerald-950 font-black w-20"
@@ -272,10 +312,19 @@
                                     <!-- Header untuk Mapel Biasa / Reguler: 1 Nilai Per Bulan -->
                                     <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
                                         <th class="py-3.5 px-3 w-10 text-center border-r border-slate-200">No</th>
-                                        <th class="py-3.5 px-4 min-w-[200px] border-r border-slate-200">Nama Peserta Didik</th>
+                                        <th class="py-3.5 px-4 min-w-[200px] border-r border-slate-200 sticky left-0 bg-slate-50 z-10 shadow-[1px_0_0_0_#e2e8f0]">Nama Peserta Didik</th>
                                         @foreach($bulanSemester as $bNum => $bNama)
-                                            <th class="py-3.5 px-2 text-center border-r border-slate-200 w-16">
-                                                {{ substr($bNama, 0, 3) }}
+                                            @php $cntHarian = $harianCountPerBulan[$bNum] ?? 0; @endphp
+                                            <th class="py-2.5 px-1.5 text-center border-r border-slate-200 w-16">
+                                                <div class="flex flex-col items-center justify-center">
+                                                    <span>{{ substr($bNama, 0, 3) }}</span>
+                                                    <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun, 'bulan' => $bNum]) }}"
+                                                       class="mt-0.5 text-[8.5px] px-1.5 py-0.2 rounded font-bold transition border flex items-center gap-0.5 {{ $cntHarian > 0 ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-200' }}"
+                                                       title="Kelola & Rincian Nilai Harian Bulan {{ $bNama }}">
+                                                        <i class="fa-solid fa-list-check text-[7.5px]"></i>
+                                                        <span>{{ $cntHarian > 0 ? $cntHarian . ' Hrn' : 'Harian' }}</span>
+                                                    </a>
+                                                </div>
                                             </th>
                                         @endforeach
                                         <th class="py-3.5 px-3 text-center border-r border-emerald-200 bg-emerald-50 text-emerald-950 font-black w-24">
@@ -296,7 +345,7 @@
                                         <td class="py-3 px-3 text-center font-bold text-slate-400 border-r border-slate-200">
                                             {{ $idx + 1 }}
                                         </td>
-                                        <td class="py-3 px-4 border-r border-slate-200 whitespace-nowrap">
+                                        <td class="py-3 px-4 border-r border-slate-200 whitespace-nowrap sticky left-0 bg-white z-10 shadow-[1px_0_0_0_#e2e8f0]">
                                             <div class="font-bold text-slate-900">{{ $ks->siswa->nama }}</div>
                                             <div class="text-[10px] text-slate-400 font-mono">NIS: {{ $ks->siswa->nis }} &bull; {{ $ks->siswa->nisn ?? '-' }}</div>
                                         </td>
@@ -448,13 +497,35 @@
     <!-- ========================================================================================= -->
     @if($tab === 'uts')
         <div class="space-y-4">
-            <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start space-x-3 text-xs text-amber-900">
-                <i class="fa-solid fa-circle-info text-amber-600 text-base mt-0.5 shrink-0"></i>
-                <div>
-                    <p class="font-bold text-sm text-amber-950">Lembar 2: Nilai UTS (Sumatif Tengah Semester) — {{ $mapel->nama }}</p>
-                    <p class="text-amber-800 mt-0.5">
-                        Isikan satu nilai UTS per siswa (skala 0 – 100). Status ketuntasan dihitung otomatis berdasarkan KKM: <strong>{{ $kkm }}</strong>.
-                    </p>
+            <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-amber-900">
+                <div class="flex items-start space-x-3">
+                    <i class="fa-solid fa-circle-info text-amber-600 text-base mt-0.5 shrink-0"></i>
+                    <div>
+                        <p class="font-bold text-sm text-amber-950">Lembar 2: Nilai UTS (Sumatif Tengah Semester) — {{ $mapel->nama }}</p>
+                        <p class="text-amber-800 mt-0.5">
+                            Isikan satu nilai UTS per siswa (skala 0 – 100). Status ketuntasan dihitung otomatis berdasarkan KKM: <strong>{{ $kkm }}</strong>.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+                    <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
+                       class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
+                       title="Cetak Lembar Laporan Hasil Belajar STS Siswa Sekelas (Format 1 Lembar Tanpa Deskripsi)">
+                        <i class="fa-solid fa-print"></i>
+                        <span>Cetak Lembar STS Siswa (Sekelas)</span>
+                    </a>
+                    <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
+                       class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
+                       title="Unduh PDF Lembar STS Seluruh Siswa Sekelas (1 File PDF)">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Unduh PDF STS</span>
+                    </a>
+                    <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
+                       class="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-xs shadow-2xs transition flex items-center gap-1.5"
+                       title="Buku Leger Rekapitulasi Nilai UTS Seluruh Siswa (Landscape)">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Buku Leger</span>
+                    </a>
                 </div>
             </div>
 
@@ -544,13 +615,35 @@
     <!-- ========================================================================================= -->
     @if($tab === 'uas')
         <div class="space-y-4">
-            <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-2xl flex items-start space-x-3 text-xs text-indigo-900">
-                <i class="fa-solid fa-circle-info text-indigo-600 text-base mt-0.5 shrink-0"></i>
-                <div>
-                    <p class="font-bold text-sm text-indigo-950">Lembar 3: Nilai Semester (UAS / SAS) — {{ $mapel->nama }}</p>
-                    <p class="text-indigo-800 mt-0.5">
-                        Isikan satu nilai UAS per peserta didik (skala 0 – 100). Status ketuntasan dihitung mengacu pada KKM: <strong>{{ $kkm }}</strong>.
-                    </p>
+            <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-indigo-900">
+                <div class="flex items-start space-x-3">
+                    <i class="fa-solid fa-circle-info text-indigo-600 text-base mt-0.5 shrink-0"></i>
+                    <div>
+                        <p class="font-bold text-sm text-indigo-950">Lembar 3: Nilai Semester (UAS / SAS) — {{ $mapel->nama }}</p>
+                        <p class="text-indigo-800 mt-0.5">
+                            Isikan satu nilai UAS per peserta didik (skala 0 – 100). Status ketuntasan dihitung mengacu pada KKM: <strong>{{ $kkm }}</strong>.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+                    <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
+                       class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
+                       title="Cetak Lembar Laporan Hasil Belajar SAS Siswa Sekelas (Format 1 Lembar Tanpa Deskripsi)">
+                        <i class="fa-solid fa-print"></i>
+                        <span>Cetak Lembar SAS Siswa (Sekelas)</span>
+                    </a>
+                    <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
+                       class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
+                       title="Unduh PDF Lembar SAS Seluruh Siswa Sekelas (1 File PDF)">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Unduh PDF SAS</span>
+                    </a>
+                    <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
+                       class="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-xs shadow-2xs transition flex items-center gap-1.5"
+                       title="Buku Leger Rekapitulasi Nilai Akhir Semester (Landscape)">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Buku Leger</span>
+                    </a>
                 </div>
             </div>
 
@@ -921,18 +1014,18 @@
                                     <i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i>
                                     Perubahan catatan rapor disimpan sekaligus untuk seluruh mata pelajaran.
                                 </span>
-                                <div class="flex flex-wrap items-center gap-2">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                                     <button type="submit"
                                             name="action"
                                             value="simpan"
-                                            class="px-5 py-2.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center justify-center">
+                                            class="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center justify-center">
                                         <i class="fa-solid fa-floppy-disk mr-2 text-amber-400"></i> Simpan Catatan Rapor
                                     </button>
                                     @if($nextSiswaId)
                                         <button type="submit"
                                                 name="action"
                                                 value="simpan_lanjut"
-                                                class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center justify-center">
+                                                class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center justify-center">
                                             <span>Simpan & Lanjut Siswa Berikutnya</span>
                                             <i class="fa-solid fa-arrow-right ml-2"></i>
                                         </button>
@@ -1204,7 +1297,7 @@
                             </div>
                         </a>
 
-                        <!-- Opsi B: Buku Leger Rekapitulasi Nilai Semester (Landscape) -->
+                        <!-- Opsi B: Lembar Nilai Rekapitulasi Akhir Semester (SAS) Sekelas -->
                         <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
                            class="block p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-100 transition group">
                             <div class="flex items-start space-x-3">
@@ -1213,15 +1306,50 @@
                                 </div>
                                 <div class="flex-1">
                                     <div class="font-bold text-slate-900 text-sm flex items-center justify-between">
-                                        <span>Buku Leger Rekapitulasi Nilai (Landscape)</span>
+                                        <span>Lembar Nilai SAS Sekelas (Semua Mata Pelajaran)</span>
                                         <i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
                                     </div>
                                     <p class="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
-                                        Buku leger nilai kelas resmi memuat rekapitulasi nilai seluruh siswa, peringkat/ranking kelas, total nilai, dan rata-rata kelas.
+                                        Daftar nilai kolektif resmi akhir semester memuat tabel seluruh siswa x semua mapel, total nilai, rata-rata, dan peringkat kelas.
                                     </p>
                                 </div>
                             </div>
                         </a>
+
+                        <!-- Opsi C: Lembar Nilai Tengah Semester (UTS / STS) Sekelas -->
+                        <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
+                           class="block p-3.5 rounded-xl border border-amber-200 bg-amber-50/50 hover:bg-amber-100/70 transition group">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center text-sm shrink-0 shadow-xs">
+                                    <i class="fa-solid fa-book-open"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-bold text-amber-950 text-sm flex items-center justify-between">
+                                        <span>Lembar Nilai UTS / STS Sekelas (Semua Mata Pelajaran)</span>
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-xs text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                                    </div>
+                                    <p class="text-slate-600 text-[11px] mt-0.5 leading-relaxed">
+                                        Daftar nilai kolektif resmi tengah semester memuat tabel seluruh siswa x semua mapel, total nilai, rata-rata, dan absensi.
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Opsi D: Lembar Laporan Hasil Belajar STS & SAS Siswa Sekelas (Format 1 Lembar Tanpa Deskripsi) -->
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
+                               class="p-2.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 transition text-center flex items-center justify-center gap-1.5 font-bold text-xs text-amber-900 shadow-2xs"
+                               title="Cetak Lembar Laporan Hasil Belajar STS Siswa Sekelas (Format 1 Lembar Ringkas)">
+                                <i class="fa-solid fa-file-invoice text-amber-600"></i>
+                                <span>Lembar STS Siswa (Sekelas)</span>
+                            </a>
+                            <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
+                               class="p-2.5 rounded-xl border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 transition text-center flex items-center justify-center gap-1.5 font-bold text-xs text-indigo-900 shadow-2xs"
+                               title="Cetak Lembar Laporan Hasil Belajar SAS Siswa Sekelas (Format 1 Lembar Ringkas)">
+                                <i class="fa-solid fa-file-invoice text-indigo-600"></i>
+                                <span>Lembar SAS Siswa (Sekelas)</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

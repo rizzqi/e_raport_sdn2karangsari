@@ -26,7 +26,7 @@ start http://127.0.0.1:8000
 
 :: Jalankan server lokal
 if exist "C:\xampp\php\php.exe" (
-    "C:\xampp\php\php.exe" -S 127.0.0.1:8000 -t public
+    "C:\xampp\php\php.exe" artisan serve --host=127.0.0.1 --port=8000
 ) else (
     php artisan serve --host=127.0.0.1 --port=8000
 )

@@ -34,18 +34,18 @@
             </p>
         </div>
 
-        <div class="relative z-10 hidden sm:flex items-center gap-2.5 shrink-0">
+        <div class="relative z-10 flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0 mt-3 md:mt-0">
             @if(auth()->user()->isAdmin())
-                <a href="{{ route('kelas.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-950/40 transition-all duration-200 hover:scale-105">
+                <a href="{{ route('kelas.index') }}" class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-950/40 transition-all duration-200">
                     <i class="fa-solid fa-chalkboard-user"></i>
                     <span>Kelola Kelas</span>
                 </a>
-                <a href="{{ route('siswa.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/15 text-white border border-white/20 font-bold text-xs rounded-xl transition-all duration-200 backdrop-blur-sm hover:scale-105">
+                <a href="{{ route('siswa.index') }}" class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-white/10 hover:bg-white/15 text-white border border-white/20 font-bold text-xs rounded-xl transition-all duration-200 backdrop-blur-sm">
                     <i class="fa-solid fa-user-graduate text-slate-300"></i>
                     <span>Data Siswa</span>
                 </a>
             @else
-                <a href="{{ route('kelas.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-950/40 transition-all duration-200 hover:scale-105">
+                <a href="{{ route('kelas.index') }}" class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-950/40 transition-all duration-200">
                     <i class="fa-solid fa-chalkboard-user"></i>
                     <span>Kelas Saya</span>
                 </a>
@@ -182,7 +182,118 @@
             @endif
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Tampilan Kartu Khusus HP / Layar Kecil (Mobile Responsive Card View) -->
+        <div class="block md:hidden divide-y divide-slate-100">
+            @forelse($rekapKelasOverview as $item)
+                @php
+                    $k = $item['kelas'];
+                    $persen = (float) $item['persen_selesai'];
+                    $isLengkap = ($persen >= 100);
+                    $isKosong = ($persen <= 0);
+                @endphp
+                <div class="p-4 space-y-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-sm font-bold shrink-0">
+                                <i class="fa-solid fa-chalkboard"></i>
+                            </div>
+                            <div>
+                                <a href="{{ route('kelas.show', $k->id) }}" class="font-black text-sm text-slate-900 hover:text-emerald-700">
+                                    {{ $k->nama }}
+                                </a>
+                                <span class="inline-block text-[9px] font-bold text-slate-600 bg-slate-100 border border-slate-200/80 px-2 py-0.2 rounded-md uppercase tracking-wider ml-1">
+                                    {{ $k->fase ?? 'Fase A' }}
+                                </span>
+                                <div class="text-[11px] text-slate-500 mt-0.5">
+                                    Wali: <span class="font-medium text-slate-700">{{ $k->nama_wali }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-right shrink-0">
+                            <span class="inline-block px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-black text-xs border border-blue-200/80">
+                                Avg: {{ $item['rata_rata'] }}
+                            </span>
+                            <div class="text-[10px] text-slate-400 mt-0.5">{{ $item['total_siswa'] }} Siswa</div>
+                        </div>
+                    </div>
+
+                    <!-- Progres Pengisian Nilai STS -->
+                    <div class="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-1.5">
+                                @if($isLengkap)
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">
+                                        <i class="fa-solid fa-circle-check text-[9px]"></i> Lengkap
+                                    </span>
+                                @elseif($isKosong)
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-slate-100 text-slate-500">
+                                        <i class="fa-solid fa-clock text-[9px]"></i> Belum Diisi
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800">
+                                        <i class="fa-solid fa-pen-clip text-[9px]"></i> Sedang Berjalan
+                                    </span>
+                                @endif
+                                <span class="text-[10px] text-slate-500 font-medium">{{ $item['siswa_selesai'] }}/{{ $item['total_siswa'] }} selesai</span>
+                            </div>
+                            <span class="font-black text-xs {{ $isLengkap ? 'text-emerald-700' : ($isKosong ? 'text-slate-400' : 'text-amber-700') }}">
+                                {{ $persen }}%
+                            </span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                            <div class="h-1.5 rounded-full transition-all duration-500 {{ $isLengkap ? 'bg-emerald-600' : ($isKosong ? 'bg-slate-300' : 'bg-emerald-500') }}"
+                                 style="width: {{ $persen }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Aksi HP -->
+                    <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                        @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $k->wali_id))
+                            <a href="{{ route('nilai.input.kelas', $k->id) }}"
+                               class="flex-1 min-w-[120px] py-2 px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center justify-center gap-1.5 transition">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                                <span>Input Nilai</span>
+                            </a>
+                        @endif
+
+                        <a href="{{ route('kelas.absensi-harian.index', $k->id) }}"
+                           class="py-2 px-3 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center justify-center gap-1 transition">
+                            <i class="fa-solid fa-calendar-check text-amber-600"></i>
+                            <span>Presensi</span>
+                        </a>
+
+                        <a href="{{ route('kelas.show', $k->id) }}"
+                           class="py-2 px-3 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center justify-center gap-1 transition">
+                            <i class="fa-solid fa-users text-slate-500"></i>
+                            <span>Siswa</span>
+                        </a>
+
+                        <div class="inline-flex rounded-xl shadow-2xs overflow-hidden border border-slate-700">
+                            <a href="{{ route('raport.cetak.kelas', ['kelas' => $k->id, 'periode' => 'sts']) }}"
+                               class="py-2 px-2.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-1 transition"
+                               title="Cetak Raport STS Sekelas">
+                                <i class="fa-solid fa-print"></i>
+                                <span>STS</span>
+                            </a>
+                            <a href="{{ route('raport.cetak.kelas', ['kelas' => $k->id, 'periode' => 'sas']) }}"
+                               class="py-2 px-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1 transition border-l border-white/20"
+                               title="Cetak Raport SAS Sekelas">
+                                <i class="fa-solid fa-print"></i>
+                                <span>SAS</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center text-slate-400">
+                    <p class="font-bold text-slate-700">Belum ada rombel terdaftar.</p>
+                </div>
+            @endforelse
+        </div>
+
+        <!-- Tampilan Tabel untuk Tablet & Desktop -->
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50/80 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-600">
                     <tr>
@@ -306,21 +417,40 @@
                                     <span>Rekap</span>
                                 </a>
 
-                                <!-- Tombol Sekunder: Cetak Raport Sekelas -->
-                                <a href="{{ route('raport.cetak.kelas', ['kelas' => $k->id, 'periode' => 'sts']) }}"
-                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-900 text-white transition shadow-xs"
-                                    title="Cetak Raport Seluruh Siswa Sekelas Sekaligus">
-                                    <i class="fa-solid fa-print text-slate-300"></i>
-                                    <span>Cetak</span>
-                                </a>
-
-                                <!-- Tombol Sekunder: PDF Sekelas -->
-                                <a href="{{ route('raport.download.kelas.pdf', ['kelas' => $k->id, 'periode' => 'sts']) }}"
-                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 transition"
-                                    title="Unduh PDF Raport Satu Kelas">
-                                    <i class="fa-solid fa-file-pdf text-rose-500"></i>
-                                    <span>PDF</span>
-                                </a>
+                                <!-- Dropdown Cetak Raport Sekelas (STS / SAS) -->
+                                <div class="inline-block relative" x-data="{ openCetak: false }">
+                                    <button @click="openCetak = !openCetak" type="button"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white transition shadow-xs"
+                                        title="Pilih Cetak / Pratinjau Raport STS atau SAS">
+                                        <i class="fa-solid fa-print text-amber-400"></i>
+                                        <span>Cetak Rapor</span>
+                                        <i class="fa-solid fa-chevron-down ml-0.5 text-[9px] opacity-75"></i>
+                                    </button>
+                                    <div x-show="openCetak" @click.outside="openCetak = false"
+                                         class="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-1 text-xs text-left" style="display: none;">
+                                        <div class="px-3 py-1 text-[10px] font-bold uppercase text-amber-700 bg-amber-50">Tengah Semester (STS)</div>
+                                        <a href="{{ route('raport.cetak.kelas', ['kelas' => $k->id, 'periode' => 'sts']) }}" class="flex items-center px-3 py-1.5 text-slate-700 hover:bg-slate-50 font-semibold">
+                                            <i class="fa-solid fa-print w-4 text-amber-600 mr-2"></i> Pratinjau Rapor STS (F4)
+                                        </a>
+                                        <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $k->id, 'periode' => 'sts']) }}" class="flex items-center px-3 py-1.5 text-slate-700 hover:bg-slate-50 font-semibold">
+                                            <i class="fa-solid fa-sheet-plastic w-4 text-purple-600 mr-2"></i> Lembar STS Ringkas
+                                        </a>
+                                        <a href="{{ route('raport.download.kelas.pdf', ['kelas' => $k->id, 'periode' => 'sts']) }}" class="flex items-center px-3 py-1.5 text-rose-700 hover:bg-rose-50 font-semibold">
+                                            <i class="fa-solid fa-file-pdf w-4 text-rose-600 mr-2"></i> Unduh PDF STS
+                                        </a>
+                                        <div class="border-t border-slate-100 my-1"></div>
+                                        <div class="px-3 py-1 text-[10px] font-bold uppercase text-indigo-700 bg-indigo-50">Akhir Semester (SAS)</div>
+                                        <a href="{{ route('raport.cetak.kelas', ['kelas' => $k->id, 'periode' => 'sas']) }}" class="flex items-center px-3 py-1.5 text-slate-700 hover:bg-slate-50 font-semibold">
+                                            <i class="fa-solid fa-print w-4 text-indigo-600 mr-2"></i> Pratinjau Rapor SAS (F4)
+                                        </a>
+                                        <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $k->id, 'periode' => 'sas']) }}" class="flex items-center px-3 py-1.5 text-slate-700 hover:bg-slate-50 font-semibold">
+                                            <i class="fa-solid fa-sheet-plastic w-4 text-purple-600 mr-2"></i> Lembar SAS Ringkas
+                                        </a>
+                                        <a href="{{ route('raport.download.kelas.pdf', ['kelas' => $k->id, 'periode' => 'sas']) }}" class="flex items-center px-3 py-1.5 text-rose-700 hover:bg-rose-50 font-semibold">
+                                            <i class="fa-solid fa-file-pdf w-4 text-rose-600 mr-2"></i> Unduh PDF SAS
+                                        </a>
+                                    </div>
+                                </div>
 
                                 <!-- Tombol Sekunder: Unduh Word -->
                                 <a href="{{ route('raport.download.kelas.docx', ['kelas' => $k->id, 'periode' => 'sts']) }}"

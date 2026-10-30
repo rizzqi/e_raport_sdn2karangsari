@@ -63,19 +63,32 @@ class HitungNilaiService
                     ->first();
             }
 
-            // Prioritaskan nilai rapor akhir yang sudah dihitung atau tersimpan di nilai_rapor_mapel
+            // Jika periode STS (Tengah Semester), prioritaskan nilai UTS / STS
             $nilaiMapelAkhir = null;
             $predikat = null;
             $catatan = '';
 
-            if ($recRapor && $recRapor->nilai_rapor !== null) {
-                $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
-                $predikat = $recRapor->predikat ?? NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir);
-                $catatan = $recRapor->catatan ?? '';
-            } elseif ($n && ($n->sumatif !== null || $n->formatif !== null)) {
-                $nilaiMapelAkhir = $n->sumatif !== null ? (float) $n->sumatif : (float) $n->formatif;
-                $predikat = NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir);
+            if ($periode === 'sts') {
+                if ($n && $n->sumatif !== null) {
+                    $nilaiMapelAkhir = (float) $n->sumatif;
+                } elseif ($recRapor && $recRapor->nilai_uts !== null) {
+                    $nilaiMapelAkhir = (float) $recRapor->nilai_uts;
+                } elseif ($recRapor && $recRapor->nilai_rapor !== null) {
+                    $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
+                }
+                $predikat = $nilaiMapelAkhir !== null ? NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir) : null;
                 $catatan = '';
+            } else {
+                // Periode SAS / Semester Penuh: Prioritaskan nilai rapor akhir yang sudah dihitung
+                if ($recRapor && $recRapor->nilai_rapor !== null) {
+                    $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
+                    $predikat = $recRapor->predikat ?? NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir);
+                    $catatan = $recRapor->catatan ?? '';
+                } elseif ($n && ($n->sumatif !== null || $n->formatif !== null)) {
+                    $nilaiMapelAkhir = $n->sumatif !== null ? (float) $n->sumatif : (float) $n->formatif;
+                    $predikat = NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir);
+                    $catatan = '';
+                }
             }
 
             if ($nilaiMapelAkhir !== null) {
@@ -1439,5 +1452,82 @@ class HitungNilaiService
             default:
                 return "Pelaksanaan {$namaPembiasaan} menunjukkan perkembangan sesuai tahap usianya.";
         }
+    }
+
+    /**
+     * Sinkronkan rata-rata formatif dari NilaiFormatifBulanan ke NilaiRaporMapel
+     */
+    public static function syncFormatifToRaporMapel(int|KelasSiswa $kelasSiswa, int|MataPelajaran $mapel, int $tahun, string $semester = 'ganjil'): ?NilaiRaporMapel
+    {
+        $ksId = $kelasSiswa instanceof KelasSiswa ? $kelasSiswa->id : $kelasSiswa;
+        $mapelObj = $mapel instanceof MataPelajaran ? $mapel : MataPelajaran::find($mapel);
+        if (! $mapelObj) {
+            return null;
+        }
+
+        $semesterLower = strtolower($semester);
+        $bulanSemester = $semesterLower === 'genap'
+            ? [1, 2, 3, 4, 5, 6]
+            : [7, 8, 9, 10, 11, 12];
+
+        $records = NilaiFormatifBulanan::where('kelas_siswa_id', $ksId)
+            ->where('mapel_id', $mapelObj->id)
+            ->where('tahun', $tahun)
+            ->whereIn('bulan', $bulanSemester)
+            ->get();
+
+        $isPjok = method_exists($mapelObj, 'isPjok') ? $mapelObj->isPjok() : false;
+        $isAgama = method_exists($mapelObj, 'isAgama') ? $mapelObj->isAgama() : false;
+
+        $terisi = [];
+        foreach ($records as $r) {
+            if ($r->nilai !== null) {
+                $terisi[] = (float) $r->nilai;
+            }
+            if ($isPjok && $r->nilai_praktik !== null) {
+                $terisi[] = (float) $r->nilai_praktik;
+            }
+        }
+
+        $rapor = NilaiRaporMapel::firstOrNew([
+            'kelas_siswa_id' => $ksId,
+            'mapel_id' => $mapelObj->id,
+            'tahun' => $tahun,
+            'semester' => $semesterLower,
+        ]);
+
+        if ($isAgama) {
+            if ($rapor->praktik_1 !== null) {
+                $terisi[] = (float) $rapor->praktik_1;
+            }
+            if ($rapor->praktik_2 !== null) {
+                $terisi[] = (float) $rapor->praktik_2;
+            }
+        }
+
+        $rataFormatif = count($terisi) > 0 ? round(array_sum($terisi) / count($terisi), 1) : null;
+
+        if (! $rapor->is_locked) {
+            $ks = $kelasSiswa instanceof KelasSiswa ? $kelasSiswa : KelasSiswa::find($ksId);
+            $sekolah = $ks?->kelas?->sekolah ?? Sekolah::first();
+            $bobotFormatif = $sekolah ? $sekolah->getBobotFormatif() : 40;
+            $bobotUts = $sekolah ? $sekolah->getBobotUts() : 30;
+            $bobotUas = $sekolah ? $sekolah->getBobotUas() : 30;
+
+            $rapor->rata_formatif = $rataFormatif;
+            $totBobot = $bobotFormatif + $bobotUts + $bobotUas;
+            if ($totBobot > 0 && ($rataFormatif !== null || $rapor->nilai_uts !== null || $rapor->nilai_uas !== null)) {
+                $f = $rataFormatif ?? 0;
+                $u = $rapor->nilai_uts ?? 0;
+                $a = $rapor->nilai_uas ?? 0;
+                $rapor->nilai_rapor = round((($f * $bobotFormatif) + ($u * $bobotUts) + ($a * $bobotUas)) / $totBobot, 1);
+            } else {
+                $rapor->nilai_rapor = $rataFormatif;
+            }
+            $rapor->predikat = $rapor->nilai_rapor !== null ? NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor) : '-';
+            $rapor->save();
+        }
+
+        return $rapor;
     }
 }

@@ -36,20 +36,31 @@
             <a href="{{ route('kelas.show', $kelas->id) }}" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition flex items-center">
                 <i class="fa-solid fa-arrow-left mr-1.5"></i> Kembali ke Kelas
             </a>
+
+            <!-- Switcher STS / SAS -->
             <div class="bg-slate-100 p-1 rounded-xl flex items-center space-x-1 text-xs font-bold">
                 <a href="{{ route('raport.preview', ['kelasSiswa' => $kelasSiswa->id, 'periode' => 'sts']) }}"
-                   class="px-2.5 py-1 rounded-lg transition {{ $periode === 'sts' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
-                   STS (Tengah Semester)
+                   class="px-3 py-1.5 rounded-lg transition {{ $periode === 'sts' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">
+                   <i class="fa-solid fa-file-invoice mr-1"></i> STS (Tengah Semester)
                 </a>
                 <a href="{{ route('raport.preview', ['kelasSiswa' => $kelasSiswa->id, 'periode' => 'sas']) }}"
-                   class="px-2.5 py-1 rounded-lg transition {{ $periode === 'sas' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
-                   SAS (Semester)
+                   class="px-3 py-1.5 rounded-lg transition {{ $periode === 'sas' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">
+                   <i class="fa-solid fa-file-contract mr-1"></i> SAS (Akhir Semester)
                 </a>
             </div>
-            <span class="hidden md:inline-flex items-center px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-semibold">
+
+            <!-- Pintasan Lembar Ringkas STS / SAS -->
+            <a href="{{ route('kelas.lembar-sts-sas.cetak-siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $kelasSiswa->id, 'periode' => $periode]) }}"
+               class="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition flex items-center gap-1.5"
+               title="Lihat Lembar {{ strtoupper($periode) }} Format Ringkas (Nilai & Predikat tanpa narasi panjang)">
+                <i class="fa-solid fa-sheet-plastic text-purple-600"></i>
+                <span>Lembar {{ strtoupper($periode) }} Ringkas</span>
+            </a>
+
+            <span class="hidden xl:inline-flex items-center px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-semibold">
                 <i class="fa-solid fa-graduation-cap mr-1 text-emerald-600"></i> Kurikulum Merdeka
             </span>
-            <span class="hidden md:inline-flex items-center px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-semibold">
+            <span class="hidden xl:inline-flex items-center px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-semibold">
                 <i class="fa-solid fa-ruler-combined mr-1 text-amber-600"></i> F4 (215 × 330 mm)
             </span>
         </div>
@@ -74,26 +85,26 @@
             <!-- Tombol Cetak Per Siswa -->
             <button type="button" onclick="cetakDokumen({{ $hasilNilai['ada_nilai_kosong'] ? 'true' : 'false' }}, {{ $hasilNilai['jumlah_kosong'] }})"
                     class="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
-                <i class="fa-solid fa-print mr-1.5 text-amber-400"></i> Cetak Rapor Siswa Ini (F4)
+                <i class="fa-solid fa-print mr-1.5 text-amber-400"></i> Cetak Rapor {{ strtoupper($periode) }} (F4)
             </button>
 
             <!-- Tombol Cetak Semua Sekelas -->
             <a href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => $periode]) }}"
                class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
-               title="Cetak seluruh siswa dalam satu kelas sekaligus">
-                <i class="fa-solid fa-users mr-1.5"></i> Cetak Semua Sekelas
+               title="Cetak rapor {{ strtoupper($periode) }} seluruh siswa sekelas sekaligus">
+                <i class="fa-solid fa-users mr-1.5"></i> Cetak {{ strtoupper($periode) }} Sekelas
             </a>
 
             <!-- Tombol Unduh Dokumen -->
             <a id="btnDownloadPdf" href="{{ route('raport.download.pdf', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
                class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
-               title="Unduh file PDF resmi">
-                <i class="fa-solid fa-file-pdf mr-1.5"></i> Unduh PDF
+               title="Unduh file PDF resmi {{ strtoupper($periode) }}">
+                <i class="fa-solid fa-file-pdf mr-1.5"></i> PDF
             </a>
             <a id="btnDownloadDocx" href="{{ route('raport.download.docx', ['kelasSiswa' => $kelasSiswa->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
-               title="Unduh file Microsoft Word (.docx)">
-                <i class="fa-solid fa-file-word mr-1.5"></i> Word (.docx)
+               title="Unduh file Microsoft Word (.docx) {{ strtoupper($periode) }}">
+                <i class="fa-solid fa-file-word mr-1.5"></i> Word
             </a>
         </div>
     </div>

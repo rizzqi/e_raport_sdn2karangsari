@@ -369,6 +369,14 @@ class NilaiMapelController extends Controller
         // Cari data Guru Pengampu jika ada
         $guruPengampu = $mapel ? $kelas->guruPengampu->firstWhere('mapel_id', $mapel->id) : null;
 
+        $harianCountPerBulan = $mapel ? \App\Models\PenilaianFormatifHarian::where('kelas_id', $kelas->id)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->whereIn('bulan', array_keys($bulanSemester))
+            ->groupBy('bulan')
+            ->selectRaw('bulan, count(*) as total')
+            ->pluck('total', 'bulan') : collect();
+
         return view('kelas.mapel.nilai', compact(
             'kelas',
             'mapel',
@@ -400,7 +408,8 @@ class NilaiMapelController extends Controller
             'rekapSekelasRapor',
             'jenisFormatif',
             'isAgama',
-            'isPjok'
+            'isPjok',
+            'harianCountPerBulan'
         ));
     }
 
@@ -1138,6 +1147,200 @@ class NilaiMapelController extends Controller
         ))->setPaper([0, 0, 609.45, 935.43]); // Ukuran Standar F4 / Folio (215 x 330 mm) dalam points
 
         $filename = 'Rekap_Formatif_' . str_replace(' ', '_', $mapel->nama) . '_' . $namaBulan . '_' . $tahun . '.pdf';
+
+        return $pdf->stream($filename);
+    }
+
+    /**
+     * Cetak Lembar Rekapitulasi Nilai UTS (Sumatif Tengah Semester) Mata Pelajaran (F4 PDF).
+     * Terpisah dari Lembar Raport Peserta Didik.
+     */
+    public function cetakUtsPdf(Kelas $kelas, MataPelajaran $mapel, Request $request)
+    {
+        $this->authorizeAkses($kelas);
+
+        $tahun = (int) $request->input('tahun', now()->year);
+        $semester = strtolower($request->input('semester', $kelas->tahunAjaran->semester ?? 'ganjil'));
+
+        $kelas->load(['tahunAjaran', 'wali', 'sekolah']);
+        $sekolah = $kelas->sekolah ?? Sekolah::first();
+        $guruPengampu = $kelas->guruPengampu->firstWhere('mapel_id', $mapel->id);
+        $kkm = $kelas->getKkmForMapel($mapel);
+
+        $kelasSiswaList = $kelas->kelasSiswa()
+            ->with(['siswa'])
+            ->get()
+            ->sortBy('siswa.nama', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+
+        $ksIds = $kelasSiswaList->pluck('id');
+
+        $nilaiUtsList = Nilai::whereIn('kelas_siswa_id', $ksIds)
+            ->where('mapel_id', $mapel->id)
+            ->where('periode', 'sts')
+            ->get()
+            ->keyBy('kelas_siswa_id');
+
+        $nilaiRaporList = NilaiRaporMapel::whereIn('kelas_siswa_id', $ksIds)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->where('semester', $semester)
+            ->get()
+            ->keyBy('kelas_siswa_id');
+
+        $baris = [];
+        $totalNilai = 0;
+        $countNilai = 0;
+        $countTuntas = 0;
+
+        foreach ($kelasSiswaList as $idx => $ks) {
+            $recUts = $nilaiUtsList->get($ks->id);
+            $val = ($recUts && $recUts->sumatif !== null) ? (float) $recUts->sumatif : null;
+
+            if ($val === null && $recRapor = $nilaiRaporList->get($ks->id)) {
+                if ($recRapor->nilai_uts !== null) {
+                    $val = (float) $recRapor->nilai_uts;
+                }
+            }
+
+            if ($val !== null) {
+                $totalNilai += $val;
+                $countNilai++;
+                if ($val >= $kkm) {
+                    $countTuntas++;
+                }
+            }
+
+            $baris[] = [
+                'no' => $idx + 1,
+                'nis' => $ks->siswa->nis,
+                'nisn' => $ks->siswa->nisn ?? '-',
+                'nama' => $ks->siswa->nama,
+                'jk' => $ks->siswa->jenis_kelamin,
+                'nilai' => $val,
+                'nilai_format' => $val !== null ? HitungNilaiService::formatAngka($val) : '-',
+                'keterangan' => $val !== null ? ($val >= $kkm ? 'Tuntas' : 'Belum Tuntas') : 'Belum Diisi',
+            ];
+        }
+
+        $rataRata = $countNilai > 0 ? round($totalNilai / $countNilai, 1) : 0;
+        $persenTuntas = $countNilai > 0 ? round(($countTuntas / $countNilai) * 100) : 0;
+        $tanggalCetak = Carbon::now();
+
+        $pdf = Pdf::loadView('kelas.mapel.pdf_uts', compact(
+            'kelas',
+            'mapel',
+            'sekolah',
+            'guruPengampu',
+            'kkm',
+            'tahun',
+            'semester',
+            'baris',
+            'rataRata',
+            'countNilai',
+            'countTuntas',
+            'persenTuntas',
+            'tanggalCetak'
+        ))->setPaper([0, 0, 609.45, 935.43]); // Ukuran Standar F4 / Folio (215 x 330 mm)
+
+        $filename = 'Daftar_Nilai_UTS_' . str_replace(' ', '_', $mapel->nama) . '_Kelas_' . str_replace(' ', '_', $kelas->nama) . '_' . $tahun . '.pdf';
+
+        return $pdf->stream($filename);
+    }
+
+    /**
+     * Cetak Lembar Rekapitulasi Nilai SAS / UAS (Sumatif Akhir Semester) Mata Pelajaran (F4 PDF).
+     * Terpisah dari Lembar Raport Peserta Didik.
+     */
+    public function cetakUasPdf(Kelas $kelas, MataPelajaran $mapel, Request $request)
+    {
+        $this->authorizeAkses($kelas);
+
+        $tahun = (int) $request->input('tahun', now()->year);
+        $semester = strtolower($request->input('semester', $kelas->tahunAjaran->semester ?? 'ganjil'));
+
+        $kelas->load(['tahunAjaran', 'wali', 'sekolah']);
+        $sekolah = $kelas->sekolah ?? Sekolah::first();
+        $guruPengampu = $kelas->guruPengampu->firstWhere('mapel_id', $mapel->id);
+        $kkm = $kelas->getKkmForMapel($mapel);
+
+        $kelasSiswaList = $kelas->kelasSiswa()
+            ->with(['siswa'])
+            ->get()
+            ->sortBy('siswa.nama', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+
+        $ksIds = $kelasSiswaList->pluck('id');
+
+        $nilaiUasList = Nilai::whereIn('kelas_siswa_id', $ksIds)
+            ->where('mapel_id', $mapel->id)
+            ->where('periode', 'sas')
+            ->get()
+            ->keyBy('kelas_siswa_id');
+
+        $nilaiRaporList = NilaiRaporMapel::whereIn('kelas_siswa_id', $ksIds)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->where('semester', $semester)
+            ->get()
+            ->keyBy('kelas_siswa_id');
+
+        $baris = [];
+        $totalNilai = 0;
+        $countNilai = 0;
+        $countTuntas = 0;
+
+        foreach ($kelasSiswaList as $idx => $ks) {
+            $recUas = $nilaiUasList->get($ks->id);
+            $val = ($recUas && $recUas->sumatif !== null) ? (float) $recUas->sumatif : null;
+
+            if ($val === null && $recRapor = $nilaiRaporList->get($ks->id)) {
+                if ($recRapor->nilai_uas !== null) {
+                    $val = (float) $recRapor->nilai_uas;
+                }
+            }
+
+            if ($val !== null) {
+                $totalNilai += $val;
+                $countNilai++;
+                if ($val >= $kkm) {
+                    $countTuntas++;
+                }
+            }
+
+            $baris[] = [
+                'no' => $idx + 1,
+                'nis' => $ks->siswa->nis,
+                'nisn' => $ks->siswa->nisn ?? '-',
+                'nama' => $ks->siswa->nama,
+                'jk' => $ks->siswa->jenis_kelamin,
+                'nilai' => $val,
+                'nilai_format' => $val !== null ? HitungNilaiService::formatAngka($val) : '-',
+                'keterangan' => $val !== null ? ($val >= $kkm ? 'Tuntas' : 'Belum Tuntas') : 'Belum Diisi',
+            ];
+        }
+
+        $rataRata = $countNilai > 0 ? round($totalNilai / $countNilai, 1) : 0;
+        $persenTuntas = $countNilai > 0 ? round(($countTuntas / $countNilai) * 100) : 0;
+        $tanggalCetak = Carbon::now();
+
+        $pdf = Pdf::loadView('kelas.mapel.pdf_uas', compact(
+            'kelas',
+            'mapel',
+            'sekolah',
+            'guruPengampu',
+            'kkm',
+            'tahun',
+            'semester',
+            'baris',
+            'rataRata',
+            'countNilai',
+            'countTuntas',
+            'persenTuntas',
+            'tanggalCetak'
+        ))->setPaper([0, 0, 609.45, 935.43]); // Ukuran Standar F4 / Folio (215 x 330 mm)
+
+        $filename = 'Daftar_Nilai_SAS_' . str_replace(' ', '_', $mapel->nama) . '_Kelas_' . str_replace(' ', '_', $kelas->nama) . '_' . $tahun . '.pdf';
 
         return $pdf->stream($filename);
     }

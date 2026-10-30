@@ -25,7 +25,7 @@
         </div>
 
         <!-- Filter Tanggal Harian -->
-        <form method="GET" action="{{ route('absensi-harian.index') }}" class="flex items-center gap-2">
+        <form method="GET" action="{{ route('absensi-harian.index') }}" class="flex items-center gap-2 flex-wrap">
             <label for="tanggal" class="text-xs font-bold text-slate-600 shrink-0">
                 <i class="fa-regular fa-calendar mr-1"></i> Tanggal:
             </label>

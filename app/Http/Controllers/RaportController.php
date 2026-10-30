@@ -329,4 +329,285 @@ class RaportController extends Controller
 
         return view('raport.riwayat', compact('riwayatList'));
     }
+
+    /**
+     * Lembar Laporan Hasil Belajar STS & SAS Khusus 1 Siswa (Pratinjau HTML & Cetak di Browser).
+     */
+    public function lembarStsSasCetakSiswa($kelas, $kelasSiswa = null, ?Request $request = null)
+    {
+        if ($kelas instanceof KelasSiswa) {
+            $kelasSiswa = $kelas;
+            $kelas = $kelasSiswa->kelas;
+        } elseif (! $kelasSiswa instanceof KelasSiswa) {
+            $kelasSiswa = KelasSiswa::findOrFail($kelasSiswa);
+            $kelas = $kelasSiswa->kelas;
+        }
+
+        $request = $request ?? request();
+        $periode = $request->input('periode', 'sts');
+        $sekolah = $kelas->sekolah ?? Sekolah::first();
+        $siswa = $kelasSiswa->siswa;
+        $tahun = $kelas->tahunAjaran;
+
+        $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
+        $tanggal = $tanggalObj->format('Y-m-d');
+
+        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode);
+        $pembiasaanList = Pembiasaan::aktif()->orderBy('urutan')->get();
+        $nilaiPemList = NilaiPembiasaan::where('kelas_siswa_id', $kelasSiswa->id)
+            ->where('periode', $periode)
+            ->get()
+            ->keyBy('pembiasaan_id');
+
+        $kehadiran = Kehadiran::where('kelas_siswa_id', $kelasSiswa->id)
+            ->where('periode', $periode)
+            ->first() ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0];
+
+        // Hitung total nilai & rata-rata secara presisi
+        $totalNilai = 0;
+        $countNilai = 0;
+        foreach ($hasilNilai['baris'] as $b) {
+            $val = $b['sumatif'] !== null ? $b['sumatif'] : $b['nilai'];
+            if ($val !== null) {
+                $totalNilai += (float) $val;
+                $countNilai++;
+            }
+        }
+        $rataNilai = $countNilai > 0 ? round($totalNilai / $countNilai, 0) : 0;
+
+        $laporanSiswa = [
+            [
+                'kelasSiswa' => $kelasSiswa,
+                'siswa' => $siswa,
+                'hasilNilai' => $hasilNilai,
+                'totalNilai' => $totalNilai,
+                'rataNilai' => $rataNilai,
+                'nilaiPemList' => $nilaiPemList,
+                'kehadiran' => $kehadiran,
+            ],
+        ];
+
+        $isSingleSiswa = true;
+
+        return view('raport.lembar_sts_sas_cetak', compact(
+            'kelas',
+            'sekolah',
+            'tahun',
+            'periode',
+            'tanggal',
+            'tanggalObj',
+            'pembiasaanList',
+            'laporanSiswa',
+            'isSingleSiswa',
+            'kelasSiswa'
+        ));
+    }
+
+    /**
+     * Lembar Laporan Hasil Belajar STS & SAS Khusus 1 Siswa (Format Ringkas Tanpa Capaian Kompetensi).
+     */
+    public function lembarStsSasPdf($kelas, $kelasSiswa = null, ?Request $request = null)
+    {
+        if ($kelas instanceof KelasSiswa) {
+            $kelasSiswa = $kelas;
+            $kelas = $kelasSiswa->kelas;
+        } elseif (! $kelasSiswa instanceof KelasSiswa) {
+            $kelasSiswa = KelasSiswa::findOrFail($kelasSiswa);
+            $kelas = $kelasSiswa->kelas;
+        }
+
+        $request = $request ?? request();
+        $periode = $request->input('periode', 'sts');
+        $kelas = $kelasSiswa->kelas;
+        $sekolah = $kelas->sekolah ?? Sekolah::first();
+        $siswa = $kelasSiswa->siswa;
+        $tahun = $kelas->tahunAjaran;
+
+        $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
+        $tanggal = $tanggalObj->format('Y-m-d');
+
+        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode);
+        $pembiasaanList = Pembiasaan::aktif()->orderBy('urutan')->get();
+        $nilaiPemList = NilaiPembiasaan::where('kelas_siswa_id', $kelasSiswa->id)
+            ->where('periode', $periode)
+            ->get()
+            ->keyBy('pembiasaan_id');
+
+        $kehadiran = Kehadiran::where('kelas_siswa_id', $kelasSiswa->id)
+            ->where('periode', $periode)
+            ->first();
+
+        // Hitung total nilai & rata-rata secara presisi
+        $totalNilai = 0;
+        $countNilai = 0;
+        foreach ($hasilNilai['baris'] as $b) {
+            $val = $b['sumatif'] !== null ? $b['sumatif'] : $b['nilai'];
+            if ($val !== null) {
+                $totalNilai += (float) $val;
+                $countNilai++;
+            }
+        }
+        $rataNilai = $countNilai > 0 ? round($totalNilai / $countNilai, 0) : 0;
+
+        $pdf = Pdf::loadView('raport.lembar_sts_sas_pdf', compact(
+            'kelasSiswa',
+            'kelas',
+            'sekolah',
+            'siswa',
+            'tahun',
+            'periode',
+            'tanggal',
+            'tanggalObj',
+            'hasilNilai',
+            'totalNilai',
+            'rataNilai',
+            'pembiasaanList',
+            'nilaiPemList',
+            'kehadiran'
+        ))->setPaper([0, 0, 609.45, 935.43], 'portrait');
+
+        $fileName = 'Lembar_'.strtoupper($periode).'_'.str_replace(' ', '_', $siswa->nama).'.pdf';
+
+        return $pdf->stream($fileName);
+    }
+
+    /**
+     * Lembar Laporan Hasil Belajar STS & SAS Sekelas Penuh (Download PDF Sekelas).
+     */
+    public function lembarStsSasKelasPdf(Kelas $kelas, Request $request)
+    {
+        $periode = $request->input('periode', 'sts');
+        $sekolah = $kelas->sekolah ?? Sekolah::first();
+        $tahun = $kelas->tahunAjaran;
+
+        $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
+        $tanggal = $tanggalObj->format('Y-m-d');
+
+        $kelasSiswaList = $kelas->kelasSiswa()
+            ->with(['siswa'])
+            ->get()
+            ->sortBy('siswa.nama', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+
+        $kelasSiswaIds = $kelasSiswaList->pluck('id');
+        $allNilaiPem = NilaiPembiasaan::whereIn('kelas_siswa_id', $kelasSiswaIds)
+            ->where('periode', $periode)
+            ->get()
+            ->groupBy('kelas_siswa_id');
+
+        $allKehadiran = Kehadiran::whereIn('kelas_siswa_id', $kelasSiswaIds)
+            ->where('periode', $periode)
+            ->get()
+            ->keyBy('kelas_siswa_id');
+
+        $pembiasaanList = Pembiasaan::aktif()->orderBy('urutan')->get();
+
+        $laporanSiswa = [];
+        foreach ($kelasSiswaList as $ks) {
+            $hasilNilai = $this->hitungService->hitungNilaiSiswa($ks, $periode);
+            $totalNilai = 0;
+            $countNilai = 0;
+            foreach ($hasilNilai['baris'] as $b) {
+                $val = $b['sumatif'] !== null ? $b['sumatif'] : $b['nilai'];
+                if ($val !== null) {
+                    $totalNilai += (float) $val;
+                    $countNilai++;
+                }
+            }
+            $rataNilai = $countNilai > 0 ? round($totalNilai / $countNilai, 0) : 0;
+
+            $laporanSiswa[] = [
+                'kelasSiswa' => $ks,
+                'siswa' => $ks->siswa,
+                'hasilNilai' => $hasilNilai,
+                'totalNilai' => $totalNilai,
+                'rataNilai' => $rataNilai,
+                'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
+                'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
+            ];
+        }
+
+        $pdf = Pdf::loadView('raport.lembar_sts_sas_kelas_pdf', compact(
+            'kelas',
+            'sekolah',
+            'tahun',
+            'periode',
+            'tanggal',
+            'tanggalObj',
+            'pembiasaanList',
+            'laporanSiswa'
+        ))->setPaper([0, 0, 609.45, 935.43], 'portrait');
+
+        $fileName = 'Lembar_'.strtoupper($periode).'_Kelas_'.str_replace(' ', '_', $kelas->nama).'.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Lembar Laporan Hasil Belajar STS & SAS Sekelas (Print Preview HTML di Browser).
+     */
+    public function lembarStsSasCetakKelas(Kelas $kelas, Request $request)
+    {
+        $periode = $request->input('periode', 'sts');
+        $sekolah = $kelas->sekolah ?? Sekolah::first();
+        $tahun = $kelas->tahunAjaran;
+
+        $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
+        $tanggal = $tanggalObj->format('Y-m-d');
+
+        $kelasSiswaList = $kelas->kelasSiswa()
+            ->with(['siswa'])
+            ->get()
+            ->sortBy('siswa.nama', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+
+        $kelasSiswaIds = $kelasSiswaList->pluck('id');
+        $allNilaiPem = NilaiPembiasaan::whereIn('kelas_siswa_id', $kelasSiswaIds)
+            ->where('periode', $periode)
+            ->get()
+            ->groupBy('kelas_siswa_id');
+
+        $allKehadiran = Kehadiran::whereIn('kelas_siswa_id', $kelasSiswaIds)
+            ->where('periode', $periode)
+            ->get()
+            ->keyBy('kelas_siswa_id');
+
+        $pembiasaanList = Pembiasaan::aktif()->orderBy('urutan')->get();
+
+        $laporanSiswa = [];
+        foreach ($kelasSiswaList as $ks) {
+            $hasilNilai = $this->hitungService->hitungNilaiSiswa($ks, $periode);
+            $totalNilai = 0;
+            $countNilai = 0;
+            foreach ($hasilNilai['baris'] as $b) {
+                $val = $b['sumatif'] !== null ? $b['sumatif'] : $b['nilai'];
+                if ($val !== null) {
+                    $totalNilai += (float) $val;
+                    $countNilai++;
+                }
+            }
+            $rataNilai = $countNilai > 0 ? round($totalNilai / $countNilai, 0) : 0;
+
+            $laporanSiswa[] = [
+                'kelasSiswa' => $ks,
+                'siswa' => $ks->siswa,
+                'hasilNilai' => $hasilNilai,
+                'totalNilai' => $totalNilai,
+                'rataNilai' => $rataNilai,
+                'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
+                'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
+            ];
+        }
+
+        return view('raport.lembar_sts_sas_cetak', compact(
+            'kelas',
+            'sekolah',
+            'tahun',
+            'periode',
+            'tanggal',
+            'tanggalObj',
+            'pembiasaanList',
+            'laporanSiswa'
+        ));
+    }
 }

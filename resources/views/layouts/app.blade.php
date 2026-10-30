@@ -64,11 +64,25 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
             body { background: white !important; color: black !important; }
+        }
+        /* Mobile safe-area padding */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 0.75rem);
+        }
+        /* Mobile friendly scrollbars */
+        .scrollbar-thin::-webkit-scrollbar {
+            height: 4px;
+            width: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 9999px;
         }
     </style>
     @stack('styles')
@@ -221,46 +235,76 @@
             </div>
         </div>
 
-        <!-- Mobile Navigation Menu -->
+        <!-- Mobile Navigation Menu (Drawer Khusus HP) -->
         <div x-show="mobileMenuOpen"
-             x-transition:enter="transition ease-out duration-150"
-             x-transition:enter-start="opacity-0 -translate-y-2"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-3"
              x-transition:enter-end="opacity-100 translate-y-0"
-             x-transition:leave="transition ease-in duration-100"
+             x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100 translate-y-0"
-             x-transition:leave-end="opacity-0 -translate-y-2"
-             class="md:hidden border-t border-white/10 bg-[#0f172a] px-4 pt-3 pb-4 space-y-1.5 text-xs font-semibold"
+             x-transition:leave-end="opacity-0 -translate-y-3"
+             class="md:hidden border-t border-white/10 bg-[#0f172a] px-4 pt-3.5 pb-5 space-y-2 text-xs font-semibold max-h-[calc(100vh-4rem)] overflow-y-auto"
              style="display: none;">
-            <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl transition {{ request()->routeIs('dashboard') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
-                <i class="fa-solid fa-house w-5 mr-2 text-emerald-400"></i> Dashboard
-            </a>
-            <a href="{{ route('kelas.index') }}" class="block px-3 py-2 rounded-xl transition {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
-                <i class="fa-solid fa-chalkboard-user w-5 mr-2 text-emerald-400"></i> Kelas & Nilai
-            </a>
-            <a href="{{ route('absensi-harian.index') }}" class="block px-3 py-2 rounded-xl transition {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
-                <i class="fa-solid fa-calendar-check w-5 mr-2 text-emerald-400"></i> Absensi Harian
-            </a>
-            <a href="{{ route('siswa.index') }}" class="block px-3 py-2 rounded-xl transition {{ request()->routeIs('siswa.*') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
-                <i class="fa-solid fa-user-graduate w-5 mr-2 text-emerald-400"></i> Data Siswa
-            </a>
-            <a href="{{ route('raport.riwayat') }}" class="block px-3 py-2 rounded-xl transition {{ request()->routeIs('raport.riwayat') ? 'bg-white/15 text-white font-bold' : 'text-slate-200 hover:bg-white/10' }}">
-                <i class="fa-solid fa-clock-rotate-left w-5 mr-2 text-emerald-400"></i> Riwayat Cetak
-            </a>
+
+            <!-- Mobile User Profile Card -->
+            <div class="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-3 mb-2">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-md">
+                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                    </div>
+                    <div class="min-w-0">
+                        <span class="block text-xs font-bold text-white truncate">{{ auth()->user()->name }}</span>
+                        <span class="inline-block text-[9px] uppercase font-extrabold tracking-wider text-emerald-300 mt-0.5">
+                            {{ auth()->user()->role === 'admin' ? 'Administrator' : 'Wali Kelas' }}
+                        </span>
+                    </div>
+                </div>
+                <form action="{{ route('logout') }}" method="POST" class="shrink-0">
+                    @csrf
+                    <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white transition text-[11px] font-bold border border-rose-500/30 flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span>Keluar</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="space-y-1">
+                <a href="{{ route('dashboard') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('dashboard') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
+                    <i class="fa-solid fa-house w-6 text-center mr-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white' : 'text-emerald-400' }}"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ route('kelas.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
+                    <i class="fa-solid fa-chalkboard-user w-6 text-center mr-2 text-sm {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'text-white' : 'text-emerald-400' }}"></i>
+                    <span>Kelas & Nilai</span>
+                </a>
+                <a href="{{ route('absensi-harian.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'bg-amber-500 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
+                    <i class="fa-solid fa-calendar-check w-6 text-center mr-2 text-sm {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'text-white' : 'text-amber-400' }}"></i>
+                    <span>Absensi Harian (Wali, Agama, PJOK)</span>
+                </a>
+                <a href="{{ route('siswa.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('siswa.*') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
+                    <i class="fa-solid fa-user-graduate w-6 text-center mr-2 text-sm {{ request()->routeIs('siswa.*') ? 'text-white' : 'text-emerald-400' }}"></i>
+                    <span>Data Siswa</span>
+                </a>
+                <a href="{{ route('raport.riwayat') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('raport.riwayat') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
+                    <i class="fa-solid fa-clock-rotate-left w-6 text-center mr-2 text-sm {{ request()->routeIs('raport.riwayat') ? 'text-white' : 'text-emerald-400' }}"></i>
+                    <span>Riwayat Cetak Raport</span>
+                </a>
+            </div>
 
             @if(auth()->user()->isAdmin())
-                <div class="pt-2 border-t border-white/10 mt-2">
+                <div class="pt-3 border-t border-white/10 mt-2 space-y-1">
                     <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Pengaturan Administrator</p>
-                    <a href="{{ route('sekolah.edit') }}" class="block px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
-                        <i class="fa-solid fa-school w-5 mr-2 text-emerald-400"></i> Identitas Sekolah
+                    <a href="{{ route('sekolah.edit') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
+                        <i class="fa-solid fa-school w-6 text-center mr-2 text-emerald-400"></i> Identitas Sekolah
                     </a>
-                    <a href="{{ route('tahun-ajaran.index') }}" class="block px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
-                        <i class="fa-solid fa-calendar w-5 mr-2 text-emerald-400"></i> Tahun Ajaran
+                    <a href="{{ route('tahun-ajaran.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
+                        <i class="fa-solid fa-calendar w-6 text-center mr-2 text-blue-400"></i> Tahun Ajaran
                     </a>
-                    <a href="{{ route('mapel.index') }}" class="block px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
-                        <i class="fa-solid fa-book w-5 mr-2 text-emerald-400"></i> Mapel & Pembiasaan
+                    <a href="{{ route('mapel.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
+                        <i class="fa-solid fa-book w-6 text-center mr-2 text-amber-400"></i> Mapel & Pembiasaan
                     </a>
-                    <a href="{{ route('users.index') }}" class="block px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
-                        <i class="fa-solid fa-users w-5 mr-2 text-emerald-400"></i> Kelola Pengguna
+                    <a href="{{ route('users.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
+                        <i class="fa-solid fa-users w-6 text-center mr-2 text-purple-400"></i> Kelola Pengguna
                     </a>
                 </div>
             @endif
@@ -436,12 +480,12 @@
     </div>
 
     <!-- Main Content -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8">
         @yield('content')
     </main>
 
     <!-- Footer Elegan & Profesional -->
-    <footer class="bg-white border-t border-slate-200/80 py-4 text-center text-xs text-slate-500 no-print mt-auto">
+    <footer class="bg-white border-t border-slate-200/80 py-4 text-center text-xs text-slate-500 no-print mt-auto mb-16 md:mb-0">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-slate-500">
             <div class="flex items-center gap-2">
                 <div class="w-5 h-5 rounded-md bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">
@@ -455,6 +499,43 @@
             </div>
         </div>
     </footer>
+
+    <!-- Mobile Bottom Navigation Bar (Khusus Tampilan HP / Smartphone) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 text-slate-300 no-print pb-safe shadow-[0_-4px_25px_rgba(0,0,0,0.35)]">
+        <div class="grid grid-cols-5 h-15 max-w-md mx-auto items-center">
+            <!-- 1. Beranda / Dashboard -->
+            <a href="{{ route('dashboard') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ request()->routeIs('dashboard') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                <i class="fa-solid fa-house text-base {{ request()->routeIs('dashboard') ? 'scale-110' : '' }}"></i>
+                <span class="text-[9.5px] mt-1 tracking-tight">Beranda</span>
+            </a>
+
+            <!-- 2. Kelas & Nilai -->
+            <a href="{{ route('kelas.index') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('absensi-harian.*') && !request()->routeIs('kelas.absensi-harian.*') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                <i class="fa-solid fa-chalkboard-user text-base {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('absensi-harian.*') && !request()->routeIs('kelas.absensi-harian.*') ? 'scale-110' : '' }}"></i>
+                <span class="text-[9.5px] mt-1 tracking-tight">Kelas</span>
+            </a>
+
+            <!-- 3. Tombol Tengah Menonjol: Absensi Harian Guru -->
+            <a href="{{ route('absensi-harian.index') }}" class="flex flex-col items-center justify-center -mt-4 group">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-orange-500 text-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/35 ring-4 ring-slate-900 group-active:scale-95 transition-transform duration-150 font-black">
+                    <i class="fa-solid fa-calendar-check text-lg text-slate-950"></i>
+                </div>
+                <span class="text-[9.5px] font-extrabold mt-1 {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'text-amber-400' : 'text-slate-300' }}">Absensi</span>
+            </a>
+
+            <!-- 4. Data Siswa -->
+            <a href="{{ route('siswa.index') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ request()->routeIs('siswa.*') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                <i class="fa-solid fa-user-graduate text-base {{ request()->routeIs('siswa.*') ? 'scale-110' : '' }}"></i>
+                <span class="text-[9.5px] mt-1 tracking-tight">Siswa</span>
+            </a>
+
+            <!-- 5. Riwayat Raport -->
+            <a href="{{ route('raport.riwayat') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ request()->routeIs('raport.riwayat') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                <i class="fa-solid fa-print text-base {{ request()->routeIs('raport.riwayat') ? 'scale-110' : '' }}"></i>
+                <span class="text-[9.5px] mt-1 tracking-tight">Raport</span>
+            </a>
+        </div>
+    </nav>
 
     @stack('scripts')
 </body>

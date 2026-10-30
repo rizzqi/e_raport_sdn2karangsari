@@ -85,6 +85,15 @@
                title="Input nilai secara cepat dalam bentuk tabel matriks">
                 <i class="fa-solid fa-table-cells mr-2 text-indigo-600"></i> Input Cepat Matriks
             </a>
+
+            <!-- Tombol Kelola Rincian Nilai Harian -->
+            @if($mapels->isNotEmpty())
+                <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapels->first()->id, 'tahun' => $tahun, 'bulan' => $bulan]) }}"
+                   class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
+                   title="Kelola rincian penilaian harian per mapel untuk bulan {{ $namaBulan }}">
+                    <i class="fa-solid fa-list-check mr-2 text-amber-300"></i> Kelola Rincian Harian
+                </a>
+            @endif
         </div>
 
         <div class="flex flex-wrap items-center gap-2">

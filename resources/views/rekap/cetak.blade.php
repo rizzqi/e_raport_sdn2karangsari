@@ -149,8 +149,11 @@
         <!-- Judul Dokumen Rekap -->
         <div class="text-center mb-3">
             <h2 class="text-sm font-black uppercase tracking-wider text-black underline">
-                BUKU LEGER &amp; REKAPITULASI NILAI {{ $periode === 'sas' ? 'SEMESTER' : 'TENGAH SEMESTER (STS)' }}
+                LEMBAR DAFTAR NILAI &amp; REKAPITULASI NILAI {{ $periode === 'sas' ? 'SEMESTER' : 'TENGAH SEMESTER (STS)' }}
             </h2>
+            <p class="text-[8.5pt] font-bold text-slate-800 uppercase tracking-wide mt-0.5">
+                KOLEKTIF SEMUA MATA PELAJARAN &bull; KELAS {{ strtoupper($kelas->nama) }}
+            </p>
             <div class="flex justify-between items-center text-[8pt] text-black font-semibold mt-1.5 px-1">
                 <div>
                     <span>Kelas: <strong>{{ $kelas->nama }}</strong> ({{ $kelas->fase ?? 'Fase A' }})</span> &bull;

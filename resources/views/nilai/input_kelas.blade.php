@@ -150,7 +150,60 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
+                <!-- Tampilan Mobile Card List (Khusus HP / Layar Sentuh) -->
+                <div class="block md:hidden divide-y divide-slate-100">
+                    @forelse($kelasSiswaList as $idx => $ks)
+                        @php
+                            $n = $nilaiList->get($ks->id);
+                            $fVal = $n && $n->formatif !== null ? (float)$n->formatif : '';
+                            $sVal = $n && $n->sumatif !== null ? (float)$n->sumatif : '';
+                            $val = $sVal !== '' ? $sVal : $fVal;
+                            $kkm = $kelas->getKkmForMapel($activeMapel);
+                        @endphp
+                        <div class="p-3.5 space-y-2.5 bg-white">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
+                                        {{ $idx + 1 }}
+                                    </span>
+                                    <div class="min-w-0">
+                                        <h4 class="font-bold text-xs text-slate-900 truncate">{{ $ks->siswa->nama }}</h4>
+                                        <p class="text-[10px] text-slate-400 font-mono">NIS: {{ $ks->siswa->nis }} &bull; KKM: {{ $kkm }}</p>
+                                    </div>
+                                </div>
+                                <span id="mobile_status_{{ $ks->id }}" class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 {{ $val !== '' ? ($val >= $kkm ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800') : 'text-slate-400 bg-slate-100' }}">
+                                    {{ $val !== '' ? ($val >= $kkm ? 'Tuntas' : 'Belum Tuntas') : 'Kosong' }}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1">
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Nilai Siswa (0-100):</label>
+                                    <input type="number" step="0.01" min="0" max="100"
+                                        name="sumatif[{{ $ks->id }}]"
+                                        value="{{ $val }}"
+                                        placeholder="0 - 100"
+                                        oninput="checkKetuntasan(this, 'status_{{ $ks->id }}', {{ $kkm }}); checkKetuntasan(this, 'mobile_status_{{ $ks->id }}', {{ $kkm }})"
+                                        class="w-full text-center py-2 px-3 text-base font-bold font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                </div>
+                                <div class="shrink-0 self-end">
+                                    <a href="{{ route('nilai.input.siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $ks->id, 'periode' => $periode]) }}"
+                                       class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1" title="Input lengkap semua mapel">
+                                        <span>Rincian</span>
+                                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="p-8 text-center text-slate-400 text-xs">
+                            Belum ada siswa di kelas ini.
+                        </div>
+                    @endforelse
+                </div>
+
+                <!-- Tabel untuk Layar Desktop & Tablet -->
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-600">
                             <tr>
@@ -214,7 +267,7 @@
                     </table>
                 </div>
 
-                <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                <div class="p-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <span class="text-xs text-slate-500">
                         Mapel: <strong>{{ $activeMapel->nama }}</strong> | Standar KKM: <strong>{{ $activeMapel->kkm ?? 70 }}</strong>
                     </span>
@@ -226,6 +279,15 @@
                             <i class="fa-solid fa-floppy-disk mr-2"></i> Simpan Seluruh Nilai Mapel Ini
                         </button>
                     </div>
+                </div>
+
+                <!-- Floating Mobile Action Bar (Khusus HP agar Guru Mudah Simpan saat Scroll) -->
+                <div class="md:hidden fixed bottom-15 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-[0_-2px_15px_rgba(0,0,0,0.1)] flex items-center gap-2">
+                    <button type="submit"
+                        class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs shadow-md shadow-emerald-600/25 flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Simpan Nilai {{ $activeMapel->nama }}</span>
+                    </button>
                 </div>
             </div>
         </form>
@@ -318,6 +380,19 @@
             });
         }
     }
+
+    // Sinkronisasi otomatis nilai antara tampilan Mobile dan Desktop
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('input[name^="sumatif["]')) {
+            const name = e.target.name;
+            const val = e.target.value;
+            document.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
+                if (inp !== e.target && inp.value !== val) {
+                    inp.value = val;
+                }
+            });
+        }
+    });
 </script>
 @endpush
 @endsection

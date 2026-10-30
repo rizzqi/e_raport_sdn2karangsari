@@ -15,7 +15,43 @@
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
+        <!-- Tampilan Kartu Mobile Khusus HP -->
+        <div class="block md:hidden divide-y divide-slate-100">
+            @forelse($riwayatList as $index => $r)
+                <div class="p-3.5 space-y-2 bg-white">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-xs text-slate-900 truncate">{{ $r->kelasSiswa->siswa->nama ?? 'Siswa dihapus' }}</h4>
+                            <p class="text-[10px] text-slate-500 mt-0.5">
+                                {{ $r->kelasSiswa->kelas->nama ?? '-' }} &bull; {{ $r->created_at->format('d/m/Y H:i') }}
+                            </p>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase shrink-0 {{ strtolower($r->periode) === 'sts' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800' }}">
+                            {{ strtoupper($r->periode) }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-50">
+                        <span class="text-[10px] text-slate-400">
+                            Oleh: <strong class="text-slate-600">{{ $r->pembuat->name ?? 'Sistem' }}</strong>
+                        </span>
+                        @if($r->kelas_siswa_id)
+                            <a href="{{ route('raport.preview', ['kelasSiswa' => $r->kelas_siswa_id, 'periode' => $r->periode]) }}"
+                               class="inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 transition">
+                                <i class="fa-solid fa-file-lines mr-1 text-emerald-600"></i> Buka Raport
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center text-slate-400 text-xs">
+                    Belum ada riwayat pencetakan raport.
+                </div>
+            @endforelse
+        </div>
+
+        <!-- Tabel untuk Layar Desktop & Tablet -->
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-600">
                     <tr>

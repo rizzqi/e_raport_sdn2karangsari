@@ -8,6 +8,7 @@ use App\Http\Controllers\KelasController;
 use App\Http\Controllers\MataPelajaranController;
 use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\NilaiFormatifBulananController;
+use App\Http\Controllers\NilaiFormatifHarianController;
 use App\Http\Controllers\NilaiMapelController;
 use App\Http\Controllers\PenempatanSiswaController;
 use App\Http\Controllers\RaportController;
@@ -41,6 +42,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/raport/cetak-sekelas', [RaportController::class, 'cetakKelas'])->name('raport.cetak.kelas');
         Route::get('/raport/download-kelas-pdf', [RaportController::class, 'downloadKelasPdf'])->name('raport.download.kelas.pdf');
         Route::get('/raport/download-kelas-docx', [RaportController::class, 'downloadKelasDocx'])->name('raport.download.kelas.docx');
+        Route::get('/lembar-sts-sas/cetak', [RaportController::class, 'lembarStsSasCetakKelas'])->name('kelas.lembar-sts-sas.cetak');
+        Route::get('/lembar-sts-sas/pdf-sekelas', [RaportController::class, 'lembarStsSasKelasPdf'])->name('kelas.lembar-sts-sas.pdf-sekelas');
+        Route::get('/lembar-sts-sas/siswa/{kelasSiswa}/cetak', [RaportController::class, 'lembarStsSasCetakSiswa'])->name('kelas.lembar-sts-sas.cetak-siswa');
+        Route::get('/lembar-sts-sas/siswa/{kelasSiswa}/pdf', [RaportController::class, 'lembarStsSasPdf'])->name('kelas.lembar-sts-sas.pdf-siswa');
         Route::get('/daftar-hadir', [KelasController::class, 'daftarHadir'])->name('kelas.daftar-hadir');
         Route::get('/daftar-hadir/excel', [KelasController::class, 'downloadDaftarHadirExcel'])->name('kelas.daftar-hadir.excel');
 
@@ -121,6 +126,16 @@ Route::middleware('auth')->group(function () {
         Route::post('/mapel/{mapel}/nilai/buka-kunci', [NilaiMapelController::class, 'bukaKunciNilai'])->name('kelas.mapel.nilai.buka-kunci');
         Route::get('/mapel/{mapel}/cetak-formatif-pdf', [NilaiMapelController::class, 'cetakFormatifPdf'])->name('kelas.mapel.nilai.cetak-formatif-pdf');
         Route::get('/mapel/{mapel}/siswa/{kelasSiswa}/cetak-formatif-pdf', [NilaiMapelController::class, 'cetakFormatifSiswaPdf'])->name('kelas.mapel.nilai.cetak-formatif-siswa-pdf');
+        Route::get('/mapel/{mapel}/cetak-uts-pdf', [NilaiMapelController::class, 'cetakUtsPdf'])->name('kelas.mapel.nilai.cetak-uts-pdf');
+        Route::get('/mapel/{mapel}/cetak-uas-pdf', [NilaiMapelController::class, 'cetakUasPdf'])->name('kelas.mapel.nilai.cetak-uas-pdf');
+
+        // Rincian Penilaian Harian di dalam Nilai Formatif Bulanan (Fitur Terpadu)
+        Route::get('/mapel/{mapel}/formatif-harian', [NilaiFormatifHarianController::class, 'index'])->name('kelas.mapel.formatif-harian');
+        Route::post('/mapel/{mapel}/formatif-harian/penilaian', [NilaiFormatifHarianController::class, 'tambahPenilaian'])->name('kelas.mapel.formatif-harian.tambah-penilaian');
+        Route::put('/mapel/{mapel}/formatif-harian/penilaian/{penilaian}', [NilaiFormatifHarianController::class, 'updatePenilaian'])->name('kelas.mapel.formatif-harian.update-penilaian');
+        Route::delete('/mapel/{mapel}/formatif-harian/penilaian/{penilaian}', [NilaiFormatifHarianController::class, 'hapusPenilaian'])->name('kelas.mapel.formatif-harian.hapus-penilaian');
+        Route::post('/mapel/{mapel}/formatif-harian/simpan', [NilaiFormatifHarianController::class, 'simpan'])->name('kelas.mapel.formatif-harian.simpan');
+        Route::get('/mapel/{mapel}/formatif-harian/cetak', [NilaiFormatifHarianController::class, 'cetak'])->name('kelas.mapel.formatif-harian.cetak');
     });
 
     // HANYA ADMIN YANG DAPAT MENGINPUT & MENGUBAH DATA MASTER / PENGGUNA

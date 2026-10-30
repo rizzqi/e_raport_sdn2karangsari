@@ -193,7 +193,82 @@
 
     <!-- Tabel Siswa -->
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
+        <!-- Tampilan Kartu Siswa Khusus HP / Layar Kecil -->
+        <div class="block md:hidden divide-y divide-slate-100">
+            @forelse($siswaList as $index => $s)
+                <div class="p-3.5 space-y-2 bg-white">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
+                                {{ substr($s->nama, 0, 1) }}
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-xs text-slate-900 truncate">{{ $s->nama }}</h4>
+                                <p class="text-[10px] text-slate-500 font-mono mt-0.5">
+                                    NIS: <strong class="text-slate-700">{{ $s->nis }}</strong> &bull; NISN: {{ $s->nisn ?? '-' }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            @if($s->status === 'aktif')
+                                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800">Aktif</span>
+                            @else
+                                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-600">Lulus</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-50">
+                        <div>
+                            @if($s->kelasSiswa->isNotEmpty())
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg font-bold text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    <i class="fa-solid fa-graduation-cap text-[9px] mr-1 text-emerald-600"></i>
+                                    {{ $s->kelasSiswa->last()->kelas->nama ?? '-' }}
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 italic">
+                                    Belum Ada Kelas
+                                </span>
+                            @endif
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            @if(auth()->user()->isAdmin())
+                                <button onclick="editSiswa({{ json_encode($s) }})"
+                                    class="px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition" title="Ubah">
+                                    <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+                                </button>
+                                <form action="{{ route('siswa.destroy', $s->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus siswa {{ $s->nama }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="p-1.5 text-rose-500 hover:text-rose-700 transition" title="Hapus">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            @else
+                                @php
+                                    $targetKs = $s->kelasSiswa->first(function ($ks) use ($kelasList) {
+                                        return $kelasList->contains('id', $ks->kelas_id);
+                                    }) ?: $s->kelasSiswa->last();
+                                @endphp
+                                @if($targetKs)
+                                    <a href="{{ route('raport.preview', $targetKs->id) }}" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition" title="Lihat Raport Siswa">
+                                        <i class="fa-solid fa-file-lines mr-1 text-emerald-600"></i> Raport
+                                    </a>
+                                @endif
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center text-slate-400">
+                    Tidak ada data siswa yang sesuai pencarian.
+                </div>
+            @endforelse
+        </div>
+
+        <!-- Tabel untuk Layar Desktop & Tablet -->
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-600">
                     <tr>

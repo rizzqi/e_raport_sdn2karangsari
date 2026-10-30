@@ -424,4 +424,49 @@ class RaportTest extends TestCase
         $pdfKelas->assertStatus(200);
         $this->assertEquals('application/pdf', $pdfKelas->headers->get('content-type'));
     }
+
+    public function test_lembar_sts_and_sas_dedicated_format(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $ks = $kelas->kelasSiswa->first();
+
+        // 1. Lembar STS Cetak Sekelas di Browser
+        $stsResponse = $this->actingAs($admin)->get(route('kelas.lembar-sts-sas.cetak', [
+            'kelas' => $kelas->id,
+            'periode' => 'sts',
+        ]));
+        $stsResponse->assertStatus(200);
+        $stsResponse->assertSee('LAPORAN HASIL BELAJAR PESERTA DIDIK');
+        $stsResponse->assertSee('SUMATIF TENGAH SEMESTER (STS)');
+        $stsResponse->assertSee('PERKEMBANGAN KARAKTER &amp; KETIDAKHADIRAN', false);
+        $stsResponse->assertSee('Tanpa Ket.');
+        $stsResponse->assertSee($ks->siswa->nama);
+
+        // 2. Lembar SAS Cetak Sekelas di Browser
+        $sasResponse = $this->actingAs($admin)->get(route('kelas.lembar-sts-sas.cetak', [
+            'kelas' => $kelas->id,
+            'periode' => 'sas',
+        ]));
+        $sasResponse->assertStatus(200);
+        $sasResponse->assertSee('LAPORAN HASIL BELAJAR PESERTA DIDIK');
+        $sasResponse->assertSee('SUMATIF AKHIR SEMESTER (SAS)');
+
+        // 3. Unduh PDF Sekelas STS
+        $pdfSekelas = $this->actingAs($admin)->get(route('kelas.lembar-sts-sas.pdf-sekelas', [
+            'kelas' => $kelas->id,
+            'periode' => 'sts',
+        ]));
+        $pdfSekelas->assertStatus(200);
+        $this->assertEquals('application/pdf', $pdfSekelas->headers->get('content-type'));
+
+        // 4. Unduh PDF Siswa Tunggal STS
+        $pdfSiswa = $this->actingAs($admin)->get(route('kelas.lembar-sts-sas.pdf-siswa', [
+            'kelas' => $kelas->id,
+            'kelasSiswa' => $ks->id,
+            'periode' => 'sts',
+        ]));
+        $pdfSiswa->assertStatus(200);
+        $this->assertEquals('application/pdf', $pdfSiswa->headers->get('content-type'));
+    }
 }

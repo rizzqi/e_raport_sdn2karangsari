@@ -230,8 +230,93 @@
                     </button>
                 </div>
 
-                <!-- Table Daftar Siswa -->
-                <div class="overflow-x-auto">
+                <!-- Tampilan Mobile Card List (Khusus Layar HP / Smartphone) -->
+                <div class="block md:hidden divide-y divide-slate-100">
+                    @forelse($kelasSiswaList as $index => $ks)
+                        @php
+                            $absen = $absenHariIni->get($ks->id);
+                            $currentStatus = $absen ? $absen->status : 'H';
+                            $currentKet = $absen ? $absen->keterangan : '';
+                        @endphp
+                        <div class="p-3.5 space-y-2.5 bg-white">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
+                                        {{ $index + 1 }}
+                                    </span>
+                                    <div class="min-w-0">
+                                        <h4 class="font-bold text-xs text-slate-900 truncate">{{ $ks->siswa->nama }}</h4>
+                                        <p class="text-[10px] text-slate-400 font-mono">NISN: {{ $ks->siswa->nisn ?? '-' }}</p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 {{ $ks->siswa->jenis_kelamin === 'L' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-pink-50 text-pink-700 border border-pink-200' }}">
+                                    {{ $ks->siswa->jenis_kelamin ?? '-' }}
+                                </span>
+                            </div>
+
+                            <!-- Radio Buttons H / S / I / A (Ergonomis untuk Jempol) -->
+                            <div class="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-xl">
+                                <!-- Hadir (H) -->
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="status[{{ $ks->id }}]" value="H"
+                                        {{ $currentStatus === 'H' ? 'checked' : '' }}
+                                        class="peer sr-only status-radio-h">
+                                    <span class="w-full py-2.5 rounded-lg text-xs font-black transition flex flex-col items-center justify-center text-slate-600 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:shadow-sm">
+                                        <span>H</span>
+                                        <span class="text-[8px] font-normal opacity-90">Hadir</span>
+                                    </span>
+                                </label>
+
+                                <!-- Sakit (S) -->
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="status[{{ $ks->id }}]" value="S"
+                                        {{ $currentStatus === 'S' ? 'checked' : '' }}
+                                        class="peer sr-only status-radio-s">
+                                    <span class="w-full py-2.5 rounded-lg text-xs font-black transition flex flex-col items-center justify-center text-slate-600 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:shadow-sm">
+                                        <span>S</span>
+                                        <span class="text-[8px] font-normal opacity-90">Sakit</span>
+                                    </span>
+                                </label>
+
+                                <!-- Izin (I) -->
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="status[{{ $ks->id }}]" value="I"
+                                        {{ $currentStatus === 'I' ? 'checked' : '' }}
+                                        class="peer sr-only status-radio-i">
+                                    <span class="w-full py-2.5 rounded-lg text-xs font-black transition flex flex-col items-center justify-center text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:shadow-sm">
+                                        <span>I</span>
+                                        <span class="text-[8px] font-normal opacity-90">Izin</span>
+                                    </span>
+                                </label>
+
+                                <!-- Alpa (A) -->
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="status[{{ $ks->id }}]" value="A"
+                                        {{ $currentStatus === 'A' ? 'checked' : '' }}
+                                        class="peer sr-only status-radio-a">
+                                    <span class="w-full py-2.5 rounded-lg text-xs font-black transition flex flex-col items-center justify-center text-slate-600 peer-checked:bg-rose-600 peer-checked:text-white peer-checked:shadow-sm">
+                                        <span>A</span>
+                                        <span class="text-[8px] font-normal opacity-90">Alpa</span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <!-- Input Keterangan Mobile -->
+                            <div>
+                                <input type="text" name="keterangan[{{ $ks->id }}]" value="{{ $currentKet }}"
+                                    placeholder="{{ $tipe === 'pjok' ? 'cth: cedera ringan / batuk...' : ($tipe === 'agama' ? 'cth: baca iqro / hafalan...' : 'cth: surat dokter / izin...') }}"
+                                    class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                            </div>
+                        </div>
+                    @empty
+                        <div class="p-8 text-center text-slate-400">
+                            Belum ada siswa yang ditempatkan pada rombel kelas ini.
+                        </div>
+                    @endforelse
+                </div>
+
+                <!-- Table Daftar Siswa (Khusus Desktop & Tablet) -->
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-xs text-left">
                         <thead class="bg-slate-100 text-slate-700 uppercase tracking-wider font-bold text-[10px] border-b border-slate-200">
                             <tr>
@@ -334,18 +419,32 @@
                 </div>
 
                 <!-- Footer Simpan -->
-                <div class="p-4 bg-slate-50/70 border-t border-slate-200 flex items-center justify-between">
+                <div class="p-4 bg-slate-50/70 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <span class="text-xs text-slate-500">
                         <i class="fa-solid fa-circle-info text-amber-500 mr-1"></i> Perubahan akan langsung tersimpan setelah tombol ditekan.
                     </span>
                     <button type="submit"
-                        class="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center gap-2">
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
                         <i class="fa-solid fa-floppy-disk"></i>
                         <span>Simpan Absensi Harian</span>
                     </button>
                 </div>
             </div>
         </form>
+
+        <!-- Floating Quick Action Bar Khusus HP (Memudahkan Guru Menyimpan saat Scroll di HP) -->
+        <div class="md:hidden fixed bottom-15 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-[0_-2px_15px_rgba(0,0,0,0.1)] flex items-center gap-2">
+            <button type="button" onclick="setSemuaHadir()"
+                class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition flex items-center justify-center gap-1.5 shadow-xs">
+                <i class="fa-solid fa-check-double text-emerald-600"></i>
+                <span>Semua Hadir</span>
+            </button>
+            <button type="submit" form="formAbsensiHarian"
+                class="flex-1 py-2.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white transition flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Simpan Absen</span>
+            </button>
+        </div>
     </div>
 
     <!-- TAB 2: MATRIKS REKAP KALENDER BULANAN (TANGGAL 1 - 31) -->
@@ -500,6 +599,24 @@
             radio.checked = true;
         });
     }
+
+    // Sinkronisasi otomatis antara input tampilan Mobile dan Desktop
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('input[type="radio"][name^="status["]')) {
+            const name = e.target.name;
+            const val = e.target.value;
+            document.querySelectorAll(`input[type="radio"][name="${name}"][value="${val}"]`).forEach(r => {
+                r.checked = true;
+            });
+        }
+        if (e.target.matches('input[name^="keterangan["]')) {
+            const name = e.target.name;
+            const val = e.target.value;
+            document.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
+                if (inp !== e.target) inp.value = val;
+            });
+        }
+    });
 </script>
 @endpush
 @endsection

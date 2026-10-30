@@ -53,6 +53,11 @@ class KelasSiswa extends Model
         return $this->hasMany(NilaiFormatifBulanan::class);
     }
 
+    public function nilaiFormatifHarian(): HasMany
+    {
+        return $this->hasMany(NilaiFormatifHarian::class, 'kelas_siswa_id');
+    }
+
     public function nilaiRaporMapel(): HasMany
     {
         return $this->hasMany(NilaiRaporMapel::class);
