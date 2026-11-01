@@ -298,6 +298,10 @@
                             $currentStatus = $absen ? $absen->status : 'H';
                             $currentKet = $absen ? $absen->keterangan : '';
                         @endphp
+                        <!-- Hidden Inputs Utama untuk Siswa Ini (Disimpan ke Form) -->
+                        <input type="hidden" name="status[{{ $ks->id }}]" id="status_input_{{ $ks->id }}" value="{{ $currentStatus }}" class="real-status-input" data-ks-id="{{ $ks->id }}">
+                        <input type="hidden" name="keterangan[{{ $ks->id }}]" id="keterangan_input_{{ $ks->id }}" value="{{ $currentKet }}">
+
                         <div class="p-3.5 space-y-2.5 bg-white">
                             <div class="flex items-center justify-between gap-2">
                                 <div class="flex items-center gap-2.5 min-w-0">
@@ -314,56 +318,41 @@
                                 </span>
                             </div>
 
-                            <!-- Radio Buttons H / S / I / A (Ergonomis untuk Jempol) -->
-                            <div class="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-xl">
+                            <!-- Tombol Pilihan H / S / I / A (Ergonomis untuk Jempol di HP) -->
+                            <div class="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200/60 shadow-2xs">
                                 <!-- Hadir (H) -->
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="status[{{ $ks->id }}]" value="H"
-                                        {{ $currentStatus === 'H' ? 'checked' : '' }}
-                                        class="peer sr-only status-radio-h">
-                                    <span class="w-full py-2.5 rounded-lg text-xs font-black transition flex flex-col items-center justify-center text-slate-600 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:shadow-sm">
-                                        <span>H</span>
-                                        <span class="text-[8px] font-normal opacity-90">Hadir</span>
-                                    </span>
-                                </label>
+                                <button type="button" onclick="pilihStatus({{ $ks->id }}, 'H')" id="btn_m_{{ $ks->id }}_H"
+                                    class="w-full py-2.5 rounded-lg text-xs font-black transition-all duration-150 flex flex-col items-center justify-center {{ $currentStatus === 'H' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70' }}">
+                                    <span class="text-xs">H</span>
+                                    <span class="text-[8px] font-normal sub-label {{ $currentStatus === 'H' ? 'text-emerald-100' : 'text-slate-400' }}">Hadir</span>
+                                </button>
 
                                 <!-- Sakit (S) -->
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="status[{{ $ks->id }}]" value="S"
-                                        {{ $currentStatus === 'S' ? 'checked' : '' }}
-                                        class="peer sr-only status-radio-s">
-                                    <span class="w-full py-2.5 rounded-lg text-xs font-black transition flex flex-col items-center justify-center text-slate-600 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:shadow-sm">
-                                        <span>S</span>
-                                        <span class="text-[8px] font-normal opacity-90">Sakit</span>
-                                    </span>
-                                </label>
+                                <button type="button" onclick="pilihStatus({{ $ks->id }}, 'S')" id="btn_m_{{ $ks->id }}_S"
+                                    class="w-full py-2.5 rounded-lg text-xs font-black transition-all duration-150 flex flex-col items-center justify-center {{ $currentStatus === 'S' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70' }}">
+                                    <span class="text-xs">S</span>
+                                    <span class="text-[8px] font-normal sub-label {{ $currentStatus === 'S' ? 'text-amber-100' : 'text-slate-400' }}">Sakit</span>
+                                </button>
 
                                 <!-- Izin (I) -->
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="status[{{ $ks->id }}]" value="I"
-                                        {{ $currentStatus === 'I' ? 'checked' : '' }}
-                                        class="peer sr-only status-radio-i">
-                                    <span class="w-full py-2.5 rounded-lg text-xs font-black transition flex flex-col items-center justify-center text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:shadow-sm">
-                                        <span>I</span>
-                                        <span class="text-[8px] font-normal opacity-90">Izin</span>
-                                    </span>
-                                </label>
+                                <button type="button" onclick="pilihStatus({{ $ks->id }}, 'I')" id="btn_m_{{ $ks->id }}_I"
+                                    class="w-full py-2.5 rounded-lg text-xs font-black transition-all duration-150 flex flex-col items-center justify-center {{ $currentStatus === 'I' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70' }}">
+                                    <span class="text-xs">I</span>
+                                    <span class="text-[8px] font-normal sub-label {{ $currentStatus === 'I' ? 'text-blue-100' : 'text-slate-400' }}">Izin</span>
+                                </button>
 
                                 <!-- Alpa (A) -->
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="status[{{ $ks->id }}]" value="A"
-                                        {{ $currentStatus === 'A' ? 'checked' : '' }}
-                                        class="peer sr-only status-radio-a">
-                                    <span class="w-full py-2.5 rounded-lg text-xs font-black transition flex flex-col items-center justify-center text-slate-600 peer-checked:bg-rose-600 peer-checked:text-white peer-checked:shadow-sm">
-                                        <span>A</span>
-                                        <span class="text-[8px] font-normal opacity-90">Alpa</span>
-                                    </span>
-                                </label>
+                                <button type="button" onclick="pilihStatus({{ $ks->id }}, 'A')" id="btn_m_{{ $ks->id }}_A"
+                                    class="w-full py-2.5 rounded-lg text-xs font-black transition-all duration-150 flex flex-col items-center justify-center {{ $currentStatus === 'A' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70' }}">
+                                    <span class="text-xs">A</span>
+                                    <span class="text-[8px] font-normal sub-label {{ $currentStatus === 'A' ? 'text-rose-100' : 'text-slate-400' }}">Alpa</span>
+                                </button>
                             </div>
 
                             <!-- Input Keterangan Mobile -->
                             <div>
-                                <input type="text" name="keterangan[{{ $ks->id }}]" value="{{ $currentKet }}"
+                                <input type="text" id="keterangan_m_{{ $ks->id }}" value="{{ $currentKet }}"
+                                    oninput="syncKeterangan({{ $ks->id }}, this.value)"
                                     placeholder="{{ $tipe === 'pjok' ? 'cth: cedera ringan / batuk...' : ($tipe === 'agama' ? 'cth: baca iqro / hafalan...' : 'cth: surat dokter / izin...') }}"
                                     class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
                             </div>
@@ -418,51 +407,38 @@
                                     </td>
                                     <!-- Radio Buttons H / S / I / A -->
                                     <td class="py-2.5 px-4 text-center">
+                                    <!-- Tombol Pilihan H / S / I / A Desktop -->
+                                    <td class="py-2.5 px-4 text-center">
                                         <div class="inline-flex rounded-xl p-1 bg-slate-100 border border-slate-200 shadow-2xs gap-1">
                                             <!-- Hadir (H) -->
-                                            <label class="cursor-pointer">
-                                                <input type="radio" name="status[{{ $ks->id }}]" value="H"
-                                                    {{ $currentStatus === 'H' ? 'checked' : '' }}
-                                                    class="peer sr-only status-radio-h">
-                                                <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-black transition text-slate-600 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:shadow-xs">
-                                                    H
-                                                </span>
-                                            </label>
+                                            <button type="button" onclick="pilihStatus({{ $ks->id }}, 'H')" id="btn_d_{{ $ks->id }}_H"
+                                                class="px-2.5 py-1 rounded-lg text-xs font-black transition-all duration-150 {{ $currentStatus === 'H' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/70' }}">
+                                                H
+                                            </button>
 
                                             <!-- Sakit (S) -->
-                                            <label class="cursor-pointer">
-                                                <input type="radio" name="status[{{ $ks->id }}]" value="S"
-                                                    {{ $currentStatus === 'S' ? 'checked' : '' }}
-                                                    class="peer sr-only status-radio-s">
-                                                <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-black transition text-slate-600 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:shadow-xs">
-                                                    S
-                                                </span>
-                                            </label>
+                                            <button type="button" onclick="pilihStatus({{ $ks->id }}, 'S')" id="btn_d_{{ $ks->id }}_S"
+                                                class="px-2.5 py-1 rounded-lg text-xs font-black transition-all duration-150 {{ $currentStatus === 'S' ? 'bg-amber-500 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/70' }}">
+                                                S
+                                            </button>
 
                                             <!-- Izin (I) -->
-                                            <label class="cursor-pointer">
-                                                <input type="radio" name="status[{{ $ks->id }}]" value="I"
-                                                    {{ $currentStatus === 'I' ? 'checked' : '' }}
-                                                    class="peer sr-only status-radio-i">
-                                                <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-black transition text-slate-600 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:shadow-xs">
-                                                    I
-                                                </span>
-                                            </label>
+                                            <button type="button" onclick="pilihStatus({{ $ks->id }}, 'I')" id="btn_d_{{ $ks->id }}_I"
+                                                class="px-2.5 py-1 rounded-lg text-xs font-black transition-all duration-150 {{ $currentStatus === 'I' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/70' }}">
+                                                I
+                                            </button>
 
                                             <!-- Alpa (A) -->
-                                            <label class="cursor-pointer">
-                                                <input type="radio" name="status[{{ $ks->id }}]" value="A"
-                                                    {{ $currentStatus === 'A' ? 'checked' : '' }}
-                                                    class="peer sr-only status-radio-a">
-                                                <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-black transition text-slate-600 peer-checked:bg-rose-600 peer-checked:text-white peer-checked:shadow-xs">
-                                                    A
-                                                </span>
-                                            </label>
+                                            <button type="button" onclick="pilihStatus({{ $ks->id }}, 'A')" id="btn_d_{{ $ks->id }}_A"
+                                                class="px-2.5 py-1 rounded-lg text-xs font-black transition-all duration-150 {{ $currentStatus === 'A' ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200/70' }}">
+                                                A
+                                            </button>
                                         </div>
                                     </td>
-                                    <!-- Input Keterangan -->
+                                    <!-- Input Keterangan Desktop -->
                                     <td class="py-2.5 px-4">
-                                        <input type="text" name="keterangan[{{ $ks->id }}]" value="{{ $currentKet }}"
+                                        <input type="text" id="keterangan_d_{{ $ks->id }}" value="{{ $currentKet }}"
+                                            oninput="syncKeterangan({{ $ks->id }}, this.value)"
                                             placeholder="{{ $tipe === 'pjok' ? 'cth: cedera lutut / batuk pusing' : ($tipe === 'agama' ? 'cth: membaca iqra / hafal doa' : 'cth: surat dokter / izin urusan keluarga') }}"
                                             class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
                                     </td>
@@ -725,30 +701,74 @@
 
 @push('scripts')
 <script>
-    function setSemuaHadir() {
-        const hadirs = document.querySelectorAll('.status-radio-h');
-        hadirs.forEach(radio => {
-            radio.checked = true;
+    const STATUS_MAP = {
+        'H': { bg: 'bg-emerald-600', text: 'text-white', sub: 'text-emerald-100', shadow: 'shadow-sm', shadowD: 'shadow-xs' },
+        'S': { bg: 'bg-amber-500', text: 'text-white', sub: 'text-amber-100', shadow: 'shadow-sm', shadowD: 'shadow-xs' },
+        'I': { bg: 'bg-blue-600', text: 'text-white', sub: 'text-blue-100', shadow: 'shadow-sm', shadowD: 'shadow-xs' },
+        'A': { bg: 'bg-rose-600', text: 'text-white', sub: 'text-rose-100', shadow: 'shadow-sm', shadowD: 'shadow-xs' },
+    };
+
+    function pilihStatus(ksId, status) {
+        const hiddenInp = document.getElementById('status_input_' + ksId);
+        if (hiddenInp) {
+            hiddenInp.value = status;
+        }
+
+        ['H', 'S', 'I', 'A'].forEach(s => {
+            // Update Tombol Mobile
+            const btnM = document.getElementById(`btn_m_${ksId}_${s}`);
+            if (btnM) {
+                btnM.classList.remove('bg-emerald-600', 'bg-amber-500', 'bg-blue-600', 'bg-rose-600', 'text-white', 'shadow-sm');
+                const subSpan = btnM.querySelector('.sub-label');
+                if (subSpan) subSpan.classList.remove('text-emerald-100', 'text-amber-100', 'text-blue-100', 'text-rose-100', 'text-slate-400');
+
+                if (s === status) {
+                    btnM.classList.add(STATUS_MAP[s].bg, STATUS_MAP[s].text, STATUS_MAP[s].shadow);
+                    btnM.classList.remove('text-slate-600', 'hover:bg-slate-200/70');
+                    if (subSpan) subSpan.classList.add(STATUS_MAP[s].sub);
+                } else {
+                    btnM.classList.add('text-slate-600', 'hover:bg-slate-200/70');
+                    if (subSpan) subSpan.classList.add('text-slate-400');
+                }
+            }
+
+            // Update Tombol Desktop
+            const btnD = document.getElementById(`btn_d_${ksId}_${s}`);
+            if (btnD) {
+                btnD.classList.remove('bg-emerald-600', 'bg-amber-500', 'bg-blue-600', 'bg-rose-600', 'text-white', 'shadow-xs');
+                if (s === status) {
+                    btnD.classList.add(STATUS_MAP[s].bg, STATUS_MAP[s].text, STATUS_MAP[s].shadowD);
+                    btnD.classList.remove('text-slate-600', 'hover:bg-slate-200/70');
+                } else {
+                    btnD.classList.add('text-slate-600', 'hover:bg-slate-200/70');
+                }
+            }
         });
     }
 
-    // Sinkronisasi otomatis antara input tampilan Mobile dan Desktop
-    document.addEventListener('change', function(e) {
-        if (e.target.matches('input[type="radio"][name^="status["]')) {
-            const name = e.target.name;
-            const val = e.target.value;
-            document.querySelectorAll(`input[type="radio"][name="${name}"][value="${val}"]`).forEach(r => {
-                r.checked = true;
-            });
+    function syncKeterangan(ksId, val) {
+        const hiddenInp = document.getElementById('keterangan_input_' + ksId);
+        if (hiddenInp) {
+            hiddenInp.value = val;
         }
-        if (e.target.matches('input[name^="keterangan["]')) {
-            const name = e.target.name;
-            const val = e.target.value;
-            document.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
-                if (inp !== e.target) inp.value = val;
-            });
+        const inpM = document.getElementById('keterangan_m_' + ksId);
+        if (inpM && inpM !== document.activeElement) {
+            inpM.value = val;
         }
-    });
+        const inpD = document.getElementById('keterangan_d_' + ksId);
+        if (inpD && inpD !== document.activeElement) {
+            inpD.value = val;
+        }
+    }
+
+    function setSemuaHadir() {
+        document.querySelectorAll('.real-status-input').forEach(inp => {
+            const ksId = inp.getAttribute('data-ks-id');
+            if (ksId) {
+                pilihStatus(ksId, 'H');
+            }
+        });
+    }
 </script>
 @endpush
 @endsection
