@@ -64,11 +64,12 @@ class KelasController extends Controller
 
     public function show(Kelas $kelas): View
     {
-        $kelas->load(['wali', 'tahunAjaran', 'sekolah', 'kelasSiswa.siswa', 'guruPengampu.mapel', 'mapelKkm']);
+        $kelas->load(['wali', 'tahunAjaran', 'sekolah', 'kelasSiswa.siswa', 'guruPengampu.mapel', 'guruPengampu.user', 'mapelKkm']);
         $tahunAjaranList = TahunAjaran::orderBy('tahun', 'desc')->get();
         $mapelList = $kelas->mataPelajaran();
+        $guruUsers = User::whereIn('role', ['wali', 'guru', 'admin'])->orderBy('name')->get();
 
-        return view('kelas.show', compact('kelas', 'tahunAjaranList', 'mapelList'));
+        return view('kelas.show', compact('kelas', 'tahunAjaranList', 'mapelList', 'guruUsers'));
     }
 
     public function update(Request $request, Kelas $kelas): RedirectResponse
@@ -169,7 +170,7 @@ class KelasController extends Controller
     }
 
     /**
-     * Perbarui data 3 Guru Pengampu Mata Pelajaran (Non-Wali Kelas).
+     * Perbarui data Guru Pengampu Mata Pelajaran (Non-Wali Kelas).
      */
     public function updateGuruPengampu(Request $request, Kelas $kelas): RedirectResponse
     {
@@ -179,8 +180,9 @@ class KelasController extends Controller
         }
 
         $request->validate([
-            'guru' => 'required|array|min:1|max:5',
+            'guru' => 'required|array|min:1|max:10',
             'guru.*.mapel_id' => 'nullable|exists:mata_pelajaran,id',
+            'guru.*.user_id' => 'nullable|exists:users,id',
             'guru.*.nama' => 'nullable|string|max:255',
             'guru.*.nip' => 'nullable|string|max:100',
         ]);
@@ -188,18 +190,29 @@ class KelasController extends Controller
         $kelas->guruPengampu()->delete();
 
         foreach ($request->input('guru') as $idx => $gData) {
+            $userId = ! empty($gData['user_id']) ? (int) $gData['user_id'] : null;
             $nama = trim($gData['nama'] ?? '');
-            if ($nama !== '') {
+            $nip = ! empty($gData['nip']) ? trim($gData['nip']) : null;
+
+            if ($userId && $nama === '') {
+                $targetUser = User::find($userId);
+                if ($targetUser) {
+                    $nama = $targetUser->name;
+                }
+            }
+
+            if ($nama !== '' || $userId !== null || ! empty($gData['mapel_id'])) {
                 $kelas->guruPengampu()->create([
                     'mapel_id' => ! empty($gData['mapel_id']) ? $gData['mapel_id'] : null,
-                    'nama' => $nama,
-                    'nip' => ! empty($gData['nip']) ? trim($gData['nip']) : null,
+                    'user_id' => $userId,
+                    'nama' => $nama ?: 'Guru Pengampu',
+                    'nip' => $nip,
                     'urutan' => $idx + 1,
                 ]);
             }
         }
 
-        return redirect()->back()->with('success', "Data 3 Guru Mata Pelajaran untuk {$kelas->nama} berhasil diperbarui.");
+        return redirect()->back()->with('success', "Data Guru Pengampu Mata Pelajaran untuk {$kelas->nama} berhasil diperbarui.");
     }
 
     /**

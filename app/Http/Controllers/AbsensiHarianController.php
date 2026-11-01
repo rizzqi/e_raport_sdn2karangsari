@@ -24,17 +24,30 @@ class AbsensiHarianController extends Controller
         $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
         $tanggalObj = Carbon::parse($tanggal)->locale('id');
 
-        $kelasList = Kelas::with(['wali', 'tahunAjaran', 'kelasSiswa'])
+        $kelasQuery = Kelas::with(['wali', 'tahunAjaran', 'kelasSiswa', 'guruPengampu.mapel', 'guruPengampu.user'])
             ->withCount('kelasSiswa')
-            ->orderBy('nama')
-            ->get();
+            ->orderBy('nama');
+
+        $allKelas = $kelasQuery->get();
+
+        // HANYA TAMPILKAN KELAS YANG DIAMPU jika bukan Admin / Kepsek
+        if (! $user->isAdmin() && ! $user->isKepsek()) {
+            $kelasList = $allKelas->filter(function ($k) use ($user) {
+                return $user->hasAnyPenugasanInKelas($k);
+            })->values();
+        } else {
+            $kelasList = $allKelas;
+        }
 
         // Cari mata pelajaran Agama & PJOK
         $mapelAgama = MataPelajaran::where('nama', 'like', '%Agama%')->first();
         $mapelPjok = MataPelajaran::where('nama', 'like', '%PJOK%')->orWhere('nama', 'like', '%Jasmani%')->first();
 
-        // Ringkasan Kehadiran Hari Ini (Semua Kelas)
-        $absenHariIni = AbsensiHarian::whereDate('tanggal', $tanggal)->get();
+        // Ringkasan Kehadiran Hari Ini (berdasarkan rombel yang ditampilkan ke pengguna)
+        $tampilKsIds = $kelasList->flatMap(fn ($k) => $k->kelasSiswa)->pluck('id');
+        $absenHariIni = AbsensiHarian::whereIn('kelas_siswa_id', $tampilKsIds)
+            ->whereDate('tanggal', $tanggal)
+            ->get();
 
         $stats = [
             'total_absen' => $absenHariIni->count(),
@@ -83,12 +96,11 @@ class AbsensiHarianController extends Controller
      * - 'agama': Absensi Sesi Pembelajaran Guru Pendidikan Agama
      * - 'pjok' : Absensi Sesi Pembelajaran Guru PJOK
      */
-    public function kelas(Kelas $kelas, Request $request): View
+    public function kelas(Kelas $kelas, Request $request)
     {
-        $this->authorizeAkses($kelas);
-
-        $kelas->load(['tahunAjaran', 'wali', 'sekolah', 'guruPengampu.mapel']);
+        $kelas->load(['tahunAjaran', 'wali', 'sekolah', 'guruPengampu.mapel', 'guruPengampu.user']);
         $sekolah = $kelas->sekolah ?? Sekolah::first();
+        $user = auth()->user();
 
         // Parameter Tanggal & Tipe
         $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
@@ -97,6 +109,28 @@ class AbsensiHarianController extends Controller
         $tipe = strtolower($request->input('tipe', 'wali'));
         if (! in_array($tipe, ['wali', 'agama', 'pjok'])) {
             $tipe = 'wali';
+        }
+
+        // Validasi Otorisasi Penugasan
+        if (! $user->canInputAbsensi($kelas, $tipe)) {
+            // Cek apakah user punya akses ke tipe lain di kelas ini
+            $fallbackTipe = null;
+            foreach (['wali', 'agama', 'pjok'] as $t) {
+                if ($user->canInputAbsensi($kelas, $t)) {
+                    $fallbackTipe = $t;
+                    break;
+                }
+            }
+
+            if ($fallbackTipe) {
+                return redirect()->route('kelas.absensi-harian.index', [
+                    'kelas' => $kelas->id,
+                    'tanggal' => $tanggal,
+                    'tipe' => $fallbackTipe,
+                ])->with('warning', "Anda dialihkan ke formulir absensi " . strtoupper($fallbackTipe) . " karena Anda tidak memiliki penugasan untuk tipe " . strtoupper($tipe) . " di Kelas {$kelas->nama}.");
+            }
+
+            abort(403, "Akses Ditolak: Anda tidak memiliki penugasan mengajar atau hak akses untuk mengisi absensi pada Kelas {$kelas->nama}.");
         }
 
         // Tentukan Mapel berdasarkan tipe
@@ -217,8 +251,6 @@ class AbsensiHarianController extends Controller
      */
     public function simpan(Kelas $kelas, Request $request): RedirectResponse
     {
-        $this->authorizeAkses($kelas);
-
         $request->validate([
             'tanggal' => 'required|date',
             'tipe' => 'required|in:wali,agama,pjok',
@@ -226,8 +258,16 @@ class AbsensiHarianController extends Controller
             'keterangan' => 'nullable|array',
         ]);
 
+        $kelas->load(['guruPengampu.mapel', 'guruPengampu.user']);
+        $tipe = strtolower($request->input('tipe'));
+        $user = auth()->user();
+
+        // PEMBATASAN AKSES BACKEND: Validasi apakah pengguna berhak menyimpan absensi untuk tipe ini
+        if (! $user->canInputAbsensi($kelas, $tipe)) {
+            abort(403, "Akses Ditolak: Anda tidak memiliki penugasan untuk menyimpan data absensi {$tipe} pada Kelas {$kelas->nama}.");
+        }
+
         $tanggal = $request->input('tanggal');
-        $tipe = $request->input('tipe');
         $statusData = $request->input('status', []);
         $keteranganData = $request->input('keterangan', []);
 
@@ -282,7 +322,10 @@ class AbsensiHarianController extends Controller
      */
     public function syncKehadiranBulanan(Kelas $kelas, Request $request): RedirectResponse
     {
-        $this->authorizeAkses($kelas);
+        $user = auth()->user();
+        if (! $user->isAdmin() && ! ($user->isWali() && (int) $kelas->wali_id === (int) $user->id)) {
+            abort(403, "Hanya Administrator atau Wali Kelas {$kelas->nama} yang berhak menyinkronkan absensi umum ke rekap bulanan.");
+        }
 
         $tahun = (int) $request->input('tahun', now()->year);
         $bulan = (int) $request->input('bulan', now()->month);
@@ -323,9 +366,7 @@ class AbsensiHarianController extends Controller
      */
     public function cetak(Kelas $kelas, Request $request): View
     {
-        $this->authorizeAkses($kelas);
-
-        $kelas->load(['tahunAjaran', 'wali', 'sekolah', 'guruPengampu.mapel']);
+        $kelas->load(['tahunAjaran', 'wali', 'sekolah', 'guruPengampu.mapel', 'guruPengampu.user']);
         $sekolah = $kelas->sekolah ?? Sekolah::first();
 
         $mode = $request->input('mode', 'harian'); // 'harian' atau 'bulanan'
@@ -333,6 +374,11 @@ class AbsensiHarianController extends Controller
         $tanggalObj = Carbon::parse($tanggal)->locale('id');
 
         $tipe = strtolower($request->input('tipe', 'wali'));
+        $user = auth()->user();
+
+        if (! $user->isAdmin() && ! $user->isKepsek() && ! $user->canInputAbsensi($kelas, $tipe)) {
+            abort(403, "Akses Ditolak: Anda tidak memiliki hak akses untuk mencetak absensi {$tipe} Kelas {$kelas->nama}.");
+        }
         $mapel = null;
         if ($tipe === 'agama') {
             $mapel = $kelas->getMapelAgama();
@@ -424,24 +470,25 @@ class AbsensiHarianController extends Controller
     }
 
     /**
-     * Otorisasi akses: Admin, Wali Kelas bersangkutan, atau Guru Pengampu.
+     * Otorisasi akses: Admin, Wali Kelas bersangkutan, atau Guru Pengampu yang ditugaskan.
      */
-    protected function authorizeAkses(Kelas $kelas): void
+    protected function authorizeAkses(Kelas $kelas, ?string $tipe = null): void
     {
         $user = auth()->user();
         if ($user->isAdmin() || $user->isKepsek()) {
             return;
         }
 
-        if ($user->isWali() && $user->id === $kelas->wali_id) {
-            return;
+        if ($tipe !== null) {
+            if ($user->canInputAbsensi($kelas, $tipe)) {
+                return;
+            }
+        } else {
+            if ($user->hasAnyPenugasanInKelas($kelas)) {
+                return;
+            }
         }
 
-        // Guru mata pelajaran diizinkan mengisi absensi kelas
-        if ($user->role === 'guru' || $user->isWali()) {
-            return;
-        }
-
-        abort(403, 'Anda tidak memiliki hak akses untuk absensi rombel kelas ini.');
+        abort(403, "Anda tidak memiliki hak akses atau penugasan untuk rombel Kelas {$kelas->nama}.");
     }
 }

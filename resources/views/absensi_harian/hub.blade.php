@@ -149,139 +149,230 @@
         </div>
     </div>
 
-    <!-- Grid Kartu Kelas -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        @foreach($kelasList as $k)
-            @php
-                $statusK = $statusKelasHariIni[$k->id] ?? [
-                    'wali_terisi' => false,
-                    'wali_hadir' => 0,
-                    'wali_absen' => 0,
-                    'agama_terisi' => false,
-                    'pjok_terisi' => false,
-                ];
-                $isWaliUser = auth()->user()->isWali() && auth()->user()->id === $k->wali_id;
-            @endphp
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between overflow-hidden {{ $isWaliUser ? 'ring-2 ring-amber-400' : '' }}">
-                <div>
-                    <!-- Header Kartu Kelas -->
-                    <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-xl bg-amber-500 text-white font-black flex items-center justify-center text-sm shadow-xs">
-                                {{ $k->tingkat ?? substr($k->nama, 0, 2) }}
-                            </div>
-                            <div>
-                                <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
-                                    <span>Kelas {{ $k->nama }}</span>
-                                    @if($isWaliUser)
-                                        <span class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                            Kelas Anda
-                                        </span>
-                                    @endif
-                                </h3>
-                                <p class="text-[11px] text-slate-500 font-medium">
-                                    <i class="fa-solid fa-user-tie text-[10px] text-slate-400 mr-1"></i>
-                                    {{ $k->nama_wali }}
-                                </p>
-                            </div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                            {{ $k->kelas_siswa_count }} Siswa
-                        </span>
-                    </div>
+    <!-- Bar Informasi Hak Akses & Jumlah Rombel -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+        <div class="flex items-center gap-2 flex-wrap">
+            @if($user->isAdmin())
+                <span class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved text-amber-600"></i> Mode Administrator: Seluruh Rombel ({{ $kelasList->count() }} Kelas)
+                </span>
+            @elseif($user->isKepsek())
+                <span class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-tie text-indigo-600"></i> Mode Monitoring Kepala Sekolah ({{ $kelasList->count() }} Kelas)
+                </span>
+            @else
+                <span class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-chalkboard-user text-emerald-600"></i> Rombel Yang Anda Ampu ({{ $kelasList->count() }} Kelas)
+                </span>
+            @endif
+        </div>
 
-                    <!-- Status Presensi Hari Ini -->
-                    <div class="p-4 space-y-2.5">
-                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                            Status Presensi {{ $tanggalObj->translatedFormat('d M Y') }}:
-                        </div>
-
-                        <!-- Wali Kelas -->
-                        <div class="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                            <span class="font-medium text-slate-700 flex items-center gap-1.5">
-                                <i class="fa-solid fa-chalkboard-user text-amber-500"></i> Wali Kelas
-                            </span>
-                            @if($statusK['wali_terisi'])
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                                    <i class="fa-solid fa-check text-[9px]"></i> Terisi ({{ $statusK['wali_hadir'] }} Hadir, {{ $statusK['wali_absen'] }} SIA)
-                                </span>
-                            @else
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                                    Belum Diisi
-                                </span>
-                            @endif
-                        </div>
-
-                        <!-- Guru Agama -->
-                        <div class="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                            <span class="font-medium text-slate-700 flex items-center gap-1.5">
-                                <i class="fa-solid fa-book-quran text-emerald-600"></i> Pendidikan Agama
-                            </span>
-                            @if($statusK['agama_terisi'])
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                                    <i class="fa-solid fa-check text-[9px]"></i> Terisi
-                                </span>
-                            @else
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                                    Belum Diisi
-                                </span>
-                            @endif
-                        </div>
-
-                        <!-- Guru PJOK -->
-                        <div class="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                            <span class="font-medium text-slate-700 flex items-center gap-1.5">
-                                <i class="fa-solid fa-person-running text-sky-600"></i> PJOK
-                            </span>
-                            @if($statusK['pjok_terisi'])
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                                    <i class="fa-solid fa-check text-[9px]"></i> Terisi
-                                </span>
-                            @else
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                                    Belum Diisi
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Buttons: 3 Pintu Masuk -->
-                <div class="p-4 pt-0 space-y-2">
-                    <div class="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100">
-                        <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $k->id, 'tanggal' => $tanggal, 'tipe' => 'wali']) }}"
-                           class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] transition shadow-xs text-center">
-                            <i class="fa-solid fa-chalkboard-user text-xs mb-0.5"></i>
-                            <span>Wali</span>
-                        </a>
-
-                        <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $k->id, 'tanggal' => $tanggal, 'tipe' => 'agama']) }}"
-                           class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition shadow-xs text-center">
-                            <i class="fa-solid fa-book-quran text-xs mb-0.5"></i>
-                            <span>Agama</span>
-                        </a>
-
-                        <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $k->id, 'tanggal' => $tanggal, 'tipe' => 'pjok']) }}"
-                           class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-[11px] transition shadow-xs text-center">
-                            <i class="fa-solid fa-person-running text-xs mb-0.5"></i>
-                            <span>PJOK</span>
-                        </a>
-                    </div>
-
-                    <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-                        <a href="{{ route('kelas.absensi-harian.cetak', ['kelas' => $k->id, 'tanggal' => $tanggal, 'mode' => 'harian', 'tipe' => 'wali']) }}"
-                           target="_blank" class="hover:text-amber-700 flex items-center gap-1 font-medium">
-                            <i class="fa-solid fa-print text-slate-400"></i> Cetak Hari Ini
-                        </a>
-                        <a href="{{ route('kelas.absensi-harian.cetak', ['kelas' => $k->id, 'tanggal' => $tanggal, 'mode' => 'bulanan', 'tipe' => 'wali']) }}"
-                           target="_blank" class="hover:text-blue-700 flex items-center gap-1 font-medium">
-                            <i class="fa-solid fa-calendar-days text-slate-400"></i> Cetak Rekap Bulan (F4)
-                        </a>
-                    </div>
-                </div>
-            </div>
-        @endforeach
+        <div class="text-[11px] text-slate-500 flex items-center gap-3">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Tombol Aktif = Berwenang Mengisi</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span> <i class="fa-solid fa-lock text-[10px] text-slate-400"></i> Terkunci = Pengampu Lain</span>
+        </div>
     </div>
+
+    @if($kelasList->isEmpty())
+        <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-xl border border-amber-200">
+                <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <h3 class="font-bold text-slate-800 text-sm">Tidak Ada Rombel Yang Anda Ampu</h3>
+            <p class="text-xs text-slate-500 max-w-md mx-auto">
+                Akun Anda saat ini belum tercatat sebagai Wali Kelas maupun Guru Pengampu pada rombel mana pun. Silakan hubungi Administrator Sekolah jika Anda memerlukan penugasan kelas.
+            </p>
+        </div>
+    @else
+        <!-- Grid Kartu Kelas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            @foreach($kelasList as $k)
+                @php
+                    $statusK = $statusKelasHariIni[$k->id] ?? [
+                        'wali_terisi' => false,
+                        'wali_hadir' => 0,
+                        'wali_absen' => 0,
+                        'agama_terisi' => false,
+                        'pjok_terisi' => false,
+                    ];
+                    $canWali = $user->canInputAbsensi($k, 'wali');
+                    $canAgama = $user->canInputAbsensi($k, 'agama');
+                    $canPjok = $user->canInputAbsensi($k, 'pjok');
+                    $hasAnyAccess = $canWali || $canAgama || $canPjok;
+                    $isWaliUser = auth()->user()->isWali() && (int) auth()->user()->id === (int) $k->wali_id;
+                @endphp
+                <div class="kartu-kelas bg-white rounded-2xl border shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between overflow-hidden {{ $isWaliUser ? 'ring-2 ring-amber-400 border-amber-300' : ($hasAnyAccess ? 'border-slate-300 ring-1 ring-emerald-400/50' : 'border-slate-200') }}">
+                    <div>
+                        <!-- Header Kartu Kelas -->
+                        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-amber-500 text-white font-black flex items-center justify-center text-sm shadow-xs">
+                                    {{ $k->tingkat ?? substr($k->nama, 0, 2) }}
+                                </div>
+                                <div>
+                                    <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
+                                        <span>Kelas {{ $k->nama }}</span>
+                                        @if($isWaliUser)
+                                            <span class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                                Kelas Anda
+                                            </span>
+                                        @elseif($canAgama && $canPjok)
+                                            <span class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                Pengampu Agama &amp; PJOK
+                                            </span>
+                                        @elseif($canAgama)
+                                            <span class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                Pengampu Agama
+                                            </span>
+                                        @elseif($canPjok)
+                                            <span class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-sky-100 text-sky-800 border border-sky-200">
+                                                Pengampu PJOK
+                                            </span>
+                                        @endif
+                                    </h3>
+                                    <p class="text-[11px] text-slate-500 font-medium">
+                                        <i class="fa-solid fa-user-tie text-[10px] text-slate-400 mr-1"></i>
+                                        {{ $k->nama_wali }}
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                {{ $k->kelas_siswa_count }} Siswa
+                            </span>
+                        </div>
+
+                        <!-- Status Presensi Hari Ini -->
+                        <div class="p-4 space-y-2.5">
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                                Status Presensi {{ $tanggalObj->translatedFormat('d M Y') }}:
+                            </div>
+
+                            <!-- Wali Kelas -->
+                            <div class="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-chalkboard-user text-amber-500"></i> Wali Kelas
+                                </span>
+                                @if($statusK['wali_terisi'])
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                                        <i class="fa-solid fa-check text-[9px]"></i> Terisi ({{ $statusK['wali_hadir'] }} Hadir, {{ $statusK['wali_absen'] }} SIA)
+                                    </span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                        Belum Diisi
+                                    </span>
+                                @endif
+                            </div>
+
+                            <!-- Guru Agama -->
+                            <div class="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-book-quran text-emerald-600"></i> Pendidikan Agama
+                                </span>
+                                @if($statusK['agama_terisi'])
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                                        <i class="fa-solid fa-check text-[9px]"></i> Terisi
+                                    </span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                        Belum Diisi
+                                    </span>
+                                @endif
+                            </div>
+
+                            <!-- Guru PJOK -->
+                            <div class="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                                <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-person-running text-sky-600"></i> PJOK
+                                </span>
+                                @if($statusK['pjok_terisi'])
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                                        <i class="fa-solid fa-check text-[9px]"></i> Terisi
+                                    </span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                        Belum Diisi
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons: 3 Pintu Masuk Dibatasi Sesuai Penugasan -->
+                    <div class="p-4 pt-0 space-y-2">
+                        <div class="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100">
+                            {{-- Tombol Wali --}}
+                            @if($canWali)
+                                <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $k->id, 'tanggal' => $tanggal, 'tipe' => 'wali']) }}"
+                                   class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] transition shadow-xs text-center"
+                                   title="Input Presensi Wali Kelas {{ $k->nama }}">
+                                    <i class="fa-solid fa-chalkboard-user text-xs mb-0.5"></i>
+                                    <span>Wali</span>
+                                </a>
+                            @else
+                                <button type="button" disabled
+                                   class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-slate-100 text-slate-400 font-semibold text-[11px] border border-slate-200/80 cursor-not-allowed text-center opacity-60"
+                                   title="Terkunci: Khusus Wali Kelas {{ $k->nama }} atau Admin">
+                                    <i class="fa-solid fa-lock text-[10px] mb-0.5 text-slate-400"></i>
+                                    <span>Wali</span>
+                                </button>
+                            @endif
+
+                            {{-- Tombol Agama --}}
+                            @if($canAgama)
+                                <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $k->id, 'tanggal' => $tanggal, 'tipe' => 'agama']) }}"
+                                   class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition shadow-xs text-center"
+                                   title="Input Presensi Agama Kelas {{ $k->nama }}">
+                                    <i class="fa-solid fa-book-quran text-xs mb-0.5"></i>
+                                    <span>Agama</span>
+                                </a>
+                            @else
+                                <button type="button" disabled
+                                   class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-slate-100 text-slate-400 font-semibold text-[11px] border border-slate-200/80 cursor-not-allowed text-center opacity-60"
+                                   title="Terkunci: Hanya untuk Guru Pengampu Agama di Kelas {{ $k->nama }}">
+                                    <i class="fa-solid fa-lock text-[10px] mb-0.5 text-slate-400"></i>
+                                    <span>Agama</span>
+                                </button>
+                            @endif
+
+                            {{-- Tombol PJOK --}}
+                            @if($canPjok)
+                                <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $k->id, 'tanggal' => $tanggal, 'tipe' => 'pjok']) }}"
+                                   class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-[11px] transition shadow-xs text-center"
+                                   title="Input Presensi PJOK Kelas {{ $k->nama }}">
+                                    <i class="fa-solid fa-person-running text-xs mb-0.5"></i>
+                                    <span>PJOK</span>
+                                </a>
+                            @else
+                                <button type="button" disabled
+                                   class="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-slate-100 text-slate-400 font-semibold text-[11px] border border-slate-200/80 cursor-not-allowed text-center opacity-60"
+                                   title="Terkunci: Hanya untuk Guru Pengampu PJOK di Kelas {{ $k->nama }}">
+                                    <i class="fa-solid fa-lock text-[10px] mb-0.5 text-slate-400"></i>
+                                    <span>PJOK</span>
+                                </button>
+                            @endif
+                        </div>
+
+                        <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                            @if($hasAnyAccess || $user->isAdmin() || $user->isKepsek())
+                                <a href="{{ route('kelas.absensi-harian.cetak', ['kelas' => $k->id, 'tanggal' => $tanggal, 'mode' => 'harian', 'tipe' => $canWali ? 'wali' : ($canAgama ? 'agama' : 'pjok')]) }}"
+                                   target="_blank" class="hover:text-amber-700 flex items-center gap-1 font-medium">
+                                    <i class="fa-solid fa-print text-slate-400"></i> Cetak Hari Ini
+                                </a>
+                                <a href="{{ route('kelas.absensi-harian.cetak', ['kelas' => $k->id, 'tanggal' => $tanggal, 'mode' => 'bulanan', 'tipe' => $canWali ? 'wali' : ($canAgama ? 'agama' : 'pjok')]) }}"
+                                   target="_blank" class="hover:text-blue-700 flex items-center gap-1 font-medium">
+                                    <i class="fa-solid fa-calendar-days text-slate-400"></i> Cetak Rekap Bulan (F4)
+                                </a>
+                            @else
+                                <span class="text-slate-400 text-[10px] italic flex items-center gap-1">
+                                    <i class="fa-solid fa-ban text-slate-300"></i> Tidak memiliki akses rombel ini
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
 
 </div>
 @endsection

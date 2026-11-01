@@ -823,7 +823,7 @@
                             </span>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Mata Pelajaran</label>
                                 <select name="guru[{{ $idx }}][mapel_id]" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500 bg-white">
@@ -837,8 +837,22 @@
                             </div>
 
                             <div>
+                                <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Akun Login Guru</label>
+                                <select name="guru[{{ $idx }}][user_id]" onchange="pilihAkunGuru(this, {{ $idx }})" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500 bg-white">
+                                    <option value="">-- Manual / Luar Akun --</option>
+                                    @if(isset($guruUsers))
+                                        @foreach($guruUsers as $u)
+                                            <option value="{{ $u->id }}" data-name="{{ $u->name }}" {{ ($currG && $currG->user_id == $u->id) ? 'selected' : '' }}>
+                                                {{ $u->name }} ({{ ucfirst($u->role) }})
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
+
+                            <div>
                                 <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Guru & Gelar</label>
-                                <input type="text" name="guru[{{ $idx }}][nama]" value="{{ old("guru.{$idx}.nama", $currG ? $currG->nama : '') }}"
+                                <input type="text" id="input_nama_guru_{{ $idx }}" name="guru[{{ $idx }}][nama]" value="{{ old("guru.{$idx}.nama", $currG ? $currG->nama : '') }}"
                                     placeholder="Contoh: Nama Guru, S.Pd."
                                     class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500 bg-white">
                             </div>
@@ -1456,6 +1470,15 @@
 
 @push('scripts')
 <script>
+    function pilihAkunGuru(selectEl, idx) {
+        const opt = selectEl.options[selectEl.selectedIndex];
+        const name = opt.getAttribute('data-name');
+        const inputNama = document.getElementById('input_nama_guru_' + idx);
+        if (name && inputNama) {
+            inputNama.value = name;
+        }
+    }
+
     function setEditKelasQuick(nama, fase) {
         document.getElementById('edit_kelas_nama').value = nama;
         document.getElementById('edit_kelas_fase').value = fase;

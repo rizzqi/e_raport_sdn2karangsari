@@ -87,44 +87,86 @@
         </div>
 
         <!-- Role / Type Switcher Pills -->
+        @php
+            $canWali = auth()->user()->canInputAbsensi($kelas, 'wali');
+            $canAgama = auth()->user()->canInputAbsensi($kelas, 'agama');
+            $canPjok = auth()->user()->canInputAbsensi($kelas, 'pjok');
+            $canEditCurrent = auth()->user()->canInputAbsensi($kelas, $tipe);
+        @endphp
         <div class="flex items-center gap-2 border-t border-slate-100 pt-3 flex-wrap">
             <span class="text-xs font-bold text-slate-400 mr-2">Pilih Peran:</span>
             
-            <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $kelas->id, 'tanggal' => $tanggal, 'tipe' => 'wali']) }}"
-               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 {{ $tipe === 'wali' ? 'bg-amber-500 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                <i class="fa-solid fa-chalkboard-user"></i>
-                <span>Wali Kelas (Umum)</span>
-            </a>
+            @if($canWali)
+                <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $kelas->id, 'tanggal' => $tanggal, 'tipe' => 'wali']) }}"
+                   class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 {{ $tipe === 'wali' ? 'bg-amber-500 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <span>Wali Kelas (Umum)</span>
+                </a>
+            @else
+                <span class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed flex items-center gap-1.5 opacity-60"
+                      title="Khusus Wali Kelas {{ $kelas->nama }} atau Admin">
+                    <i class="fa-solid fa-lock text-[10px]"></i>
+                    <span>Wali Kelas (Terkunci)</span>
+                </span>
+            @endif
 
-            <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $kelas->id, 'tanggal' => $tanggal, 'tipe' => 'agama']) }}"
-               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 {{ $tipe === 'agama' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                <i class="fa-solid fa-book-quran"></i>
-                <span>Pendidikan Agama</span>
-            </a>
+            @if($canAgama)
+                <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $kelas->id, 'tanggal' => $tanggal, 'tipe' => 'agama']) }}"
+                   class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 {{ $tipe === 'agama' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                    <i class="fa-solid fa-book-quran"></i>
+                    <span>Pendidikan Agama</span>
+                </a>
+            @else
+                <span class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed flex items-center gap-1.5 opacity-60"
+                      title="Hanya untuk Guru Pengampu Agama di Kelas {{ $kelas->nama }}">
+                    <i class="fa-solid fa-lock text-[10px]"></i>
+                    <span>Agama (Terkunci)</span>
+                </span>
+            @endif
 
-            <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $kelas->id, 'tanggal' => $tanggal, 'tipe' => 'pjok']) }}"
-               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 {{ $tipe === 'pjok' ? 'bg-sky-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                <i class="fa-solid fa-person-running"></i>
-                <span>PJOK</span>
-            </a>
+            @if($canPjok)
+                <a href="{{ route('kelas.absensi-harian.index', ['kelas' => $kelas->id, 'tanggal' => $tanggal, 'tipe' => 'pjok']) }}"
+                   class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 {{ $tipe === 'pjok' ? 'bg-sky-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                    <i class="fa-solid fa-person-running"></i>
+                    <span>PJOK</span>
+                </a>
+            @else
+                <span class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed flex items-center gap-1.5 opacity-60"
+                      title="Hanya untuk Guru Pengampu PJOK di Kelas {{ $kelas->nama }}">
+                    <i class="fa-solid fa-lock text-[10px]"></i>
+                    <span>PJOK (Terkunci)</span>
+                </span>
+            @endif
 
             <div class="ml-auto flex items-center gap-2">
                 <!-- Cetak Harian -->
                 <a href="{{ route('kelas.absensi-harian.cetak', ['kelas' => $kelas->id, 'tanggal' => $tanggal, 'mode' => 'harian', 'tipe' => $tipe]) }}"
-                   target="_blank" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 transition flex items-center gap-1.5 shadow-2xs">
+                    target="_blank" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 transition flex items-center gap-1.5 shadow-2xs">
                     <i class="fa-solid fa-print text-slate-500"></i>
                     <span>Cetak Lembar Harian</span>
                 </a>
 
                 <!-- Cetak Rekap Bulanan -->
                 <a href="{{ route('kelas.absensi-harian.cetak', ['kelas' => $kelas->id, 'tanggal' => $tanggal, 'mode' => 'bulanan', 'tipe' => $tipe]) }}"
-                   target="_blank" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-slate-200 hover:bg-slate-50 text-blue-700 transition flex items-center gap-1.5 shadow-2xs">
+                    target="_blank" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-slate-200 hover:bg-slate-50 text-blue-700 transition flex items-center gap-1.5 shadow-2xs">
                     <i class="fa-solid fa-calendar-days text-blue-600"></i>
                     <span>Cetak Rekap Bulan (F4)</span>
                 </a>
             </div>
         </div>
     </div>
+
+    @if(! $canEditCurrent)
+        <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs flex items-center gap-3 shadow-2xs">
+            <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+                <p class="font-bold">Mode Hanya Lihat (Bukan Pengampu)</p>
+                <p class="text-amber-700 mt-0.5">Anda tidak terdaftar sebagai guru pengampu untuk sesi <strong>{{ strtoupper($tipe) }}</strong> pada Kelas {{ $kelas->nama }}. Anda dapat melihat rekap dan mencetak lembar, namun formulir perubahan dinonaktifkan.</p>
+            </div>
+        </div>
+    @endif
 
     <!-- Summary KPI Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -223,11 +265,19 @@
                         <span class="text-xs text-slate-500">Klik untuk menandai semua siswa hadir secara instan</span>
                     </div>
 
-                    <button type="submit"
-                        class="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        <span>Simpan Absensi Harian</span>
-                    </button>
+                    @if($canEditCurrent)
+                        <button type="submit"
+                            class="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Simpan Absensi Harian</span>
+                        </button>
+                    @else
+                        <button type="button" disabled
+                            class="px-5 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-400 cursor-not-allowed flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-lock"></i>
+                            <span>Simpan Dinonaktifkan (Bukan Pengampu)</span>
+                        </button>
+                    @endif
                 </div>
 
                 <!-- Tampilan Mobile Card List (Khusus Layar HP / Smartphone) -->
@@ -423,27 +473,41 @@
                     <span class="text-xs text-slate-500">
                         <i class="fa-solid fa-circle-info text-amber-500 mr-1"></i> Perubahan akan langsung tersimpan setelah tombol ditekan.
                     </span>
-                    <button type="submit"
-                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        <span>Simpan Absensi Harian</span>
-                    </button>
+                    @if($canEditCurrent)
+                        <button type="submit"
+                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Simpan Absensi Harian</span>
+                        </button>
+                    @else
+                        <button type="button" disabled
+                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-200 text-slate-400 cursor-not-allowed flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-lock"></i>
+                            <span>Simpan Dinonaktifkan (Bukan Pengampu)</span>
+                        </button>
+                    @endif
                 </div>
             </div>
         </form>
 
         <!-- Floating Quick Action Bar Khusus HP (Memudahkan Guru Menyimpan saat Scroll di HP) -->
         <div class="md:hidden fixed bottom-15 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-[0_-2px_15px_rgba(0,0,0,0.1)] flex items-center gap-2">
-            <button type="button" onclick="setSemuaHadir()"
-                class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition flex items-center justify-center gap-1.5 shadow-xs">
-                <i class="fa-solid fa-check-double text-emerald-600"></i>
-                <span>Semua Hadir</span>
-            </button>
-            <button type="submit" form="formAbsensiHarian"
-                class="flex-1 py-2.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white transition flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25">
-                <i class="fa-solid fa-floppy-disk"></i>
-                <span>Simpan Absen</span>
-            </button>
+            @if($canEditCurrent)
+                <button type="button" onclick="setSemuaHadir()"
+                    class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition flex items-center justify-center gap-1.5 shadow-xs">
+                    <i class="fa-solid fa-check-double text-emerald-600"></i>
+                    <span>Semua Hadir</span>
+                </button>
+                <button type="submit" form="formAbsensiHarian"
+                    class="flex-1 py-2.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white transition flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Simpan Absen</span>
+                </button>
+            @else
+                <div class="flex-1 py-2 text-center text-xs font-bold text-slate-400 bg-slate-100 rounded-xl">
+                    <i class="fa-solid fa-lock mr-1"></i> Mode Hanya Lihat
+                </div>
+            @endif
         </div>
     </div>
 

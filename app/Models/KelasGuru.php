@@ -15,10 +15,16 @@ class KelasGuru extends Model
     protected $fillable = [
         'kelas_id',
         'mapel_id',
+        'user_id',
         'nama',
         'nip',
         'urutan',
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     public function kelas(): BelongsTo
     {
