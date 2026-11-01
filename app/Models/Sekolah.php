@@ -81,6 +81,16 @@ class Sekolah extends Model
         return $this->bobot_uas !== null ? (int) $this->bobot_uas : 30;
     }
 
+    public function getKepalaSekolahAttribute(): ?string
+    {
+        return $this->kepsek;
+    }
+
+    public function getNipKepalaSekolahAttribute(): ?string
+    {
+        return $this->nip;
+    }
+
     public function kelas(): HasMany
     {
         return $this->hasMany(Kelas::class);

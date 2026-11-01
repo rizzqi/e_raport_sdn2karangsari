@@ -74,7 +74,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('siswa', SiswaController::class)->only(['index', 'show']);
 
     // Modul Input Nilai (Per Siswa, Matriks Kelas, Formatif Bulanan, & 4 Lembar Mapel)
-    Route::middleware('role:admin,wali,guru')->prefix('kelas/{kelas}')->group(function () {
+    Route::middleware('role:admin,wali,guru,kepsek')->prefix('kelas/{kelas}')->group(function () {
         Route::get('/nilai/siswa/{kelasSiswa}', [NilaiController::class, 'inputSiswa'])->name('nilai.input.siswa');
         Route::post('/nilai/siswa/{kelasSiswa}', [NilaiController::class, 'simpanSiswa'])->name('nilai.simpan.siswa');
 

@@ -14,8 +14,8 @@
     };
 
     $namaGuru = match ($tipe) {
-        'agama' => $guruPengampu?->guru?->name ?? 'Guru Pendidikan Agama',
-        'pjok' => $guruPengampu?->guru?->name ?? 'Guru PJOK',
+        'agama' => $guruPengampu?->nama ?: ($guruPengampu?->user?->name ?? 'Guru Pendidikan Agama'),
+        'pjok' => $guruPengampu?->nama ?: ($guruPengampu?->user?->name ?? 'Guru PJOK'),
         default => $kelas->nama_wali,
     };
 @endphp

@@ -233,5 +233,8 @@ class DatabaseSeeder extends Seeder
 
         // 8. Pastikan seluruh akun Wali Kelas (Kelas 1 - 6) terkonfigurasi dan terhubung ke rombel
         $this->call(WaliKelasSeeder::class);
+
+        // 9. Pastikan akun Guru Mapel (Agama & PJOK) dan penugasan kelas terkonfigurasi
+        $this->call(PenugasanGuruSeeder::class);
     }
 }

@@ -112,15 +112,16 @@
     </div>
 
     @php
+        $kg = $mapel ? $kelas->guruPengampu->firstWhere('mapel_id', $mapel->id) : null;
         $guruNama = match ($tipe) {
-            'agama' => $kelas->guruPengampu->firstWhere('mapel_id', $mapel?->id)?->guru?->name ?? 'Guru Pendidikan Agama',
-            'pjok' => $kelas->guruPengampu->firstWhere('mapel_id', $mapel?->id)?->guru?->name ?? 'Guru PJOK',
+            'agama' => $kg?->nama ?: ($kg?->user?->name ?? 'Guru Pendidikan Agama'),
+            'pjok' => $kg?->nama ?: ($kg?->user?->name ?? 'Guru PJOK'),
             default => $kelas->nama_wali,
         };
 
         $guruNip = match ($tipe) {
-            'agama' => $kelas->guruPengampu->firstWhere('mapel_id', $mapel?->id)?->guru?->nip ?? '-',
-            'pjok' => $kelas->guruPengampu->firstWhere('mapel_id', $mapel?->id)?->guru?->nip ?? '-',
+            'agama' => $kg?->nip ?: ($kg?->user?->nip ?? '-'),
+            'pjok' => $kg?->nip ?: ($kg?->user?->nip ?? '-'),
             default => $kelas->nip_wali,
         };
     @endphp
@@ -238,8 +239,8 @@
                 Mengetahui,<br>
                 Kepala Sekolah
                 <div class="space-ttd"></div>
-                <strong>{{ $sekolah->kepala_sekolah ?? '....................................' }}</strong><br>
-                NIP. {{ $sekolah->nip_kepala_sekolah ?? '........................' }}
+                <strong>{{ $sekolah->kepsek ?? $sekolah->kepala_sekolah ?? '....................................' }}</strong><br>
+                NIP. {{ $sekolah->nip ?? $sekolah->nip_kepala_sekolah ?? '........................' }}
             </td>
             <td style="width: 50%; text-align: right; padding-right: 30px;">
                 {{ $sekolah->kota ?? 'Banyuwangi' }}, {{ \Carbon\Carbon::createFromDate($tahun, $bulan, $jumlahHariBulan)->locale('id')->translatedFormat('d F Y') }}<br>

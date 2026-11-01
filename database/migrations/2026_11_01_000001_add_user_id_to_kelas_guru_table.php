@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('kelas_guru', function (Blueprint $table) {
-            $table->foreignId('user_id')
-                ->nullable()
-                ->after('mapel_id')
-                ->constrained('users')
-                ->nullOnDelete();
-        });
+        if (! Schema::hasColumn('kelas_guru', 'user_id')) {
+            Schema::table('kelas_guru', function (Blueprint $table) {
+                $table->foreignId('user_id')
+                    ->nullable()
+                    ->after('mapel_id')
+                    ->constrained('users')
+                    ->nullOnDelete();
+            });
+        }
     }
 
     /**
@@ -25,9 +27,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('kelas_guru', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
-            $table->dropColumn('user_id');
-        });
+        if (Schema::hasColumn('kelas_guru', 'user_id')) {
+            Schema::table('kelas_guru', function (Blueprint $table) {
+                $table->dropForeign(['user_id']);
+                $table->dropColumn('user_id');
+            });
+        }
     }
 };

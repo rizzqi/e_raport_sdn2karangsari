@@ -112,7 +112,7 @@ class AbsensiHarianController extends Controller
         }
 
         // Validasi Otorisasi Penugasan
-        if (! $user->canInputAbsensi($kelas, $tipe)) {
+        if (! $user->isAdmin() && ! $user->isKepsek() && ! $user->canInputAbsensi($kelas, $tipe)) {
             // Cek apakah user punya akses ke tipe lain di kelas ini
             $fallbackTipe = null;
             foreach (['wali', 'agama', 'pjok'] as $t) {

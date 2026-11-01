@@ -193,7 +193,7 @@
                         @if(auth()->user()->isAdmin())
                             <button type="button" onclick="openAlatMenu = false; document.getElementById('modalEditKelas').classList.remove('hidden')"
                                class="w-full text-left flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
-                                <i class="fa-solid fa-pen-to-square w-5 text-emerald-600 mr-2 text-center"></i> Edit Kelas &amp; Koreksi Fase
+                                <i class="fa-solid fa-pen-to-square w-5 text-emerald-600 mr-2 text-center"></i> Edit Kelas & Fase
                             </button>
                         @endif
                         @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
@@ -890,7 +890,7 @@
                 <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div>
                         <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
-                            <i class="fa-solid fa-pen-to-square text-emerald-600 mr-2 text-base"></i> Edit Rombongan Kelas
+                            <i class="fa-solid fa-pen-to-square text-emerald-600 mr-2 text-base"></i> Edit Kelas & Fase
                         </h3>
                         <p class="text-xs text-slate-500 mt-0.5">Ubah nama rombel, koreksi fase kurikulum, atau wali kelas</p>
                     </div>
