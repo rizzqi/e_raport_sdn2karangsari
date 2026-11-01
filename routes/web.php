@@ -97,6 +97,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/absensi-harian', [AbsensiHarianController::class, 'simpan'])->name('kelas.absensi-harian.simpan');
         Route::post('/absensi-harian/sync-bulanan', [AbsensiHarianController::class, 'syncKehadiranBulanan'])->name('kelas.absensi-harian.sync-bulanan');
         Route::get('/absensi-harian/cetak', [AbsensiHarianController::class, 'cetak'])->name('kelas.absensi-harian.cetak');
+        Route::delete('/absensi-harian/hapus-tanggal', [AbsensiHarianController::class, 'hapusTanggal'])->name('kelas.absensi-harian.hapus-tanggal');
 
         // Modul Nilai Formatif Bulanan (Format Rapor UTS)
         Route::get('/nilai-formatif-bulanan', [NilaiFormatifBulananController::class, 'index'])->name('kelas.nilai-formatif.index');

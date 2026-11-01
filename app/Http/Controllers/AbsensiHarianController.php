@@ -318,6 +318,95 @@ class AbsensiHarianController extends Controller
     }
 
     /**
+     * Hapus / Kosongkan seluruh data presensi pada tanggal dan tipe tertentu untuk kelas ini.
+     */
+    public function hapusTanggal(Kelas $kelas, Request $request): RedirectResponse
+    {
+        $request->validate([
+            'tanggal' => 'required|date',
+            'tipe' => 'required|in:wali,agama,pjok',
+        ]);
+
+        $kelas->load(['guruPengampu.mapel', 'guruPengampu.user']);
+        $tipe = strtolower($request->input('tipe'));
+        $user = auth()->user();
+
+        // PEMBATASAN AKSES BACKEND: Validasi apakah pengguna berhak menghapus absensi untuk tipe ini
+        if (! $user->canInputAbsensi($kelas, $tipe)) {
+            abort(403, "Akses Ditolak: Anda tidak memiliki penugasan untuk menghapus data absensi {$tipe} pada Kelas {$kelas->nama}.");
+        }
+
+        $tanggal = $request->input('tanggal');
+        $tanggalObj = Carbon::parse($tanggal);
+
+        $mapel = null;
+        if ($tipe === 'agama') {
+            $mapel = $kelas->getMapelAgama();
+        } elseif ($tipe === 'pjok') {
+            $mapel = $kelas->getMapelPjok();
+        }
+        $mapelId = $mapel?->id;
+
+        $ksIds = $kelas->kelasSiswa()->pluck('id');
+
+        $query = AbsensiHarian::whereIn('kelas_siswa_id', $ksIds)
+            ->whereDate('tanggal', $tanggal);
+
+        if ($mapelId === null) {
+            $query->whereNull('mapel_id');
+        } else {
+            $query->where('mapel_id', $mapelId);
+        }
+
+        $deletedCount = $query->delete();
+
+        // Jika tipe 'wali', otomatis sesuaikan sinkronisasi ke KehadiranBulanan jika bulan tersebut sudah memiliki rekap
+        if ($tipe === 'wali' && $deletedCount > 0) {
+            $tahun = (int) $tanggalObj->year;
+            $bulan = (int) $tanggalObj->month;
+
+            $hasBulanan = KehadiranBulanan::whereIn('kelas_siswa_id', $ksIds)
+                ->where('tahun', $tahun)
+                ->where('bulan', $bulan)
+                ->exists();
+
+            if ($hasBulanan) {
+                $allAbsenBulan = AbsensiHarian::whereIn('kelas_siswa_id', $ksIds)
+                    ->whereNull('mapel_id')
+                    ->whereYear('tanggal', $tahun)
+                    ->whereMonth('tanggal', $bulan)
+                    ->get();
+
+                foreach ($ksIds as $ksId) {
+                    $siswaAbsen = $allAbsenBulan->where('kelas_siswa_id', $ksId);
+                    KehadiranBulanan::updateOrCreate([
+                        'kelas_siswa_id' => $ksId,
+                        'tahun' => $tahun,
+                        'bulan' => $bulan,
+                    ], [
+                        'sakit' => $siswaAbsen->where('status', 'S')->count(),
+                        'izin' => $siswaAbsen->where('status', 'I')->count(),
+                        'alpa' => $siswaAbsen->where('status', 'A')->count(),
+                    ]);
+                }
+            }
+        }
+
+        $tanggalFormat = $tanggalObj->locale('id')->translatedFormat('d F Y');
+        $namaTipe = match ($tipe) {
+            'agama' => 'Pendidikan Agama & Budi Pekerti',
+            'pjok' => 'PJOK',
+            default => 'Wali Kelas (Umum)',
+        };
+
+        return redirect()->route('kelas.absensi-harian.index', [
+            'kelas' => $kelas->id,
+            'tanggal' => $tanggal,
+            'tipe' => $tipe,
+        ])->with('success', "Data absensi harian {$namaTipe} sebanyak {$deletedCount} siswa pada tanggal {$tanggalFormat} berhasil dihapus/dikosongkan.");
+    }
+
+    /**
      * Sinkronkan akumulasi absensi harian umum (Wali Kelas) ke Rekap Bulanan (KehadiranBulanan) & Rapor.
      */
     public function syncKehadiranBulanan(Kelas $kelas, Request $request): RedirectResponse

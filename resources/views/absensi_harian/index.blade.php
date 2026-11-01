@@ -265,19 +265,29 @@
                         <span class="text-xs text-slate-500">Klik untuk menandai semua siswa hadir secara instan</span>
                     </div>
 
-                    @if($canEditCurrent)
-                        <button type="submit"
-                            class="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-floppy-disk"></i>
-                            <span>Simpan Absensi Harian</span>
-                        </button>
-                    @else
-                        <button type="button" disabled
-                            class="px-5 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-400 cursor-not-allowed flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-lock"></i>
-                            <span>Simpan Dinonaktifkan (Bukan Pengampu)</span>
-                        </button>
-                    @endif
+                    <div class="flex items-center gap-2">
+                        @if($canEditCurrent)
+                            @if($absenHariIni->isNotEmpty())
+                                <button type="button" onclick="document.getElementById('modalKonfirmasiHapusAbsensi').classList.remove('hidden')"
+                                    class="px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition flex items-center justify-center gap-1.5 shadow-2xs"
+                                    title="Hapus atau kosongkan presensi tanggal {{ $tanggalObj->translatedFormat('d F Y') }} untuk {{ $namaTipe }}">
+                                    <i class="fa-solid fa-trash-can text-rose-600"></i>
+                                    <span>Hapus Tanggal Ini</span>
+                                </button>
+                            @endif
+                            <button type="submit"
+                                class="px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>Simpan Absensi Harian</span>
+                            </button>
+                        @else
+                            <button type="button" disabled
+                                class="px-5 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-400 cursor-not-allowed flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-lock"></i>
+                                <span>Simpan Dinonaktifkan (Bukan Pengampu)</span>
+                            </button>
+                        @endif
+                    </div>
                 </div>
 
                 <!-- Tampilan Mobile Card List (Khusus Layar HP / Smartphone) -->
@@ -468,24 +478,34 @@
                     </table>
                 </div>
 
-                <!-- Footer Simpan -->
+                <!-- Footer Simpan & Hapus -->
                 <div class="p-4 bg-slate-50/70 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <span class="text-xs text-slate-500">
                         <i class="fa-solid fa-circle-info text-amber-500 mr-1"></i> Perubahan akan langsung tersimpan setelah tombol ditekan.
                     </span>
-                    @if($canEditCurrent)
-                        <button type="submit"
-                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-floppy-disk"></i>
-                            <span>Simpan Absensi Harian</span>
-                        </button>
-                    @else
-                        <button type="button" disabled
-                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-200 text-slate-400 cursor-not-allowed flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-lock"></i>
-                            <span>Simpan Dinonaktifkan (Bukan Pengampu)</span>
-                        </button>
-                    @endif
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        @if($canEditCurrent)
+                            @if($absenHariIni->isNotEmpty())
+                                <button type="button" onclick="document.getElementById('modalKonfirmasiHapusAbsensi').classList.remove('hidden')"
+                                    class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition flex items-center justify-center gap-1.5 shadow-2xs"
+                                    title="Hapus seluruh data presensi tanggal ini">
+                                    <i class="fa-solid fa-trash-can text-rose-600"></i>
+                                    <span>Hapus Tanggal Ini</span>
+                                </button>
+                            @endif
+                            <button type="submit"
+                                class="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>Simpan Absensi Harian</span>
+                            </button>
+                        @else
+                            <button type="button" disabled
+                                class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-200 text-slate-400 cursor-not-allowed flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-lock"></i>
+                                <span>Simpan Dinonaktifkan (Bukan Pengampu)</span>
+                            </button>
+                        @endif
+                    </div>
                 </div>
             </div>
         </form>
@@ -493,6 +513,13 @@
         <!-- Floating Quick Action Bar Khusus HP (Memudahkan Guru Menyimpan saat Scroll di HP) -->
         <div class="md:hidden fixed bottom-15 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 shadow-[0_-2px_15px_rgba(0,0,0,0.1)] flex items-center gap-2">
             @if($canEditCurrent)
+                @if($absenHariIni->isNotEmpty())
+                    <button type="button" onclick="document.getElementById('modalKonfirmasiHapusAbsensi').classList.remove('hidden')"
+                        class="px-3 py-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 transition flex items-center justify-center"
+                        title="Hapus Presensi Tanggal Ini">
+                        <i class="fa-solid fa-trash-can text-rose-600"></i>
+                    </button>
+                @endif
                 <button type="button" onclick="setSemuaHadir()"
                     class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition flex items-center justify-center gap-1.5 shadow-xs">
                     <i class="fa-solid fa-check-double text-emerald-600"></i>
@@ -652,6 +679,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Konfirmasi Hapus Data Presensi Tanggal Ini -->
+    @if($canEditCurrent && $absenHariIni->isNotEmpty())
+        <div id="modalKonfirmasiHapusAbsensi" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-100 animate-in fade-in duration-150">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 text-xl shadow-xs">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="space-y-1.5">
+                        <h3 class="text-base font-bold text-slate-900">Hapus Presensi Tanggal Ini?</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Anda akan menghapus seluruh catatan presensi <strong>{{ $namaTipe }}</strong> pada Kelas <strong>{{ $kelas->nama }}</strong> untuk tanggal <strong>{{ $tanggalObj->translatedFormat('d F Y') }}</strong> (sebanyak {{ $absenHariIni->count() }} siswa).
+                        </p>
+                        <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-[11px] text-rose-700 leading-relaxed font-medium">
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i>
+                            Status kehadiran pada tanggal ini akan dikosongkan (kembali <em>Belum Diisi</em>) dan tidak lagi dihitung dalam akumulasi rekap bulanan.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="document.getElementById('modalKonfirmasiHapusAbsensi').classList.add('hidden')"
+                        class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                        Batal
+                    </button>
+                    <form action="{{ route('kelas.absensi-harian.hapus-tanggal', $kelas->id) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <input type="hidden" name="tanggal" value="{{ $tanggal }}">
+                        <input type="hidden" name="tipe" value="{{ $tipe }}">
+                        <button type="submit"
+                            class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition shadow-sm shadow-rose-600/30 flex items-center gap-1.5">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Ya, Hapus Data Ini</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
 
 </div>
 

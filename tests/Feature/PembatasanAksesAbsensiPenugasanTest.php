@@ -176,4 +176,45 @@ class PembatasanAksesAbsensiPenugasanTest extends TestCase
         ]);
         $resWali->assertStatus(403);
     }
+
+    public function test_hapus_absensi_tanggal_mematuhi_otorisasi_dan_mengosongkan_data(): void
+    {
+        $kelas = Kelas::where('nama', 'like', '%1%')->first() ?? Kelas::first();
+        $wali = $kelas->wali;
+        $ks = $kelas->kelasSiswa()->first();
+        $tanggal = now()->format('Y-m-d');
+
+        // 1. Wali simpan absensi
+        $this->actingAs($wali)->post(route('kelas.absensi-harian.simpan', $kelas->id), [
+            'tanggal' => $tanggal,
+            'tipe' => 'wali',
+            'status' => [$ks->id => 'S'],
+        ])->assertRedirect();
+
+        $this->assertEquals(1, \App\Models\AbsensiHarian::where('kelas_siswa_id', $ks->id)
+            ->whereDate('tanggal', $tanggal)
+            ->where('status', 'S')
+            ->whereNull('mapel_id')
+            ->count());
+
+        // 2. User lain tanpa penugasan mencoba menghapus -> 403
+        $randomUser = User::factory()->create(['role' => 'wali']);
+        $this->actingAs($randomUser)->delete(route('kelas.absensi-harian.hapus-tanggal', $kelas->id), [
+            'tanggal' => $tanggal,
+            'tipe' => 'wali',
+        ])->assertStatus(403);
+
+        // 3. Wali yang sah menghapus absensi tanggal ini -> Sukses
+        $resDelete = $this->actingAs($wali)->delete(route('kelas.absensi-harian.hapus-tanggal', $kelas->id), [
+            'tanggal' => $tanggal,
+            'tipe' => 'wali',
+        ]);
+        $resDelete->assertRedirect();
+
+        // 4. Pastikan data di database sudah terhapus bersih
+        $this->assertEquals(0, \App\Models\AbsensiHarian::where('kelas_siswa_id', $ks->id)
+            ->whereDate('tanggal', $tanggal)
+            ->whereNull('mapel_id')
+            ->count());
+    }
 }
