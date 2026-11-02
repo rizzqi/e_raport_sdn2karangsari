@@ -16,6 +16,7 @@ use App\Services\HitungNilaiService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class NilaiFormatifBulananController extends Controller
@@ -674,28 +675,30 @@ class NilaiFormatifBulananController extends Controller
         $mapels = $kelas->mataPelajaran();
         $kelasSiswaList = $kelas->kelasSiswa;
 
-        foreach ($kelasSiswaList as $ks) {
-            if (! isset($matriksData[$ks->id]) || ! is_array($matriksData[$ks->id])) {
-                continue;
-            }
-
-            foreach ($mapels as $mapel) {
-                $rawVal = $matriksData[$ks->id][$mapel->id] ?? null;
-                $nilai = null;
-                if ($rawVal !== null && trim((string) $rawVal) !== '') {
-                    $nilai = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
+        DB::transaction(function () use ($kelasSiswaList, $matriksData, $mapels, $tahun, $bulan) {
+            foreach ($kelasSiswaList as $ks) {
+                if (! isset($matriksData[$ks->id]) || ! is_array($matriksData[$ks->id])) {
+                    continue;
                 }
 
-                NilaiFormatifBulanan::updateOrCreate([
-                    'kelas_siswa_id' => $ks->id,
-                    'mapel_id' => $mapel->id,
-                    'tahun' => $tahun,
-                    'bulan' => $bulan,
-                ], [
-                    'nilai' => $nilai,
-                ]);
+                foreach ($mapels as $mapel) {
+                    $rawVal = $matriksData[$ks->id][$mapel->id] ?? null;
+                    $nilai = null;
+                    if ($rawVal !== null && trim((string) $rawVal) !== '') {
+                        $nilai = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
+                    }
+
+                    NilaiFormatifBulanan::updateOrCreate([
+                        'kelas_siswa_id' => $ks->id,
+                        'mapel_id' => $mapel->id,
+                        'tahun' => $tahun,
+                        'bulan' => $bulan,
+                    ], [
+                        'nilai' => $nilai,
+                    ]);
+                }
             }
-        }
+        });
 
         $namaBulan = NilaiFormatifBulanan::NAMA_BULAN[$bulan] ?? "Bulan {$bulan}";
 
@@ -841,35 +844,38 @@ class NilaiFormatifBulananController extends Controller
 
         $importedCount = 0;
         $dataRows = array_slice($rows, 1);
-        foreach ($dataRows as $r) {
-            $nisVal = $nisCol !== false ? trim((string) ($r[$nisCol] ?? '')) : '';
-            $namaVal = $namaCol !== false ? strtolower(trim((string) ($r[$namaCol] ?? ''))) : '';
 
-            $ks = ($nisVal !== '' && isset($byNis[$nisVal])) ? $byNis[$nisVal] : ($namaVal !== '' && isset($byName[$namaVal]) ? $byName[$namaVal] : null);
-            if (! $ks) {
-                continue;
-            }
+        DB::transaction(function () use ($dataRows, $nisCol, $byNis, $namaCol, $byName, $mapelCols, $tahun, $bulan, &$importedCount) {
+            foreach ($dataRows as $r) {
+                $nisVal = $nisCol !== false ? trim((string) ($r[$nisCol] ?? '')) : '';
+                $namaVal = $namaCol !== false ? strtolower(trim((string) ($r[$namaCol] ?? ''))) : '';
 
-            foreach ($mapelCols as $mId => $cIdx) {
-                $rawVal = $r[$cIdx] ?? null;
-                if ($rawVal === null || trim((string) $rawVal) === '') {
+                $ks = ($nisVal !== '' && isset($byNis[$nisVal])) ? $byNis[$nisVal] : ($namaVal !== '' && isset($byName[$namaVal]) ? $byName[$namaVal] : null);
+                if (! $ks) {
                     continue;
                 }
 
-                $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
+                foreach ($mapelCols as $mId => $cIdx) {
+                    $rawVal = $r[$cIdx] ?? null;
+                    if ($rawVal === null || trim((string) $rawVal) === '') {
+                        continue;
+                    }
 
-                NilaiFormatifBulanan::updateOrCreate([
-                    'kelas_siswa_id' => $ks->id,
-                    'mapel_id' => $mId,
-                    'tahun' => $tahun,
-                    'bulan' => $bulan,
-                ], [
-                    'nilai' => $val,
-                ]);
+                    $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
 
-                $importedCount++;
+                    NilaiFormatifBulanan::updateOrCreate([
+                        'kelas_siswa_id' => $ks->id,
+                        'mapel_id' => $mId,
+                        'tahun' => $tahun,
+                        'bulan' => $bulan,
+                    ], [
+                        'nilai' => $val,
+                    ]);
+
+                    $importedCount++;
+                }
             }
-        }
+        });
 
         return redirect()->back()->with('success', "Berhasil mengimpor {$importedCount} data nilai formatif bulanan.");
     }

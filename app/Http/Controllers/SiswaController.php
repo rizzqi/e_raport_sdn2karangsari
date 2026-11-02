@@ -10,6 +10,7 @@ use App\Services\ExcelReader;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -299,48 +300,50 @@ class SiswaController extends Controller
         $penempatanSummary = []; // [nama_kelas => jumlah]
         $sudahDiKelas = 0;
 
-        foreach ($students as $item) {
-            $nis = ! empty($item['nis']) ? $item['nis'] : $this->generateTemporaryNis();
-            $siswa = Siswa::where('nis', $nis)->first();
-            if (! $siswa) {
-                $siswa = Siswa::create([
-                    'nama' => $item['nama'],
-                    'nis' => $nis,
-                    'nisn' => $item['nisn'],
-                    'status' => 'aktif',
-                ]);
-                $suksesCount++;
-            } else {
-                $duplikatCount++;
-                if (empty($siswa->nisn) && ! empty($item['nisn'])) {
-                    $siswa->update(['nisn' => $item['nisn']]);
-                }
-            }
-
-            // Tentukan kelas tujuan untuk siswa ini
-            $targetKelas = null;
-            if ($targetKelasSpesifik) {
-                $targetKelas = $targetKelasSpesifik;
-            } elseif (! empty($item['kelas'])) {
-                $targetKelas = $this->matchOrCreateKelas($item['kelas']);
-            }
-
-            if ($targetKelas) {
-                $ks = KelasSiswa::where('kelas_id', $targetKelas->id)
-                    ->where('siswa_id', $siswa->id)
-                    ->first();
-
-                if (! $ks) {
-                    KelasSiswa::create([
-                        'kelas_id' => $targetKelas->id,
-                        'siswa_id' => $siswa->id,
+        DB::transaction(function () use ($students, $targetKelasSpesifik, &$suksesCount, &$duplikatCount, &$penempatanSummary, &$sudahDiKelas) {
+            foreach ($students as $item) {
+                $nis = ! empty($item['nis']) ? $item['nis'] : $this->generateTemporaryNis();
+                $siswa = Siswa::where('nis', $nis)->first();
+                if (! $siswa) {
+                    $siswa = Siswa::create([
+                        'nama' => $item['nama'],
+                        'nis' => $nis,
+                        'nisn' => $item['nisn'],
+                        'status' => 'aktif',
                     ]);
-                    $penempatanSummary[$targetKelas->nama] = ($penempatanSummary[$targetKelas->nama] ?? 0) + 1;
+                    $suksesCount++;
                 } else {
-                    $sudahDiKelas++;
+                    $duplikatCount++;
+                    if (empty($siswa->nisn) && ! empty($item['nisn'])) {
+                        $siswa->update(['nisn' => $item['nisn']]);
+                    }
+                }
+
+                // Tentukan kelas tujuan untuk siswa ini
+                $targetKelas = null;
+                if ($targetKelasSpesifik) {
+                    $targetKelas = $targetKelasSpesifik;
+                } elseif (! empty($item['kelas'])) {
+                    $targetKelas = $this->matchOrCreateKelas($item['kelas']);
+                }
+
+                if ($targetKelas) {
+                    $ks = KelasSiswa::where('kelas_id', $targetKelas->id)
+                        ->where('siswa_id', $siswa->id)
+                        ->first();
+
+                    if (! $ks) {
+                        KelasSiswa::create([
+                            'kelas_id' => $targetKelas->id,
+                            'siswa_id' => $siswa->id,
+                        ]);
+                        $penempatanSummary[$targetKelas->nama] = ($penempatanSummary[$targetKelas->nama] ?? 0) + 1;
+                    } else {
+                        $sudahDiKelas++;
+                    }
                 }
             }
-        }
+        });
 
         $msg = "Impor data berhasil: {$suksesCount} siswa baru ditambahkan";
         if ($duplikatCount > 0) {

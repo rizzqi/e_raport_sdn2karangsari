@@ -6,6 +6,7 @@ use App\Models\Kelas;
 use App\Models\KelasSiswa;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PenempatanSiswaController extends Controller
 {
@@ -41,12 +42,14 @@ class PenempatanSiswaController extends Controller
             'siswa_ids.*' => 'exists:siswa,id',
         ]);
 
-        foreach ($request->siswa_ids as $siswaId) {
-            KelasSiswa::firstOrCreate([
-                'kelas_id' => $kelas->id,
-                'siswa_id' => $siswaId,
-            ]);
-        }
+        DB::transaction(function () use ($request, $kelas) {
+            foreach ($request->siswa_ids as $siswaId) {
+                KelasSiswa::firstOrCreate([
+                    'kelas_id' => $kelas->id,
+                    'siswa_id' => $siswaId,
+                ]);
+            }
+        });
 
         return redirect()->route('penempatan.index', $kelas->id)->with('success', count($request->siswa_ids).' siswa berhasil ditempatkan ke kelas.');
     }
