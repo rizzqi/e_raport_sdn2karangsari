@@ -208,17 +208,17 @@
                 <!-- User Profile & Action Buttons -->
                 <div class="flex items-center space-x-2.5">
                     <!-- User Pill Badge -->
-                    <div class="hidden sm:flex items-center gap-2 py-1 px-2.5 rounded-xl bg-white/10 border border-white/15">
-                        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                    <a href="{{ route('profil.edit') }}" title="Pengaturan Profil & Sandi" class="hidden sm:flex items-center gap-2 py-1 px-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 transition group">
+                        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 group-hover:from-emerald-400 group-hover:to-teal-300 text-white font-black text-xs flex items-center justify-center shadow-xs transition">
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>
                         <div class="text-left">
-                            <span class="block text-xs font-bold leading-none text-white truncate max-w-[130px]">{{ auth()->user()->name }}</span>
+                            <span class="block text-xs font-bold leading-none text-white truncate max-w-[130px] group-hover:text-emerald-200 transition">{{ auth()->user()->name }}</span>
                             <span class="inline-block text-[9px] uppercase font-extrabold tracking-wider text-emerald-300 mt-0.5">
                                 {{ auth()->user()->role === 'admin' ? 'Administrator' : 'Wali Kelas' }}
                             </span>
                         </div>
-                    </div>
+                    </a>
 
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
@@ -248,17 +248,17 @@
 
             <!-- Mobile User Profile Card -->
             <div class="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-3 mb-2">
-                <div class="flex items-center gap-3 min-w-0">
+                <a href="{{ route('profil.edit') }}" class="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-md">
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </div>
                     <div class="min-w-0">
                         <span class="block text-xs font-bold text-white truncate">{{ auth()->user()->name }}</span>
                         <span class="inline-block text-[9px] uppercase font-extrabold tracking-wider text-emerald-300 mt-0.5">
-                            {{ auth()->user()->role === 'admin' ? 'Administrator' : 'Wali Kelas' }}
+                            {{ auth()->user()->role === 'admin' ? 'Administrator' : 'Wali Kelas' }} &bull; Ubah Profil
                         </span>
                     </div>
-                </div>
+                </a>
                 <form action="{{ route('logout') }}" method="POST" class="shrink-0">
                     @csrf
                     <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white transition text-[11px] font-bold border border-rose-500/30 flex items-center gap-1.5">

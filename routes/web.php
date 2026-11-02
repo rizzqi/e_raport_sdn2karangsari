@@ -11,6 +11,7 @@ use App\Http\Controllers\NilaiFormatifBulananController;
 use App\Http\Controllers\NilaiFormatifHarianController;
 use App\Http\Controllers\NilaiMapelController;
 use App\Http\Controllers\PenempatanSiswaController;
+use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\RaportController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\SekolahController;
@@ -34,6 +35,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/absensi-harian', [AbsensiHarianController::class, 'index'])->name('absensi-harian.index');
+
+    // Profil Pengguna & Ubah Kata Sandi
+    Route::get('/profil', [ProfilController::class, 'edit'])->name('profil.edit');
+    Route::put('/profil', [ProfilController::class, 'update'])->name('profil.update');
+    Route::put('/profil/password', [ProfilController::class, 'updatePassword'])->name('profil.password.update');
 
     // Modul Rekap, Unduh Raport Kelas, Daftar Hadir Ujian, & Absensi Bulanan
     Route::prefix('kelas/{kelas}')->scopeBindings()->group(function () {
