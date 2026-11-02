@@ -203,7 +203,7 @@
                                 {{ substr($s->nama, 0, 1) }}
                             </div>
                             <div class="min-w-0">
-                                <h4 class="font-bold text-xs text-slate-900 truncate">{{ $s->nama }}</h4>
+                                <a href="{{ route('siswa.show', $s->id) }}" class="font-bold text-xs text-slate-900 hover:text-emerald-700 truncate block transition">{{ $s->nama }}</a>
                                 <p class="text-[10px] text-slate-500 font-mono mt-0.5">
                                     NIS: <strong class="text-slate-700">{{ $s->nis }}</strong> &bull; NISN: {{ $s->nisn ?? '-' }}
                                 </p>
@@ -288,7 +288,10 @@
                                 {{ $siswaList->firstItem() + $index }}
                             </td>
                             <td class="py-3.5 px-4 font-bold text-slate-900">
-                                {{ $s->nama }}
+                                <a href="{{ route('siswa.show', $s->id) }}" class="hover:text-emerald-700 transition inline-flex items-center gap-1.5 group">
+                                    <span>{{ $s->nama }}</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-emerald-600 transition"></i>
+                                </a>
                             </td>
                             <td class="py-3.5 px-4 font-mono text-xs text-slate-700">
                                 <div class="flex items-center space-x-1.5">
@@ -331,6 +334,10 @@
                                 @endif
                             </td>
                             <td class="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
+                                <a href="{{ route('siswa.show', $s->id) }}"
+                                    class="p-1.5 text-slate-400 hover:text-emerald-700 transition inline-block" title="Lihat Profil Detail Siswa">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
                                 @if(auth()->user()->isAdmin())
                                     <button onclick="editSiswa({{ json_encode($s) }})"
                                         class="p-1.5 text-slate-400 hover:text-emerald-600 transition" title="Ubah">

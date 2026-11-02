@@ -7,6 +7,7 @@ use App\Models\KelasSiswa;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Services\ExcelReader;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -92,6 +93,40 @@ class SiswaController extends Controller
             'totalSiswaCount',
             'tanpaKelasCount'
         ));
+    }
+
+    /**
+     * Tampilkan detail profil siswa, riwayat kelas, dan data akademik.
+     */
+    public function show(Request $request, Siswa $siswa): View|JsonResponse
+    {
+        $user = auth()->user();
+        if ($user && $user->isWali()) {
+            $waliKelasIds = $user->kelasWali()->pluck('id');
+            $hasAccess = $siswa->kelasSiswa()->whereIn('kelas_id', $waliKelasIds)->exists();
+            if (! $hasAccess) {
+                abort(403, 'Anda hanya dapat melihat data siswa di kelas yang Anda ampu.');
+            }
+        }
+
+        $siswa->load([
+            'kelasSiswa' => function ($q) {
+                $q->with(['kelas.tahunAjaran', 'kelas.wali'])->orderBy('id', 'desc');
+            },
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'siswa' => $siswa,
+            ]);
+        }
+
+        $kelasAktif = $siswa->kelasSiswa->first(function ($ks) {
+            return $ks->kelas && $ks->kelas->tahunAjaran && $ks->kelas->tahunAjaran->aktif;
+        });
+
+        return view('siswa.show', compact('siswa', 'kelasAktif'));
     }
 
     /**
