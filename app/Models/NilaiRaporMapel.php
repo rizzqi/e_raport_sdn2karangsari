@@ -106,7 +106,7 @@ class NilaiRaporMapel extends Model
      */
     public static function getTemplateCatatan(string $predikat, string $mapelNama, string $siswaNama = ''): string
     {
-        $namaPrefix = $siswaNama ? "Ananda {$siswaNama}" : "Peserta didik";
+        $namaPrefix = $siswaNama ? "Ananda {$siswaNama}" : 'Peserta didik';
 
         return match (strtoupper($predikat)) {
             'A' => "{$namaPrefix} menunjukkan penguasaan yang sangat baik dalam memahami materi {$mapelNama}, sangat aktif dan mandiri dalam proses pembelajaran.",

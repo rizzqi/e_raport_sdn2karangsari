@@ -36,7 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/absensi-harian', [AbsensiHarianController::class, 'index'])->name('absensi-harian.index');
 
     // Modul Rekap, Unduh Raport Kelas, Daftar Hadir Ujian, & Absensi Bulanan
-    Route::prefix('kelas/{kelas}')->group(function () {
+    Route::prefix('kelas/{kelas}')->scopeBindings()->group(function () {
         Route::get('/rekap', [RekapController::class, 'index'])->name('rekap.kelas');
         Route::get('/rekap/cetak', [RekapController::class, 'cetak'])->name('rekap.kelas.cetak');
         Route::get('/raport/cetak-sekelas', [RaportController::class, 'cetakKelas'])->name('raport.cetak.kelas');

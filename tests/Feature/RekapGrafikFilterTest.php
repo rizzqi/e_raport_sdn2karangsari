@@ -2,14 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Kelas;
 use App\Models\Kehadiran;
 use App\Models\KehadiranBulanan;
-use App\Models\NilaiFormatifBulanan;
-use App\Models\NilaiRaporMapel;
-use App\Models\NilaiSumatif;
-use App\Models\Pembiasaan;
+use App\Models\Kelas;
 use App\Models\NilaiPembiasaan;
+use App\Models\Pembiasaan;
 use App\Models\Sekolah;
 use App\Models\User;
 use App\Services\HitungNilaiService;
@@ -48,11 +45,11 @@ class RekapGrafikFilterTest extends TestCase
         $this->assertArrayHasKey('uas', $akademik);
         $this->assertArrayHasKey('formatif', $akademik);
         for ($b = 7; $b <= 12; $b++) {
-            $this->assertArrayHasKey('formatif_' . $b, $akademik);
-            $this->assertArrayHasKey('mapel', $akademik['formatif_' . $b]);
-            $this->assertArrayHasKey('distribusi', $akademik['formatif_' . $b]);
-            $this->assertArrayHasKey('rentang_nilai', $akademik['formatif_' . $b]);
-            $this->assertArrayHasKey('summary', $akademik['formatif_' . $b]);
+            $this->assertArrayHasKey('formatif_'.$b, $akademik);
+            $this->assertArrayHasKey('mapel', $akademik['formatif_'.$b]);
+            $this->assertArrayHasKey('distribusi', $akademik['formatif_'.$b]);
+            $this->assertArrayHasKey('rentang_nilai', $akademik['formatif_'.$b]);
+            $this->assertArrayHasKey('summary', $akademik['formatif_'.$b]);
         }
     }
 

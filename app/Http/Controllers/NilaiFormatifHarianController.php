@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kelas;
-use App\Models\KelasSiswa;
 use App\Models\MataPelajaran;
 use App\Models\NilaiFormatifBulanan;
 use App\Models\NilaiFormatifHarian;
@@ -203,7 +202,7 @@ class NilaiFormatifHarianController extends Controller
             'mapel' => $mapel->id,
             'tahun' => $tahun,
             'bulan' => $bulan,
-        ])->with('success', "Penilaian Harian '{$penilaian->nama}' berhasil ditambahkan ke Bulan " . (NilaiFormatifBulanan::NAMA_BULAN[$bulan] ?? $bulan) . '.');
+        ])->with('success', "Penilaian Harian '{$penilaian->nama}' berhasil ditambahkan ke Bulan ".(NilaiFormatifBulanan::NAMA_BULAN[$bulan] ?? $bulan).'.');
     }
 
     /**

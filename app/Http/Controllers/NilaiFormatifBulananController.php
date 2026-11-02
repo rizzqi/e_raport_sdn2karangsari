@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kehadiran;
 use App\Models\KehadiranBulanan;
 use App\Models\Kelas;
 use App\Models\KelasSiswa;
-use App\Models\MataPelajaran;
+use App\Models\Nilai;
 use App\Models\NilaiFormatifBulanan;
+use App\Models\NilaiRaporMapel;
 use App\Models\Sekolah;
 use App\Services\ExcelReader;
 use App\Services\ExcelWriter;
@@ -245,7 +247,7 @@ class NilaiFormatifBulananController extends Controller
             ->keyBy('mapel_id');
 
         // Fallback otomatis dari tabel nilai jika formatif bulanan belum diinput khusus
-        $existingNilaiList = \App\Models\Nilai::where('kelas_siswa_id', $kelasSiswa->id)->get()->keyBy('mapel_id');
+        $existingNilaiList = Nilai::where('kelas_siswa_id', $kelasSiswa->id)->get()->keyBy('mapel_id');
 
         // Susun baris nilai
         $baris = [];
@@ -288,7 +290,7 @@ class NilaiFormatifBulananController extends Controller
             ->where('bulan', $bulan)
             ->first();
 
-        $fallbackKeh = \App\Models\Kehadiran::where('kelas_siswa_id', $kelasSiswa->id)->first();
+        $fallbackKeh = Kehadiran::where('kelas_siswa_id', $kelasSiswa->id)->first();
         $sakit = $kehadiran ? $kehadiran->sakit : ($fallbackKeh?->sakit ?? 0);
         $izin = $kehadiran ? $kehadiran->izin : ($fallbackKeh?->izin ?? 0);
         $alpa = $kehadiran ? $kehadiran->alpa : ($fallbackKeh?->alpa ?? 0);
@@ -363,8 +365,8 @@ class NilaiFormatifBulananController extends Controller
             ->get();
 
         // Fallback otomatis dari tabel nilai dan kehadiran agar guru tidak perlu mengulang input data
-        $allExistingNilai = \App\Models\Nilai::whereIn('kelas_siswa_id', $ksIds)->get();
-        $fallbackKehadiran = \App\Models\Kehadiran::whereIn('kelas_siswa_id', $ksIds)->get()->keyBy('kelas_siswa_id');
+        $allExistingNilai = Nilai::whereIn('kelas_siswa_id', $ksIds)->get();
+        $fallbackKehadiran = Kehadiran::whereIn('kelas_siswa_id', $ksIds)->get()->keyBy('kelas_siswa_id');
 
         $allKehadiran = KehadiranBulanan::whereIn('kelas_siswa_id', $ksIds)
             ->where('tahun', $tahun)
@@ -475,13 +477,13 @@ class NilaiFormatifBulananController extends Controller
             ->get();
 
         // Fallback otomatis dari tabel nilai dan kehadiran
-        $allExistingNilai = \App\Models\Nilai::whereIn('kelas_siswa_id', $ksIds)->get();
+        $allExistingNilai = Nilai::whereIn('kelas_siswa_id', $ksIds)->get();
         $allKehadiran = KehadiranBulanan::whereIn('kelas_siswa_id', $ksIds)
             ->where('tahun', $tahun)
             ->where('bulan', $bulan)
             ->get()
             ->keyBy('kelas_siswa_id');
-        $fallbackKehadiran = \App\Models\Kehadiran::whereIn('kelas_siswa_id', $ksIds)->get()->keyBy('kelas_siswa_id');
+        $fallbackKehadiran = Kehadiran::whereIn('kelas_siswa_id', $ksIds)->get()->keyBy('kelas_siswa_id');
 
         $tanggalInput = $request->input('tanggal');
         $tanggalObj = $tanggalInput ? Carbon::parse($tanggalInput) : now();
@@ -914,7 +916,7 @@ class NilaiFormatifBulananController extends Controller
             ->get();
 
         // Fallback ke tabel nilai jika ada mapel yang belum ada di formatif bulanan
-        $fallbackNilai = \App\Models\Nilai::where('kelas_siswa_id', $kelasSiswa->id)->get()->keyBy('mapel_id');
+        $fallbackNilai = Nilai::where('kelas_siswa_id', $kelasSiswa->id)->get()->keyBy('mapel_id');
 
         $baris = [];
         $totalSemuaMapel = 0;
@@ -959,7 +961,7 @@ class NilaiFormatifBulananController extends Controller
             }
 
             // Capaian Kompetensi / Keterangan Predikat
-            $predikat = $rataMapel !== null ? \App\Models\NilaiRaporMapel::hitungPredikat($rataMapel) : '-';
+            $predikat = $rataMapel !== null ? NilaiRaporMapel::hitungPredikat($rataMapel) : '-';
             $keterangan = $rataMapel !== null ? ($rataMapel >= $kkm ? 'Tuntas' : 'Perlu Bimbingan') : '-';
 
             $baris[] = [
@@ -983,7 +985,7 @@ class NilaiFormatifBulananController extends Controller
             ->whereIn('bulan', $bulanKeys)
             ->get();
 
-        $fallbackKeh = \App\Models\Kehadiran::where('kelas_siswa_id', $kelasSiswa->id)->first();
+        $fallbackKeh = Kehadiran::where('kelas_siswa_id', $kelasSiswa->id)->first();
         if ($kehadiranBulanan->isNotEmpty()) {
             $sakit = $kehadiranBulanan->sum('sakit');
             $izin = $kehadiranBulanan->sum('izin');

@@ -30,8 +30,11 @@ class AbsensiHarian extends Model
     }
 
     public const STATUS_HADIR = 'H';
+
     public const STATUS_SAKIT = 'S';
+
     public const STATUS_IZIN = 'I';
+
     public const STATUS_ALPA = 'A';
 
     public const STATUS_LABELS = [
@@ -82,6 +85,7 @@ class AbsensiHarian extends Model
         if ($mapelId === null) {
             return $query->whereNull('mapel_id');
         }
+
         return $query->where('mapel_id', $mapelId);
     }
 

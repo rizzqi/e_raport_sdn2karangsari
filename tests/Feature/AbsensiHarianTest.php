@@ -5,9 +5,7 @@ namespace Tests\Feature;
 use App\Models\AbsensiHarian;
 use App\Models\KehadiranBulanan;
 use App\Models\Kelas;
-use App\Models\MataPelajaran;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 

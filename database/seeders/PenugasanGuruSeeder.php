@@ -47,7 +47,7 @@ class PenugasanGuruSeeder extends Seeder
                 $kgAgama = KelasGuru::where('kelas_id', $kelas->id)
                     ->where(function ($q) use ($mapelAgama) {
                         $q->where('mapel_id', $mapelAgama->id)
-                          ->orWhere('nama', 'like', '%Asrofi%');
+                            ->orWhere('nama', 'like', '%Asrofi%');
                     })->first();
 
                 if ($kgAgama) {
@@ -73,7 +73,7 @@ class PenugasanGuruSeeder extends Seeder
                 $kgPjok = KelasGuru::where('kelas_id', $kelas->id)
                     ->where(function ($q) use ($mapelPjok) {
                         $q->where('mapel_id', $mapelPjok->id)
-                          ->orWhere('nama', 'like', '%Wanto%');
+                            ->orWhere('nama', 'like', '%Wanto%');
                     })->first();
 
                 if ($kgPjok) {

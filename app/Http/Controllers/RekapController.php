@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kehadiran;
 use App\Models\Kelas;
 use App\Services\HitungNilaiService;
 use Carbon\Carbon;
@@ -70,14 +71,14 @@ class RekapController extends Controller
 
         // Ambil kehadiran untuk seluruh siswa di kelas
         $ksIds = $kelasSiswaList->pluck('id');
-        $kehadiranList = \App\Models\Kehadiran::whereIn('kelas_siswa_id', $ksIds)
+        $kehadiranList = Kehadiran::whereIn('kelas_siswa_id', $ksIds)
             ->where('periode', in_array($periode, ['sas', 'semester']) ? 'sas' : 'sts')
             ->get()
             ->keyBy('kelas_siswa_id');
 
         // Jika periode sas belum diisi absensinya, otomatis ambil dari sts
         if ($kehadiranList->isEmpty() && in_array($periode, ['sas', 'semester'])) {
-            $kehadiranList = \App\Models\Kehadiran::whereIn('kelas_siswa_id', $ksIds)
+            $kehadiranList = Kehadiran::whereIn('kelas_siswa_id', $ksIds)
                 ->where('periode', 'sts')
                 ->get()
                 ->keyBy('kelas_siswa_id');

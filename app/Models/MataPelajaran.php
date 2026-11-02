@@ -165,6 +165,7 @@ class MataPelajaran extends Model
         if ($this->isPjok()) {
             return 'pjok';
         }
+
         return 'reguler';
     }
 

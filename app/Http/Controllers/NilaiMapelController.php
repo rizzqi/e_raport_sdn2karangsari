@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kehadiran;
 use App\Models\Kelas;
 use App\Models\KelasSiswa;
-use App\Models\Kehadiran;
 use App\Models\MataPelajaran;
 use App\Models\Nilai;
 use App\Models\NilaiFormatifBulanan;
 use App\Models\NilaiRaporMapel;
+use App\Models\PenilaianFormatifHarian;
 use App\Models\Sekolah;
 use App\Services\HitungNilaiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class NilaiMapelController extends Controller
@@ -369,7 +369,7 @@ class NilaiMapelController extends Controller
         // Cari data Guru Pengampu jika ada
         $guruPengampu = $mapel ? $kelas->guruPengampu->firstWhere('mapel_id', $mapel->id) : null;
 
-        $harianCountPerBulan = $mapel ? \App\Models\PenilaianFormatifHarian::where('kelas_id', $kelas->id)
+        $harianCountPerBulan = $mapel ? PenilaianFormatifHarian::where('kelas_id', $kelas->id)
             ->where('mapel_id', $mapel->id)
             ->where('tahun', $tahun)
             ->whereIn('bulan', array_keys($bulanSemester))
@@ -523,7 +523,7 @@ class NilaiMapelController extends Controller
             'mapel' => $mapel->id,
             'tab' => 'formatif',
             'tahun' => $tahun,
-        ])->with('success', 'Nilai Formatif Bulanan untuk ' . $mapel->nama . ' berhasil disimpan dan rata-rata otomatis diperbarui.');
+        ])->with('success', 'Nilai Formatif Bulanan untuk '.$mapel->nama.' berhasil disimpan dan rata-rata otomatis diperbarui.');
     }
 
     /**
@@ -585,7 +585,7 @@ class NilaiMapelController extends Controller
             'mapel' => $mapel->id,
             'tab' => 'uts',
             'tahun' => $tahun,
-        ])->with('success', 'Nilai UTS untuk ' . $mapel->nama . ' berhasil disimpan.');
+        ])->with('success', 'Nilai UTS untuk '.$mapel->nama.' berhasil disimpan.');
     }
 
     /**
@@ -647,7 +647,7 @@ class NilaiMapelController extends Controller
             'mapel' => $mapel->id,
             'tab' => 'uas',
             'tahun' => $tahun,
-        ])->with('success', 'Nilai Semester (UAS) untuk ' . $mapel->nama . ' berhasil disimpan.');
+        ])->with('success', 'Nilai Semester (UAS) untuk '.$mapel->nama.' berhasil disimpan.');
     }
 
     /**
@@ -695,7 +695,7 @@ class NilaiMapelController extends Controller
             'mapel' => $mapel->id,
             'tab' => 'rapor',
             'tahun' => $tahun,
-        ])->with('success', 'Catatan Guru untuk ' . $mapel->nama . ' berhasil disimpan.');
+        ])->with('success', 'Catatan Guru untuk '.$mapel->nama.' berhasil disimpan.');
     }
 
     /**
@@ -821,10 +821,14 @@ class NilaiMapelController extends Controller
     {
         if ($nilai === null && $predikat !== null) {
             switch ($predikat) {
-                case 'A': $nilai = 90.0; break;
-                case 'B': $nilai = 82.0; break;
-                case 'C': $nilai = 70.0; break;
-                case 'D': $nilai = 55.0; break;
+                case 'A': $nilai = 90.0;
+                    break;
+                case 'B': $nilai = 82.0;
+                    break;
+                case 'C': $nilai = 70.0;
+                    break;
+                case 'D': $nilai = 55.0;
+                    break;
             }
         }
 
@@ -858,7 +862,7 @@ class NilaiMapelController extends Controller
             'mapel' => $mapel->id,
             'tab' => 'rapor',
             'tahun' => $tahun,
-        ])->with('success', 'Nilai Rapor ' . $mapel->nama . ' berhasil dikunci dan disahkan.');
+        ])->with('success', 'Nilai Rapor '.$mapel->nama.' berhasil dikunci dan disahkan.');
     }
 
     /**
@@ -890,7 +894,7 @@ class NilaiMapelController extends Controller
             'mapel' => $mapel->id,
             'tab' => 'rapor',
             'tahun' => $tahun,
-        ])->with('success', 'Kunci Nilai Rapor ' . $mapel->nama . ' berhasil dibuka. Guru dapat melakukan pengeditan kembali.');
+        ])->with('success', 'Kunci Nilai Rapor '.$mapel->nama.' berhasil dibuka. Guru dapat melakukan pengeditan kembali.');
     }
 
     /**
@@ -951,8 +955,8 @@ class NilaiMapelController extends Controller
                 // PJOK: Formatif Teori & Praktikum per bulan
                 $baris[] = [
                     'bulan_nomor' => $bNum,
-                    'bulan_nama' => $bNama . ' (Formatif)',
-                    'lingkup_materi' => 'Formatif Teori & Pengetahuan ' . $bNama,
+                    'bulan_nama' => $bNama.' (Formatif)',
+                    'lingkup_materi' => 'Formatif Teori & Pengetahuan '.$bNama,
                     'kkm' => $kkm,
                     'nilai' => $val,
                     'nilai_format' => $val !== null ? HitungNilaiService::formatAngka($val) : '-',
@@ -968,8 +972,8 @@ class NilaiMapelController extends Controller
                 }
                 $baris[] = [
                     'bulan_nomor' => $bNum,
-                    'bulan_nama' => $bNama . ' (Praktik)',
-                    'lingkup_materi' => 'Praktikum Gerak, Kebugaran & Olahraga ' . $bNama,
+                    'bulan_nama' => $bNama.' (Praktik)',
+                    'lingkup_materi' => 'Praktikum Gerak, Kebugaran & Olahraga '.$bNama,
                     'kkm' => $kkm,
                     'nilai' => $valPrak,
                     'nilai_format' => $valPrak !== null ? HitungNilaiService::formatAngka($valPrak) : '-',
@@ -979,7 +983,7 @@ class NilaiMapelController extends Controller
                 $baris[] = [
                     'bulan_nomor' => $bNum,
                     'bulan_nama' => $bNama,
-                    'lingkup_materi' => $rec->lingkup_materi ?? 'Ulangan Formatif ' . $bNama,
+                    'lingkup_materi' => $rec->lingkup_materi ?? 'Ulangan Formatif '.$bNama,
                     'kkm' => $kkm,
                     'nilai' => $val,
                     'nilai_format' => $val !== null ? HitungNilaiService::formatAngka($val) : '-',
@@ -1146,7 +1150,7 @@ class NilaiMapelController extends Controller
             'tanggalCetak'
         ))->setPaper([0, 0, 609.45, 935.43]); // Ukuran Standar F4 / Folio (215 x 330 mm) dalam points
 
-        $filename = 'Rekap_Formatif_' . str_replace(' ', '_', $mapel->nama) . '_' . $namaBulan . '_' . $tahun . '.pdf';
+        $filename = 'Rekap_Formatif_'.str_replace(' ', '_', $mapel->nama).'_'.$namaBulan.'_'.$tahun.'.pdf';
 
         return $pdf->stream($filename);
     }
@@ -1243,7 +1247,7 @@ class NilaiMapelController extends Controller
             'tanggalCetak'
         ))->setPaper([0, 0, 609.45, 935.43]); // Ukuran Standar F4 / Folio (215 x 330 mm)
 
-        $filename = 'Daftar_Nilai_UTS_' . str_replace(' ', '_', $mapel->nama) . '_Kelas_' . str_replace(' ', '_', $kelas->nama) . '_' . $tahun . '.pdf';
+        $filename = 'Daftar_Nilai_UTS_'.str_replace(' ', '_', $mapel->nama).'_Kelas_'.str_replace(' ', '_', $kelas->nama).'_'.$tahun.'.pdf';
 
         return $pdf->stream($filename);
     }
@@ -1340,7 +1344,7 @@ class NilaiMapelController extends Controller
             'tanggalCetak'
         ))->setPaper([0, 0, 609.45, 935.43]); // Ukuran Standar F4 / Folio (215 x 330 mm)
 
-        $filename = 'Daftar_Nilai_SAS_' . str_replace(' ', '_', $mapel->nama) . '_Kelas_' . str_replace(' ', '_', $kelas->nama) . '_' . $tahun . '.pdf';
+        $filename = 'Daftar_Nilai_SAS_'.str_replace(' ', '_', $mapel->nama).'_Kelas_'.str_replace(' ', '_', $kelas->nama).'_'.$tahun.'.pdf';
 
         return $pdf->stream($filename);
     }

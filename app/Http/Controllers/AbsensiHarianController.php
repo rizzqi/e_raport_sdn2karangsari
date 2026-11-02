@@ -10,6 +10,7 @@ use App\Models\Sekolah;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AbsensiHarianController extends Controller
@@ -127,7 +128,7 @@ class AbsensiHarianController extends Controller
                     'kelas' => $kelas->id,
                     'tanggal' => $tanggal,
                     'tipe' => $fallbackTipe,
-                ])->with('warning', "Anda dialihkan ke formulir absensi " . strtoupper($fallbackTipe) . " karena Anda tidak memiliki penugasan untuk tipe " . strtoupper($tipe) . " di Kelas {$kelas->nama}.");
+                ])->with('warning', 'Anda dialihkan ke formulir absensi '.strtoupper($fallbackTipe).' karena Anda tidak memiliki penugasan untuk tipe '.strtoupper($tipe)." di Kelas {$kelas->nama}.");
             }
 
             abort(403, "Akses Ditolak: Anda tidak memiliki penugasan mengajar atau hak akses untuk mengisi absensi pada Kelas {$kelas->nama}.");
@@ -280,28 +281,36 @@ class AbsensiHarianController extends Controller
         $mapelId = $mapel?->id;
 
         $userId = auth()->id();
+        $validKsIds = $kelas->kelasSiswa()->pluck('id')->flip()->toArray();
         $updatedCount = 0;
 
-        foreach ($statusData as $ksId => $st) {
-            $cleanStatus = strtoupper(trim((string) $st));
-            if (! in_array($cleanStatus, ['H', 'S', 'I', 'A'])) {
-                $cleanStatus = 'H';
+        DB::transaction(function () use ($statusData, $validKsIds, $keteranganData, $mapelId, $tanggal, $userId, &$updatedCount) {
+            foreach ($statusData as $ksId => $st) {
+                // Cegah parameter tampering (pastikan siswa benar anggota kelas ini)
+                if (! isset($validKsIds[$ksId])) {
+                    continue;
+                }
+
+                $cleanStatus = strtoupper(trim((string) $st));
+                if (! in_array($cleanStatus, ['H', 'S', 'I', 'A'])) {
+                    $cleanStatus = 'H';
+                }
+
+                $ket = isset($keteranganData[$ksId]) ? trim((string) $keteranganData[$ksId]) : null;
+
+                AbsensiHarian::updateOrCreate([
+                    'kelas_siswa_id' => $ksId,
+                    'mapel_id' => $mapelId,
+                    'tanggal' => $tanggal,
+                ], [
+                    'status' => $cleanStatus,
+                    'keterangan' => $ket,
+                    'created_by' => $userId,
+                ]);
+
+                $updatedCount++;
             }
-
-            $ket = isset($keteranganData[$ksId]) ? trim((string) $keteranganData[$ksId]) : null;
-
-            AbsensiHarian::updateOrCreate([
-                'kelas_siswa_id' => $ksId,
-                'mapel_id' => $mapelId,
-                'tanggal' => $tanggal,
-            ], [
-                'status' => $cleanStatus,
-                'keterangan' => $ket,
-                'created_by' => $userId,
-            ]);
-
-            $updatedCount++;
-        }
+        });
 
         $tanggalFormat = Carbon::parse($tanggal)->locale('id')->translatedFormat('d F Y');
         $namaTipe = match ($tipe) {
@@ -348,49 +357,52 @@ class AbsensiHarianController extends Controller
         $mapelId = $mapel?->id;
 
         $ksIds = $kelas->kelasSiswa()->pluck('id');
+        $deletedCount = 0;
 
-        $query = AbsensiHarian::whereIn('kelas_siswa_id', $ksIds)
-            ->whereDate('tanggal', $tanggal);
+        DB::transaction(function () use ($ksIds, $tanggal, $mapelId, $tipe, $tanggalObj, &$deletedCount) {
+            $query = AbsensiHarian::whereIn('kelas_siswa_id', $ksIds)
+                ->whereDate('tanggal', $tanggal);
 
-        if ($mapelId === null) {
-            $query->whereNull('mapel_id');
-        } else {
-            $query->where('mapel_id', $mapelId);
-        }
+            if ($mapelId === null) {
+                $query->whereNull('mapel_id');
+            } else {
+                $query->where('mapel_id', $mapelId);
+            }
 
-        $deletedCount = $query->delete();
+            $deletedCount = $query->delete();
 
-        // Jika tipe 'wali', otomatis sesuaikan sinkronisasi ke KehadiranBulanan jika bulan tersebut sudah memiliki rekap
-        if ($tipe === 'wali' && $deletedCount > 0) {
-            $tahun = (int) $tanggalObj->year;
-            $bulan = (int) $tanggalObj->month;
+            // Jika tipe 'wali', otomatis sesuaikan sinkronisasi ke KehadiranBulanan jika bulan tersebut sudah memiliki rekap
+            if ($tipe === 'wali' && $deletedCount > 0) {
+                $tahun = (int) $tanggalObj->year;
+                $bulan = (int) $tanggalObj->month;
 
-            $hasBulanan = KehadiranBulanan::whereIn('kelas_siswa_id', $ksIds)
-                ->where('tahun', $tahun)
-                ->where('bulan', $bulan)
-                ->exists();
+                $hasBulanan = KehadiranBulanan::whereIn('kelas_siswa_id', $ksIds)
+                    ->where('tahun', $tahun)
+                    ->where('bulan', $bulan)
+                    ->exists();
 
-            if ($hasBulanan) {
-                $allAbsenBulan = AbsensiHarian::whereIn('kelas_siswa_id', $ksIds)
-                    ->whereNull('mapel_id')
-                    ->whereYear('tanggal', $tahun)
-                    ->whereMonth('tanggal', $bulan)
-                    ->get();
+                if ($hasBulanan) {
+                    $allAbsenBulan = AbsensiHarian::whereIn('kelas_siswa_id', $ksIds)
+                        ->whereNull('mapel_id')
+                        ->whereYear('tanggal', $tahun)
+                        ->whereMonth('tanggal', $bulan)
+                        ->get();
 
-                foreach ($ksIds as $ksId) {
-                    $siswaAbsen = $allAbsenBulan->where('kelas_siswa_id', $ksId);
-                    KehadiranBulanan::updateOrCreate([
-                        'kelas_siswa_id' => $ksId,
-                        'tahun' => $tahun,
-                        'bulan' => $bulan,
-                    ], [
-                        'sakit' => $siswaAbsen->where('status', 'S')->count(),
-                        'izin' => $siswaAbsen->where('status', 'I')->count(),
-                        'alpa' => $siswaAbsen->where('status', 'A')->count(),
-                    ]);
+                    foreach ($ksIds as $ksId) {
+                        $siswaAbsen = $allAbsenBulan->where('kelas_siswa_id', $ksId);
+                        KehadiranBulanan::updateOrCreate([
+                            'kelas_siswa_id' => $ksId,
+                            'tahun' => $tahun,
+                            'bulan' => $bulan,
+                        ], [
+                            'sakit' => $siswaAbsen->where('status', 'S')->count(),
+                            'izin' => $siswaAbsen->where('status', 'I')->count(),
+                            'alpa' => $siswaAbsen->where('status', 'A')->count(),
+                        ]);
+                    }
                 }
             }
-        }
+        });
 
         $tanggalFormat = $tanggalObj->locale('id')->translatedFormat('d F Y');
         $namaTipe = match ($tipe) {

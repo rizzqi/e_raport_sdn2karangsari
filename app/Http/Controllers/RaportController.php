@@ -45,10 +45,54 @@ class RaportController extends Controller
     }
 
     /**
+     * Pastikan pengguna memiliki hak akses ke raport siswa (Admin, Kepsek, atau Wali Kelas terkait).
+     */
+    protected function authorizeRaportAccess(KelasSiswa $kelasSiswa): void
+    {
+        $user = auth()->user();
+        if (! $user) {
+            abort(403);
+        }
+
+        if ($user->isAdmin() || $user->isKepsek()) {
+            return;
+        }
+
+        if ($user->isWali() && (int) $kelasSiswa->kelas->wali_id === (int) $user->id) {
+            return;
+        }
+
+        abort(403, 'Anda tidak berhak mengakses raport siswa ini.');
+    }
+
+    /**
+     * Pastikan pengguna memiliki hak akses ke raport sekelas (Admin, Kepsek, atau Wali Kelas terkait).
+     */
+    protected function authorizeKelasRaportAccess(Kelas $kelas): void
+    {
+        $user = auth()->user();
+        if (! $user) {
+            abort(403);
+        }
+
+        if ($user->isAdmin() || $user->isKepsek()) {
+            return;
+        }
+
+        if ($user->isWali() && (int) $kelas->wali_id === (int) $user->id) {
+            return;
+        }
+
+        abort(403, 'Anda tidak berhak mengakses raport kelas ini.');
+    }
+
+    /**
      * F10: Pratinjau Raport resmi di web
      */
     public function preview(KelasSiswa $kelasSiswa, Request $request)
     {
+        $this->authorizeRaportAccess($kelasSiswa);
+
         $periode = $request->input('periode', 'sts');
         $kelas = $kelasSiswa->kelas;
         $sekolah = $kelas->sekolah ?? Sekolah::first();
@@ -95,6 +139,8 @@ class RaportController extends Controller
      */
     public function downloadDocx(KelasSiswa $kelasSiswa, Request $request)
     {
+        $this->authorizeRaportAccess($kelasSiswa);
+
         $periode = $request->input('periode', 'sts');
         $kelas = $kelasSiswa->kelas;
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
@@ -121,6 +167,8 @@ class RaportController extends Controller
      */
     public function downloadKelasDocx(Kelas $kelas, Request $request)
     {
+        $this->authorizeKelasRaportAccess($kelas);
+
         $periode = $request->input('periode', 'sts');
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
         $tanggal = $tanggalObj->format('Y-m-d');
@@ -148,6 +196,8 @@ class RaportController extends Controller
      */
     public function cetakKelas(Kelas $kelas, Request $request)
     {
+        $this->authorizeKelasRaportAccess($kelas);
+
         $periode = $request->input('periode', 'sts');
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $tahun = $kelas->tahunAjaran;
@@ -202,6 +252,8 @@ class RaportController extends Controller
      */
     public function downloadKelasPdf(Kelas $kelas, Request $request)
     {
+        $this->authorizeKelasRaportAccess($kelas);
+
         $periode = $request->input('periode', 'sts');
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $tahun = $kelas->tahunAjaran;
@@ -269,6 +321,8 @@ class RaportController extends Controller
      */
     public function downloadPdf(KelasSiswa $kelasSiswa, Request $request)
     {
+        $this->authorizeRaportAccess($kelasSiswa);
+
         $periode = $request->input('periode', 'sts');
         $kelas = $kelasSiswa->kelas;
         $sekolah = $kelas->sekolah ?? Sekolah::first();
@@ -323,9 +377,20 @@ class RaportController extends Controller
      */
     public function riwayatCetak(Request $request)
     {
-        $riwayatList = Raport::with(['kelasSiswa.siswa', 'kelasSiswa.kelas', 'pembuat'])
-            ->orderBy('id', 'desc')
-            ->paginate(25);
+        $user = auth()->user();
+        $query = Raport::with(['kelasSiswa.siswa', 'kelasSiswa.kelas', 'pembuat'])
+            ->orderBy('id', 'desc');
+
+        if ($user && $user->isWali()) {
+            $waliKelasIds = $user->kelasWali()->pluck('id');
+            $query->whereHas('kelasSiswa', function ($q) use ($waliKelasIds) {
+                $q->whereIn('kelas_id', $waliKelasIds);
+            });
+        } elseif ($user && ! $user->isAdmin() && ! $user->isKepsek()) {
+            $query->whereRaw('1 = 0');
+        }
+
+        $riwayatList = $query->paginate(25);
 
         return view('raport.riwayat', compact('riwayatList'));
     }
@@ -342,6 +407,8 @@ class RaportController extends Controller
             $kelasSiswa = KelasSiswa::findOrFail($kelasSiswa);
             $kelas = $kelasSiswa->kelas;
         }
+
+        $this->authorizeRaportAccess($kelasSiswa);
 
         $request = $request ?? request();
         $periode = $request->input('periode', 'sts');
@@ -416,6 +483,8 @@ class RaportController extends Controller
             $kelas = $kelasSiswa->kelas;
         }
 
+        $this->authorizeRaportAccess($kelasSiswa);
+
         $request = $request ?? request();
         $periode = $request->input('periode', 'sts');
         $kelas = $kelasSiswa->kelas;
@@ -476,6 +545,8 @@ class RaportController extends Controller
      */
     public function lembarStsSasKelasPdf(Kelas $kelas, Request $request)
     {
+        $this->authorizeKelasRaportAccess($kelas);
+
         $periode = $request->input('periode', 'sts');
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $tahun = $kelas->tahunAjaran;
@@ -548,6 +619,8 @@ class RaportController extends Controller
      */
     public function lembarStsSasCetakKelas(Kelas $kelas, Request $request)
     {
+        $this->authorizeKelasRaportAccess($kelas);
+
         $periode = $request->input('periode', 'sts');
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $tahun = $kelas->tahunAjaran;

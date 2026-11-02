@@ -155,7 +155,7 @@ class User extends Authenticatable
             // Bersihkan gelar umum untuk toleransi pencocokan nama
             $cleanGp = trim(preg_replace('/\b(s\.pd\.?i?|m\.pd\.?|s\.ag|s\.tr\.kom|s\.kom)\b/i', '', $namaGp));
             $cleanUser = trim(preg_replace('/\b(s\.pd\.?i?|m\.pd\.?|s\.ag|s\.tr\.kom|s\.kom)\b/i', '', $namaUser));
-            if ($cleanGp !== '' && $cleanUser !== '' && ($cleanGp === $cleanUser || str_contains($cleanGp, $cleanUser) || str_contains($cleanUser, $cleanGp))) {
+            if ($cleanGp !== '' && $cleanUser !== '' && $cleanGp === $cleanUser) {
                 return true;
             }
         }

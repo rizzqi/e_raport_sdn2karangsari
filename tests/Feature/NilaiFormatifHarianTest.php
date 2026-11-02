@@ -3,9 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Kelas;
-use App\Models\MataPelajaran;
 use App\Models\NilaiFormatifBulanan;
-use App\Models\NilaiFormatifHarian;
 use App\Models\NilaiRaporMapel;
 use App\Models\PenilaianFormatifHarian;
 use App\Models\User;

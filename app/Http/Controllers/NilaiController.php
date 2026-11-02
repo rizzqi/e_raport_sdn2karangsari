@@ -10,6 +10,7 @@ use App\Models\MataPelajaran;
 use App\Models\Nilai;
 use App\Models\NilaiPembiasaan;
 use App\Models\Pembiasaan;
+use App\Models\Sekolah;
 use App\Services\ExcelReader;
 use App\Services\ExcelWriter;
 use App\Services\HitungNilaiService;
@@ -959,7 +960,7 @@ class NilaiController extends Controller
             ->get()
             ->groupBy('kelas_siswa_id');
 
-        $sekolah = $kelas->sekolah ?? \App\Models\Sekolah::first();
+        $sekolah = $kelas->sekolah ?? Sekolah::first();
 
         return view('nilai.input_sia_pembiasaan', compact(
             'kelas',

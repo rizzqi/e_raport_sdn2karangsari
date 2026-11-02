@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\AbsensiHarian;
 use App\Models\Kelas;
 use App\Models\KelasGuru;
-use App\Models\MataPelajaran;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Hash;
@@ -44,16 +44,16 @@ class PembatasanAksesAbsensiPenugasanTest extends TestCase
 
         $response->assertStatus(200);
         // Harus melihat kelasnya sendiri
-        $response->assertSee('Kelas ' . $kelas1->nama);
+        $response->assertSee('Kelas '.$kelas1->nama);
         // TIDAK BOLEH menampilkan kelas lain yang tidak diampu
-        $response->assertDontSee('Kelas ' . $kelas2->nama);
+        $response->assertDontSee('Kelas '.$kelas2->nama);
 
         // Sedangkan Admin melihat semua kelas
         $admin = User::where('role', 'admin')->first();
         $responseAdmin = $this->actingAs($admin)->get(route('absensi-harian.index'));
         $responseAdmin->assertStatus(200);
-        $responseAdmin->assertSee('Kelas ' . $kelas1->nama);
-        $responseAdmin->assertSee('Kelas ' . $kelas2->nama);
+        $responseAdmin->assertSee('Kelas '.$kelas1->nama);
+        $responseAdmin->assertSee('Kelas '.$kelas2->nama);
     }
 
     public function test_wali_kelas_dapat_mengisi_wali_agama_dan_pjok_di_kelas_sendiri(): void
@@ -191,7 +191,7 @@ class PembatasanAksesAbsensiPenugasanTest extends TestCase
             'status' => [$ks->id => 'S'],
         ])->assertRedirect();
 
-        $this->assertEquals(1, \App\Models\AbsensiHarian::where('kelas_siswa_id', $ks->id)
+        $this->assertEquals(1, AbsensiHarian::where('kelas_siswa_id', $ks->id)
             ->whereDate('tanggal', $tanggal)
             ->where('status', 'S')
             ->whereNull('mapel_id')
@@ -212,7 +212,7 @@ class PembatasanAksesAbsensiPenugasanTest extends TestCase
         $resDelete->assertRedirect();
 
         // 4. Pastikan data di database sudah terhapus bersih
-        $this->assertEquals(0, \App\Models\AbsensiHarian::where('kelas_siswa_id', $ks->id)
+        $this->assertEquals(0, AbsensiHarian::where('kelas_siswa_id', $ks->id)
             ->whereDate('tanggal', $tanggal)
             ->whereNull('mapel_id')
             ->count());

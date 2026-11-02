@@ -159,7 +159,7 @@ class HitungNilaiService
         $alpa = $kehadiran ? (int) $kehadiran->alpa : 0;
         $totalAbsen = $sakit + $izin + $alpa;
 
-        $sekolah = $kelas ? ($kelas->sekolah ?? \App\Models\Sekolah::first()) : \App\Models\Sekolah::first();
+        $sekolah = $kelas ? ($kelas->sekolah ?? Sekolah::first()) : Sekolah::first();
         $hariEfektif = $sekolah ? $sekolah->getHariEfektif() : 108;
         $persenMinKenaikan = $sekolah ? $sekolah->getPersenKehadiranMinimal() : 75;
         $batasAlpa = $sekolah ? $sekolah->getBatasAlpaMaksimal() : 3;
@@ -207,7 +207,7 @@ class HitungNilaiService
             'hari_efektif' => $hariEfektif,
             'hari_hadir' => $hariHadir,
             'persen_kehadiran' => $persenKehadiran,
-            'persen_kehadiran_format' => self::formatAngka($persenKehadiran) . '%',
+            'persen_kehadiran_format' => self::formatAngka($persenKehadiran).'%',
             'sakit' => $sakit,
             'izin' => $izin,
             'alpa' => $alpa,
@@ -422,7 +422,9 @@ class HitungNilaiService
         // Isi matriks Rapor dari rekapSiswaByRank
         foreach ($rekapSiswaByRank as $item) {
             $ksId = $item['kelas_siswa']->id ?? ($item['siswa']->id ?? null);
-            if (! $ksId) continue;
+            if (! $ksId) {
+                continue;
+            }
             $barisList = $item['hasil']['baris'] ?? [];
             foreach ($barisList as $b) {
                 $mId = $b['mapel_id'] ?? null;
@@ -526,6 +528,7 @@ class HitungNilaiService
 
         $calcOverall = function ($arr) {
             $nonZero = array_filter($arr, fn ($v) => $v > 0);
+
             return count($nonZero) > 0 ? round(array_sum($nonZero) / count($nonZero), 2) : 0.0;
         };
 
@@ -610,6 +613,7 @@ class HitungNilaiService
             if ($a['total_absen'] !== $b['total_absen']) {
                 return $b['total_absen'] <=> $a['total_absen'];
             }
+
             return strcasecmp($a['nama'], $b['nama']);
         });
 
@@ -1408,9 +1412,9 @@ class HitungNilaiService
                 $kalimatKehadiran = "Tingkatkan kehadiran aktif di kelas ({$persenHadir}%) untuk memaksimalkan capaian pembelajaran.";
             }
         } elseif ($persenHadir >= 95 && $alpa === 0) {
-            $kalimatKehadiran = "Tingkat kehadiran dan kedisiplinan sangat baik, pertahankan sikap teladan ini.";
+            $kalimatKehadiran = 'Tingkat kehadiran dan kedisiplinan sangat baik, pertahankan sikap teladan ini.';
         } else {
-            $kalimatKehadiran = "Pertahankan motivasi belajar dan kedisiplinan yang telah berjalan dengan baik.";
+            $kalimatKehadiran = 'Pertahankan motivasi belajar dan kedisiplinan yang telah berjalan dengan baik.';
         }
 
         return "{$kalimatAkademik} {$kalimatKehadiran}";
@@ -1430,20 +1434,23 @@ class HitungNilaiService
         switch ($predikat) {
             case 'Sangat Baik':
                 if ($isKemandirianAtauDisiplin) {
-                    return "Menunjukkan kemandirian dan kedisiplinan yang sangat tinggi serta konsisten hadir tepat waktu dan mematuhi tata tertib sekolah.";
+                    return 'Menunjukkan kemandirian dan kedisiplinan yang sangat tinggi serta konsisten hadir tepat waktu dan mematuhi tata tertib sekolah.';
                 }
+
                 return "Sangat konsisten dan mampu menjadi teladan bagi teman-temannya dalam pelaksanaan {$namaPembiasaan}.";
 
             case 'Baik':
                 if ($isKemandirianAtauDisiplin && $alpa > 0) {
-                    return "Menunjukkan sikap tertib dan mandiri yang baik, namun perlu lebih disiplin dalam kehadiran tanpa keterangan.";
+                    return 'Menunjukkan sikap tertib dan mandiri yang baik, namun perlu lebih disiplin dalam kehadiran tanpa keterangan.';
                 }
+
                 return "Menunjukkan sikap dan kebiasaan yang baik serta terbiasa menjalankan {$namaPembiasaan} dengan kesadaran sendiri.";
 
             case 'Cukup':
                 if ($isKemandirianAtauDisiplin && $alpa > 0) {
                     return "Cukup tertib dalam kegiatan harian, namun kedisiplinan kehadiran ({$alpa} hari alpa) masih perlu ditingkatkan.";
                 }
+
                 return "Cukup mampu melaksanakan {$namaPembiasaan}, namun masih memerlukan pengingat sesekali dari guru dan orang tua.";
 
             case 'Perlu Bimbingan':

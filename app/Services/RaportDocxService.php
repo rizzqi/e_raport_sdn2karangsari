@@ -44,10 +44,10 @@ class RaportDocxService
         $this->tulisHalamanRaport($section, $kelasSiswa, $periode, $tanggal);
 
         $filename = 'raport_'.str_replace(' ', '_', strtolower($kelasSiswa->siswa->nama)).'_'.$periode.'.docx';
-        $savePath = storage_path('app/public/raport/'.$filename);
+        $savePath = storage_path('app/private/raport/'.$filename);
 
         if (! file_exists(dirname($savePath))) {
-            mkdir(dirname($savePath), 0777, true);
+            mkdir(dirname($savePath), 0755, true);
         }
 
         $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
@@ -83,10 +83,10 @@ class RaportDocxService
 
         $namaKelasClean = str_replace(' ', '_', strtolower($kelas->nama));
         $filename = 'raport_kelas_'.$namaKelasClean.'_'.$periode.'.docx';
-        $savePath = storage_path('app/public/raport/'.$filename);
+        $savePath = storage_path('app/private/raport/'.$filename);
 
         if (! file_exists(dirname($savePath))) {
-            mkdir(dirname($savePath), 0777, true);
+            mkdir(dirname($savePath), 0755, true);
         }
 
         $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
@@ -180,7 +180,7 @@ class RaportDocxService
         $section->addTextBreak(1);
 
         // 2. JUDUL LAPORAN
-        $namaPeriode = 'KURIKULUM MERDEKA • ' . ($periode === 'sts' ? 'SUMATIF TENGAH SEMESTER (STS)' : 'SUMATIF AKHIR SEMESTER (SAS)');
+        $namaPeriode = 'KURIKULUM MERDEKA • '.($periode === 'sts' ? 'SUMATIF TENGAH SEMESTER (STS)' : 'SUMATIF AKHIR SEMESTER (SAS)');
         $section->addText('LAPORAN HASIL BELAJAR PESERTA DIDIK', 'judulRaport', ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
         $section->addText($namaPeriode, 'boldText', ['alignment' => Jc::CENTER, 'spaceAfter' => 100]);
 
@@ -235,7 +235,7 @@ class RaportDocxService
         $rowRata = $nilaiTable->addRow(300);
         $rowRata->addCell(3200, ['gridSpan' => 2, 'bgColor' => 'F2F2F2'])->addText('Rata-rata Nilai', 'boldText', ['alignment' => Jc::RIGHT]);
         $rowRata->addCell(1200, ['bgColor' => 'F2F2F2'])->addText($hasilNilai['rata_akhir_format'], 'boldText', ['alignment' => Jc::CENTER]);
-        $rowRata->addCell(4800, ['bgColor' => 'F2F2F2'])->addText("Predikat Rata-rata: " . ($hasilNilai['predikat_rata'] ?? '-'), 'tableBody');
+        $rowRata->addCell(4800, ['bgColor' => 'F2F2F2'])->addText('Predikat Rata-rata: '.($hasilNilai['predikat_rata'] ?? '-'), 'tableBody');
 
         $section->addTextBreak(1);
 
