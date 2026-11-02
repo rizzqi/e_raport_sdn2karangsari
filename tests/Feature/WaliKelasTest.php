@@ -160,6 +160,20 @@ class WaliKelasTest extends TestCase
         }
     }
 
+    public function test_login_page_hides_quick_access_when_demo_accounts_disabled(): void
+    {
+        config(['app.demo_accounts' => false]);
+
+        $response = $this->get(route('login'));
+        $response->assertStatus(200);
+
+        $response->assertDontSee('Akses Cepat Pengguna');
+        $response->assertDontSee('admin@sdn2karangsari.sch.id');
+        for ($i = 1; $i <= 6; $i++) {
+            $response->assertDontSee("wali{$i}@sdn2karangsari.sch.id");
+        }
+    }
+
     public function test_wali_kelas_cannot_access_or_see_penempatan_siswa(): void
     {
         $this->seed(WaliKelas6Seeder::class);

@@ -192,6 +192,7 @@
                 </button>
             </form>
 
+            @if(config('app.demo_accounts'))
             <!-- Akses Cepat (Rapi & Terpadu) -->
             <div class="relative my-5">
                 <div class="absolute inset-0 flex items-center">
@@ -293,6 +294,7 @@
                     </div>
                 </button>
             </div>
+            @endif
         </div>
         
         <!-- Footer Sekolah -->
@@ -307,6 +309,7 @@
     </div>
 
     <script>
+        @if(config('app.demo_accounts'))
         function setDemo(email, pass, label) {
             const emailInput = document.getElementById('email');
             const passInput = document.getElementById('password');
@@ -330,6 +333,7 @@
                 }, 2500);
             }
         }
+        @endif
 
         function togglePassword() {
             const passInput = document.getElementById('password');

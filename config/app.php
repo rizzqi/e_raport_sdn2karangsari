@@ -43,6 +43,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tampilkan Akun Demo di Halaman Login
+    |--------------------------------------------------------------------------
+    |
+    | Jika true, tombol akses cepat akun demo akan tampil di halaman login.
+    | Secara default hanya aktif pada lingkungan 'local' atau 'testing'.
+    |
+    */
+
+    'demo_accounts' => (bool) env('APP_DEMO_ACCOUNTS', in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |
