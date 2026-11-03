@@ -3,12 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sekolah;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class SekolahController extends Controller
 {
-    public function edit()
+    /** Ukuran maksimal gambar hasil crop base64 setelah didekode (3 MB). */
+    private const MAX_IMAGE_DECODED_BYTES = 3 * 1024 * 1024;
+
+    public function edit(): View
     {
         $sekolah = Sekolah::firstOrCreate(
             ['nama' => 'SD NEGERI 2 KARANGSARI'],
@@ -23,7 +29,7 @@ class SekolahController extends Controller
         return view('sekolah.edit', compact('sekolah'));
     }
 
-    public function update(Request $request)
+    public function update(Request $request): RedirectResponse
     {
         $request->validate([
             'nama' => 'required|string|max:255',
@@ -84,19 +90,12 @@ class SekolahController extends Controller
 
         // Upload / Crop Logo Kiri (Pemda / Daerah)
         if ($request->filled('cropped_logo')) {
-            $cropData = $request->input('cropped_logo');
-            if (str_starts_with($cropData, 'data:image')) {
-                @[$type, $cropData] = explode(';', $cropData);
-                @[, $cropData] = explode(',', $cropData);
-                $decoded = base64_decode($cropData);
-                if ($decoded !== false) {
-                    if ($sekolah->logo && Storage::disk('public')->exists($sekolah->logo)) {
-                        Storage::disk('public')->delete($sekolah->logo);
-                    }
-                    $filename = 'sekolah/logo_'.uniqid().'.png';
-                    Storage::disk('public')->put($filename, $decoded);
-                    $data['logo'] = $filename;
+            $path = $this->saveCroppedImage($request->input('cropped_logo'), 'sekolah/logo_', 'cropped_logo');
+            if ($path !== null) {
+                if ($sekolah->logo && Storage::disk('public')->exists($sekolah->logo)) {
+                    Storage::disk('public')->delete($sekolah->logo);
                 }
+                $data['logo'] = $path;
             }
         } elseif ($request->hasFile('logo')) {
             if ($sekolah->logo && Storage::disk('public')->exists($sekolah->logo)) {
@@ -107,19 +106,12 @@ class SekolahController extends Controller
 
         // Upload / Crop Logo Kanan (Sekolah / Tut Wuri)
         if ($request->filled('cropped_logo_kanan')) {
-            $cropData = $request->input('cropped_logo_kanan');
-            if (str_starts_with($cropData, 'data:image')) {
-                @[$type, $cropData] = explode(';', $cropData);
-                @[, $cropData] = explode(',', $cropData);
-                $decoded = base64_decode($cropData);
-                if ($decoded !== false) {
-                    if ($sekolah->logo_kanan && Storage::disk('public')->exists($sekolah->logo_kanan)) {
-                        Storage::disk('public')->delete($sekolah->logo_kanan);
-                    }
-                    $filename = 'sekolah/logo_kanan_'.uniqid().'.png';
-                    Storage::disk('public')->put($filename, $decoded);
-                    $data['logo_kanan'] = $filename;
+            $path = $this->saveCroppedImage($request->input('cropped_logo_kanan'), 'sekolah/logo_kanan_', 'cropped_logo_kanan');
+            if ($path !== null) {
+                if ($sekolah->logo_kanan && Storage::disk('public')->exists($sekolah->logo_kanan)) {
+                    Storage::disk('public')->delete($sekolah->logo_kanan);
                 }
+                $data['logo_kanan'] = $path;
             }
         } elseif ($request->hasFile('logo_kanan')) {
             if ($sekolah->logo_kanan && Storage::disk('public')->exists($sekolah->logo_kanan)) {
@@ -130,19 +122,12 @@ class SekolahController extends Controller
 
         // Upload / Crop TTD / Cap Kepala Sekolah
         if ($request->filled('cropped_ttd')) {
-            $cropData = $request->input('cropped_ttd');
-            if (str_starts_with($cropData, 'data:image')) {
-                @[$type, $cropData] = explode(';', $cropData);
-                @[, $cropData] = explode(',', $cropData);
-                $decoded = base64_decode($cropData);
-                if ($decoded !== false) {
-                    if ($sekolah->ttd && Storage::disk('public')->exists($sekolah->ttd)) {
-                        Storage::disk('public')->delete($sekolah->ttd);
-                    }
-                    $filename = 'sekolah/ttd_'.uniqid().'.png';
-                    Storage::disk('public')->put($filename, $decoded);
-                    $data['ttd'] = $filename;
+            $path = $this->saveCroppedImage($request->input('cropped_ttd'), 'sekolah/ttd_', 'cropped_ttd');
+            if ($path !== null) {
+                if ($sekolah->ttd && Storage::disk('public')->exists($sekolah->ttd)) {
+                    Storage::disk('public')->delete($sekolah->ttd);
                 }
+                $data['ttd'] = $path;
             }
         } elseif ($request->hasFile('ttd')) {
             if ($sekolah->ttd && Storage::disk('public')->exists($sekolah->ttd)) {
@@ -154,5 +139,60 @@ class SekolahController extends Controller
         $sekolah->fill($data)->save();
 
         return redirect()->route('sekolah.edit')->with('success', 'Identitas dan Kop Sekolah berhasil diperbarui.');
+    }
+
+    /**
+     * Decode dan simpan gambar hasil crop (base64 data-URI) ke storage publik.
+     *
+     * Melakukan validasi biner setelah dekode untuk memastikan data adalah
+     * gambar nyata (bukan file berbahaya yang disasar sebagai gambar):
+     * - Memverifikasi ukuran maksimal data dekode (MAX_IMAGE_DECODED_BYTES).
+     * - Memanggil getimagesizefromstring() untuk memvalidasi header biner gambar.
+     *
+     * @param  string  $dataUri  Nilai input berformat 'data:image/...;base64,...'
+     * @param  string  $prefix  Awalan nama file (contoh: 'sekolah/logo_')
+     * @param  string  $fieldName  Nama field untuk pesan error validasi
+     * @return string|null Path storage jika berhasil, null jika data tidak valid
+     *
+     * @throws ValidationException Jika data bukan gambar valid atau melebihi batas ukuran
+     */
+    private function saveCroppedImage(string $dataUri, string $prefix, string $fieldName): ?string
+    {
+        if (! str_starts_with($dataUri, 'data:image')) {
+            return null;
+        }
+
+        @[, $payload] = explode(';', $dataUri);
+        @[, $base64Data] = explode(',', $payload ?? '');
+
+        if (empty($base64Data)) {
+            return null;
+        }
+
+        $decoded = base64_decode($base64Data, strict: true);
+        if ($decoded === false) {
+            throw ValidationException::withMessages([
+                $fieldName => 'Data gambar tidak valid (gagal dekode base64).',
+            ]);
+        }
+
+        if (strlen($decoded) > self::MAX_IMAGE_DECODED_BYTES) {
+            throw ValidationException::withMessages([
+                $fieldName => 'Ukuran gambar melebihi batas maksimal 3 MB.',
+            ]);
+        }
+
+        // Validasi biner: pastikan data adalah gambar yang sebenarnya
+        $imageInfo = @getimagesizefromstring($decoded);
+        if ($imageInfo === false) {
+            throw ValidationException::withMessages([
+                $fieldName => 'File yang diunggah bukan gambar yang valid.',
+            ]);
+        }
+
+        $filename = $prefix.uniqid().'.png';
+        Storage::disk('public')->put($filename, $decoded);
+
+        return $filename;
     }
 }
