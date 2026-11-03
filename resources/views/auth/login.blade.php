@@ -101,76 +101,78 @@
         </div>
 
         {{-- ========================================================================= --}}
-        {{-- WAVE DIVIDER PRESISI TINGGI & TEBAL MEWAH (BOLD, CURVY & ELEGAN)          --}}
-        {{-- Mengalir indah dari atas ke bawah membelah panel foto dan panel form       --}}
+        {{-- WAVE DIVIDER ORGANIK MULTI-LAYER BERGELOMBANG (SESUAI REFERENSI TERBARU)   --}}
+        {{-- Lapisan transparan mengalir indah (Emerald, Teal, Amber & Putih Bersih)    --}}
         {{-- ========================================================================= --}}
         <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[99%] lg:block" style="width: 260px; height: 100%;">
-            <svg class="h-full w-full" viewBox="0 0 260 1000" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg class="h-full w-full" viewBox="0 0 260 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                    {{-- Gradien Emas / Amber Cerah Mewah --}}
-                    <linearGradient id="waveGold" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#f59e0b" />
-                        <stop offset="35%" stop-color="#fbbf24" />
-                        <stop offset="70%" stop-color="#f59e0b" />
-                        <stop offset="100%" stop-color="#d97706" />
-                    </linearGradient>
-
-                    {{-- Gradien Emerald Zamrud Pekat Elegan --}}
-                    <linearGradient id="waveEmerald" x1="0%" y1="0%" x2="0%" y2="100%">
+                    {{-- Gradien Emerald Mewah --}}
+                    <linearGradient id="refWaveEmerald" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" stop-color="#047857" />
-                        <stop offset="45%" stop-color="#10b981" />
-                        <stop offset="85%" stop-color="#059669" />
+                        <stop offset="50%" stop-color="#059669" />
                         <stop offset="100%" stop-color="#064e3b" />
                     </linearGradient>
 
-                    {{-- Gradien Teal Bahari Modern --}}
-                    <linearGradient id="waveTeal" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#0d9488" />
-                        <stop offset="50%" stop-color="#14b8a6" />
-                        <stop offset="100%" stop-color="#0f766e" />
+                    {{-- Gradien Teal Cerah Transparan --}}
+                    <linearGradient id="refWaveTeal" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#14b8a6" />
+                        <stop offset="50%" stop-color="#0d9488" />
+                        <stop offset="100%" stop-color="#10b981" />
                     </linearGradient>
 
-                    {{-- Shadow Lembut untuk Efek 3D Timbul Mewah --}}
-                    <filter id="waveSoftShadow" x="-20%" y="-10%" width="150%" height="120%">
-                        <feDropShadow dx="-8" dy="6" stdDeviation="10" flood-color="#022c22" flood-opacity="0.3" />
+                    {{-- Gradien Emas / Amber Halus --}}
+                    <linearGradient id="refWaveAmber" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#fbbf24" />
+                        <stop offset="50%" stop-color="#f59e0b" />
+                        <stop offset="100%" stop-color="#d97706" />
+                    </linearGradient>
+
+                    {{-- Filter Soft Glow & Drop Shadow --}}
+                    <filter id="refWaveShadow" x="-20%" y="-10%" width="150%" height="120%">
+                        <feDropShadow dx="-6" dy="4" stdDeviation="8" flood-color="#022c22" flood-opacity="0.25" />
                     </filter>
                 </defs>
 
-                {{-- Bentuk Latar Putih Pembatas (Menutup area kanan persis dengan background form #ffffff) --}}
+                {{-- LAYER 1: Gelombang Transparan Aksen Emas / Amber di Latar Belakang (Opacity 35%) --}}
+                <path d="M 60 0 
+                         C 130 90, 160 170, 70 270 
+                         C -10 370, 150 480, 80 600 
+                         C 20 700, 180 800, 90 900 
+                         C 40 950, 110 980, 80 1000 
+                         L 260 1000 L 260 0 Z" 
+                      fill="url(#refWaveAmber)" 
+                      opacity="0.35" />
+
+                {{-- LAYER 2: Gelombang Transparan Aksen Teal Bahari (Opacity 50%) --}}
+                <path d="M 75 0 
+                         C 150 100, 180 190, 85 290 
+                         C 5 390, 170 500, 95 620 
+                         C 35 720, 200 815, 105 910 
+                         C 55 960, 125 985, 95 1000 
+                         L 260 1000 L 260 0 Z" 
+                      fill="url(#refWaveTeal)" 
+                      opacity="0.5" />
+
+                {{-- LAYER 3: Gelombang Organik Aksen Emerald Hijau Segar (Opacity 70%) --}}
                 <path d="M 90 0 
-                         C 220 180, 240 280, 120 430 
-                         C 10 580, 215 710, 135 850 
-                         C 75 930, 180 975, 105 1000 
+                         C 170 110, 200 200, 100 305 
+                         C 20 405, 185 515, 110 635 
+                         C 50 735, 215 830, 120 920 
+                         C 70 965, 140 990, 110 1000 
+                         L 260 1000 L 260 0 Z" 
+                      fill="url(#refWaveEmerald)" 
+                      opacity="0.75" 
+                      filter="url(#refWaveShadow)" />
+
+                {{-- LAYER 4 (UTAMA): Gelombang Putih Solid Menutup Panel Kanan 100% Presisi --}}
+                <path d="M 110 0 
+                         C 190 120, 220 215, 120 320 
+                         C 35 420, 205 530, 130 650 
+                         C 65 750, 230 845, 140 935 
+                         C 85 975, 155 995, 125 1000 
                          L 260 1000 L 260 0 Z" 
                       fill="#ffffff" />
-
-                {{-- Pita 1: Emas Hangat Luar (Paling Berani & Tebal, Menatap Foto Gedung) --}}
-                <path d="M 90 0 
-                         C 220 180, 240 280, 120 430 
-                         C 10 580, 215 710, 135 850 
-                         C 75 930, 180 975, 105 1000" 
-                      stroke="url(#waveGold)" 
-                      stroke-width="38" 
-                      stroke-linecap="round"
-                      filter="url(#waveSoftShadow)" />
-
-                {{-- Pita 2: Teal Bahari (Tengah, Menghubungkan Emas dan Emerald) --}}
-                <path d="M 104 0 
-                         C 234 180, 254 280, 134 430 
-                         C 24 580, 229 710, 149 850 
-                         C 89 930, 194 975, 119 1000" 
-                      stroke="url(#waveTeal)" 
-                      stroke-width="24" 
-                      stroke-linecap="round" />
-
-                {{-- Pita 3: Emerald Zamrud Utama (Tebal & Mengalir Menempel ke Putih) --}}
-                <path d="M 118 0 
-                         C 248 180, 268 280, 148 430 
-                         C 38 580, 243 710, 163 850 
-                         C 103 930, 208 975, 133 1000" 
-                      stroke="url(#waveEmerald)" 
-                      stroke-width="14" 
-                      stroke-linecap="round" />
             </svg>
         </div>
 
