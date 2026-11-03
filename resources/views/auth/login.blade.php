@@ -101,11 +101,11 @@
         </div>
 
         {{-- ========================================================================= --}}
-        {{-- WAVE DIVIDER PRESISI TINGGI & TEBAL (LEBIH BESAR, CURVY & ELEGAN)        --}}
+        {{-- WAVE DIVIDER PRESISI TINGGI & TEBAL MEWAH (BOLD, CURVY & ELEGAN)          --}}
         {{-- Mengalir indah dari atas ke bawah membelah panel foto dan panel form       --}}
         {{-- ========================================================================= --}}
-        <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[99%] lg:block" style="width: 220px; height: 100%;">
-            <svg class="h-full w-full" viewBox="0 0 220 1000" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[99%] lg:block" style="width: 260px; height: 100%;">
+            <svg class="h-full w-full" viewBox="0 0 260 1000" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     {{-- Gradien Emas / Amber Cerah Mewah --}}
                     <linearGradient id="waveGold" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -130,46 +130,46 @@
                         <stop offset="100%" stop-color="#0f766e" />
                     </linearGradient>
 
-                    {{-- Shadow Lembut untuk Efek 3D Timbul --}}
+                    {{-- Shadow Lembut untuk Efek 3D Timbul Mewah --}}
                     <filter id="waveSoftShadow" x="-20%" y="-10%" width="150%" height="120%">
-                        <feDropShadow dx="-6" dy="4" stdDeviation="8" flood-color="#022c22" flood-opacity="0.25" />
+                        <feDropShadow dx="-8" dy="6" stdDeviation="10" flood-color="#022c22" flood-opacity="0.3" />
                     </filter>
                 </defs>
 
                 {{-- Bentuk Latar Putih Pembatas (Menutup area kanan persis dengan background form #ffffff) --}}
-                <path d="M 85 0 
-                         C 190 180, 205 280, 110 430 
-                         C 15 580, 185 710, 120 850 
-                         C 70 930, 155 975, 95 1000 
-                         L 220 1000 L 220 0 Z" 
+                <path d="M 90 0 
+                         C 220 180, 240 280, 120 430 
+                         C 10 580, 215 710, 135 850 
+                         C 75 930, 180 975, 105 1000 
+                         L 260 1000 L 260 0 Z" 
                       fill="#ffffff" />
 
-                {{-- Pita 1: Emas Hangat (Paling Luar menyentuh foto gedung, lebih tebal & terlihat jelas) --}}
-                <path d="M 85 0 
-                         C 190 180, 205 280, 110 430 
-                         C 15 580, 185 710, 120 850 
-                         C 70 930, 155 975, 95 1000" 
+                {{-- Pita 1: Emas Hangat Luar (Paling Berani & Tebal, Menatap Foto Gedung) --}}
+                <path d="M 90 0 
+                         C 220 180, 240 280, 120 430 
+                         C 10 580, 215 710, 135 850 
+                         C 75 930, 180 975, 105 1000" 
                       stroke="url(#waveGold)" 
-                      stroke-width="24" 
+                      stroke-width="38" 
                       stroke-linecap="round"
                       filter="url(#waveSoftShadow)" />
 
-                {{-- Pita 2: Teal Bahari (Tengah) --}}
-                <path d="M 94 0 
-                         C 199 180, 214 280, 119 430 
-                         C 24 580, 194 710, 129 850 
-                         C 79 930, 164 975, 104 1000" 
+                {{-- Pita 2: Teal Bahari (Tengah, Menghubungkan Emas dan Emerald) --}}
+                <path d="M 104 0 
+                         C 234 180, 254 280, 134 430 
+                         C 24 580, 229 710, 149 850 
+                         C 89 930, 194 975, 119 1000" 
                       stroke="url(#waveTeal)" 
-                      stroke-width="15" 
+                      stroke-width="24" 
                       stroke-linecap="round" />
 
-                {{-- Pita 3: Emerald Zamrud Utama (Tebal & Menyatu Halus ke Form Putih) --}}
-                <path d="M 103 0 
-                         C 208 180, 223 280, 128 430 
-                         C 33 580, 203 710, 138 850 
-                         C 88 930, 173 975, 113 1000" 
+                {{-- Pita 3: Emerald Zamrud Utama (Tebal & Mengalir Menempel ke Putih) --}}
+                <path d="M 118 0 
+                         C 248 180, 268 280, 148 430 
+                         C 38 580, 243 710, 163 850 
+                         C 103 930, 208 975, 133 1000" 
                       stroke="url(#waveEmerald)" 
-                      stroke-width="8" 
+                      stroke-width="14" 
                       stroke-linecap="round" />
             </svg>
         </div>
