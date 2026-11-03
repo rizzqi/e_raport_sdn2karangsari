@@ -43,7 +43,7 @@
         {{-- ============================================================ --}}
         {{-- PANEL KIRI: Background Gedung + Logo Sekolah + Info Branding --}}
         {{-- ============================================================ --}}
-        <div class="relative flex min-h-[340px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-6 sm:p-10 lg:min-h-dvh lg:w-[48%] xl:w-[46%] lg:p-12">
+        <div class="relative flex min-h-[360px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-6 sm:p-10 lg:min-h-dvh lg:w-[58%] xl:w-[60%] lg:p-14 xl:p-16">
             
             {{-- Background Foto Gedung Sekolah --}}
             <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 hover:scale-105"
@@ -57,20 +57,20 @@
             <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
             {{-- Header Atas: Logo Sekolah AI & Nama Sekolah --}}
-            <div class="relative z-10 flex items-center gap-4 lg:gap-5">
-                <div class="size-16 shrink-0 overflow-hidden rounded-2xl bg-white/10 p-1 shadow-2xl ring-2 ring-emerald-400/40 backdrop-blur-md sm:size-20 lg:size-24">
+            <div class="relative z-10 flex items-center gap-4 lg:gap-6">
+                <div class="size-16 shrink-0 overflow-hidden rounded-2xl bg-white/10 p-1 shadow-2xl ring-2 ring-emerald-400/40 backdrop-blur-md sm:size-20 lg:size-24 xl:size-28">
                     <img src="{{ asset('images/logo-sdn2.jpg') }}"
                          alt="Logo SDN 2 Karangsari"
                          class="h-full w-full rounded-xl object-cover shadow-inner">
                 </div>
                 <div class="text-white">
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-emerald-300 ring-1 ring-emerald-400/30">
-                        <i class="fa-solid fa-school text-[9px]"></i> SD Negeri
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-emerald-300 ring-1 ring-emerald-400/30 sm:text-xs">
+                        <i class="fa-solid fa-school text-[9px] sm:text-[10px]"></i> SD Negeri
                     </span>
-                    <h1 class="mt-1 text-xl font-black uppercase tracking-tight text-white drop-shadow sm:text-2xl lg:text-3xl">
+                    <h1 class="mt-1 text-xl font-black uppercase tracking-tight text-white drop-shadow sm:text-2xl lg:text-3xl xl:text-4xl">
                         SDN 2 Karangsari
                     </h1>
-                    <p class="text-xs font-medium text-emerald-200/90 sm:text-sm">
+                    <p class="text-xs font-medium text-emerald-200/90 sm:text-sm lg:text-base">
                         Kecamatan Sempu, Kabupaten Banyuwangi
                     </p>
                 </div>
@@ -78,37 +78,37 @@
 
             {{-- Konten Tengah: Fitur Unggulan (Tampil di Tablet/Desktop) --}}
             <div class="relative z-10 my-auto hidden py-8 lg:block">
-                <div class="mb-4 inline-flex items-center gap-2 rounded-lg bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-400/20">
+                <div class="mb-4 inline-flex items-center gap-2 rounded-lg bg-emerald-400/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-400/20">
                     <i class="fa-solid fa-award"></i> Kurikulum Merdeka Terintegrasi
                 </div>
-                <h2 class="text-2xl font-extrabold text-white sm:text-3xl leading-snug drop-shadow-md">
+                <h2 class="text-2xl font-extrabold text-white sm:text-3xl lg:text-4xl leading-tight drop-shadow-md">
                     Sistem E-Raport &amp;<br>
                     <span class="bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300 bg-clip-text text-transparent">
                         Administrasi Digital Sekolah
                     </span>
                 </h2>
-                <p class="mt-3 max-w-md text-xs leading-relaxed text-emerald-100/80 sm:text-sm">
-                    Platform terpadu untuk pendataan nilai formatif, sumatif, absensi berkala, dan pencetakan buku raport secara akurat dan transparan.
+                <p class="mt-4 max-w-lg text-xs leading-relaxed text-emerald-100/80 sm:text-sm lg:text-base">
+                    Platform terpadu untuk pendataan nilai formatif, sumatif, absensi berkala, dan pencetakan buku raport secara akurat, modern, dan transparan.
                 </p>
 
-                <div class="mt-6 space-y-3">
-                    <div class="flex items-center gap-3 text-xs text-emerald-100/90">
-                        <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15">
-                            <i class="fa-solid fa-check text-emerald-300 text-[11px]"></i>
+                <div class="mt-8 space-y-3.5 max-w-md">
+                    <div class="flex items-center gap-3.5 text-xs lg:text-sm text-emerald-100/90">
+                        <div class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
+                            <i class="fa-solid fa-check text-emerald-300 text-xs"></i>
                         </div>
-                        <span>Penilaian Kurikulum Merdeka (Formatif &amp; Sumatif)</span>
+                        <span class="font-medium">Penilaian Kurikulum Merdeka (Formatif &amp; Sumatif)</span>
                     </div>
-                    <div class="flex items-center gap-3 text-xs text-emerald-100/90">
-                        <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15">
-                            <i class="fa-solid fa-check text-emerald-300 text-[11px]"></i>
+                    <div class="flex items-center gap-3.5 text-xs lg:text-sm text-emerald-100/90">
+                        <div class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
+                            <i class="fa-solid fa-check text-emerald-300 text-xs"></i>
                         </div>
-                        <span>Rekapitulasi Absensi Otomatis Harian &amp; Bulanan</span>
+                        <span class="font-medium">Rekapitulasi Absensi Otomatis Harian &amp; Bulanan</span>
                     </div>
-                    <div class="flex items-center gap-3 text-xs text-emerald-100/90">
-                        <div class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15">
-                            <i class="fa-solid fa-check text-emerald-300 text-[11px]"></i>
+                    <div class="flex items-center gap-3.5 text-xs lg:text-sm text-emerald-100/90">
+                        <div class="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
+                            <i class="fa-solid fa-check text-emerald-300 text-xs"></i>
                         </div>
-                        <span>Cetak Dokumen Raport, STS, &amp; SAS Sekali Klik</span>
+                        <span class="font-medium">Cetak Dokumen Raport, STS, &amp; SAS Sekali Klik</span>
                     </div>
                 </div>
             </div>
@@ -124,38 +124,38 @@
         {{-- WAVE DIVIDER ORGANIK (ALAH MYUT)                            --}}
         {{-- Multi-layer gelombang yang memotong panel hijau ke putih     --}}
         {{-- ============================================================ --}}
-        <div class="pointer-events-none absolute inset-y-0 left-[48%] xl:left-[46%] z-20 hidden -translate-x-[50%] lg:block" style="width: 140px; height: 100%;">
-            <svg class="h-full w-full" viewBox="0 0 140 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[50%] lg:block" style="width: 160px; height: 100%;">
+            <svg class="h-full w-full" viewBox="0 0 160 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
                 <!-- Drop shadow lembut di balik gelombang -->
                 <path d="M 0 0 
-                         C 70 120, 140 220, 50 360 
-                         C -30 480, 130 620, 60 760 
-                         C 0 880, 90 940, 70 1000 
-                         L 140 1000 L 140 0 Z" 
+                         C 80 120, 160 220, 60 360 
+                         C -30 480, 150 620, 70 760 
+                         C 0 880, 105 940, 80 1000 
+                         L 160 1000 L 160 0 Z" 
                       fill="rgba(0, 0, 0, 0.08)" />
 
                 <!-- Layer Gelombang Aksen 1: Emerald Cerah -->
-                <path d="M 10 0 
-                         C 80 120, 135 230, 55 365 
-                         C -20 485, 125 625, 65 765 
-                         C 5 885, 85 945, 65 1000 
-                         L 140 1000 L 140 0 Z" 
+                <path d="M 12 0 
+                         C 92 120, 155 230, 65 365 
+                         C -20 485, 142 625, 75 765 
+                         C 5 885, 98 945, 75 1000 
+                         L 160 1000 L 160 0 Z" 
                       fill="#059669" opacity="0.4" />
 
                 <!-- Layer Gelombang Aksen 2: Teal / Emas Hangat -->
-                <path d="M 25 0 
-                         C 90 130, 130 240, 60 375 
-                         C -10 495, 118 635, 72 775 
-                         C 15 890, 80 950, 62 1000 
-                         L 140 1000 L 140 0 Z" 
+                <path d="M 28 0 
+                         C 102 130, 150 240, 70 375 
+                         C -10 495, 135 635, 82 775 
+                         C 18 890, 92 950, 72 1000 
+                         L 160 1000 L 160 0 Z" 
                       fill="#10b981" opacity="0.7" />
 
                 <!-- Layer Utama: Putih Bersih menyatu ke Panel Kanan -->
-                <path d="M 45 0 
-                         C 105 140, 125 250, 68 385 
-                         C 5 505, 110 645, 78 785 
-                         C 25 895, 75 955, 60 1000 
-                         L 140 1000 L 140 0 Z" 
+                <path d="M 50 0 
+                         C 120 140, 145 250, 80 385 
+                         C 8 505, 125 645, 90 785 
+                         C 30 895, 85 955, 68 1000 
+                         L 160 1000 L 160 0 Z" 
                       fill="#f8fafc" />
             </svg>
         </div>
