@@ -18,10 +18,23 @@ use Illuminate\Support\Collection;
 class HitungNilaiService
 {
     /**
-     * Hitung nilai per siswa untuk suatu periode ('sts' atau 'sas')
+     * Hitung nilai per siswa untuk suatu periode ('sts' atau 'sas').
+     *
+     * Parameter opsional $preloadedNilai, $preloadedRaporMapel, dan $preloadedKehadiran
+     * digunakan oleh hitungRekapKelas() untuk menghindari N+1 query saat memproses
+     * seluruh siswa dalam satu kelas secara massal.
+     *
+     * @param  Collection|null  $preloadedNilai  Koleksi Nilai (sudah di-whereIn), di-filter & keyBy mapel_id per siswa
+     * @param  Collection|null  $preloadedRaporMapel  Koleksi NilaiRaporMapel, di-filter & keyBy mapel_id per siswa
+     * @param  Collection|null  $preloadedKehadiran  Koleksi Kehadiran, sudah di-filter per siswa & periode
      */
-    public function hitungNilaiSiswa(KelasSiswa $kelasSiswa, string $periode = 'sts'): array
-    {
+    public function hitungNilaiSiswa(
+        KelasSiswa $kelasSiswa,
+        string $periode = 'sts',
+        ?Collection $preloadedNilai = null,
+        ?Collection $preloadedRaporMapel = null,
+        ?Collection $preloadedKehadiran = null,
+    ): array {
         $kelas = $kelasSiswa->kelas;
         if ($kelas && ! $kelas->relationLoaded('mapelKkm')) {
             $kelas->load('mapelKkm');
@@ -32,16 +45,26 @@ class HitungNilaiService
         $semesterAktif = strtolower($tahunAjaran ? ($tahunAjaran->semester ?? 'ganjil') : 'ganjil');
 
         $mapels = $kelas ? $kelas->mataPelajaran() : MataPelajaran::aktif()->get();
-        $nilaiList = Nilai::where('kelas_siswa_id', $kelasSiswa->id)
-            ->where('periode', $periode)
-            ->get()
-            ->keyBy('mapel_id');
+
+        // Gunakan data pre-loaded jika tersedia (optimasi N+1), jika tidak query sendiri
+        if ($preloadedNilai !== null) {
+            $nilaiList = $preloadedNilai;
+        } else {
+            $nilaiList = Nilai::where('kelas_siswa_id', $kelasSiswa->id)
+                ->where('periode', $periode)
+                ->get()
+                ->keyBy('mapel_id');
+        }
 
         // Ambil data nilai rapor resmi beserta capaian kompetensi
-        $raporMapelList = NilaiRaporMapel::where('kelas_siswa_id', $kelasSiswa->id)
-            ->where('semester', $semesterAktif)
-            ->get()
-            ->keyBy('mapel_id');
+        if ($preloadedRaporMapel !== null) {
+            $raporMapelList = $preloadedRaporMapel;
+        } else {
+            $raporMapelList = NilaiRaporMapel::where('kelas_siswa_id', $kelasSiswa->id)
+                ->where('semester', $semesterAktif)
+                ->get()
+                ->keyBy('mapel_id');
+        }
 
         $baris = [];
         $totalFormatif = 0;
@@ -57,10 +80,15 @@ class HitungNilaiService
             $recRapor = $raporMapelList->get($mapel->id);
             $n = $nilaiList->get($mapel->id);
             if (! $n && in_array($periode, ['sas', 'semester'])) {
-                $n = Nilai::where('kelas_siswa_id', $kelasSiswa->id)
-                    ->where('mapel_id', $mapel->id)
-                    ->where('periode', 'sts')
-                    ->first();
+                // Ketika dipanggil langsung (bukan dari hitungRekapKelas), query STS sebagai fallback.
+                // Ketika dipanggil dari hitungRekapKelas, nilaiList sudah memuat nilai STS
+                // sebagai fallback (bulk-fetch), sehingga tidak perlu query tambahan.
+                if ($preloadedNilai === null) {
+                    $n = Nilai::where('kelas_siswa_id', $kelasSiswa->id)
+                        ->where('mapel_id', $mapel->id)
+                        ->where('periode', 'sts')
+                        ->first();
+                }
             }
 
             // Jika periode STS (Tengah Semester), prioritaskan nilai UTS / STS
@@ -151,9 +179,14 @@ class HitungNilaiService
         // -------------------------------------------------------------------------
         // INTEGRASI KEHADIRAN (SIA) KE KARAKTER & SYARAT KELAYAKAN KENAIKAN KELAS
         // -------------------------------------------------------------------------
-        $kehadiran = Kehadiran::where('kelas_siswa_id', $kelasSiswa->id)
-            ->where('periode', $periode)
-            ->first();
+        // Gunakan pre-loaded kehadiran jika tersedia, jika tidak query sendiri
+        if ($preloadedKehadiran !== null) {
+            $kehadiran = $preloadedKehadiran->first();
+        } else {
+            $kehadiran = Kehadiran::where('kelas_siswa_id', $kelasSiswa->id)
+                ->where('periode', $periode)
+                ->first();
+        }
         $sakit = $kehadiran ? (int) $kehadiran->sakit : 0;
         $izin = $kehadiran ? (int) $kehadiran->izin : 0;
         $alpa = $kehadiran ? (int) $kehadiran->alpa : 0;
@@ -253,11 +286,16 @@ class HitungNilaiService
     }
 
     /**
-     * Hitung rekap nilai seluruh siswa dalam satu kelas
+     * Hitung rekap nilai seluruh siswa dalam satu kelas.
+     *
+     * Menggunakan bulk-fetch (whereIn) untuk menghindari N+1 query:
+     * semua Nilai, NilaiRaporMapel, dan Kehadiran di-load sekaligus sebelum loop,
+     * kemudian diteruskan ke hitungNilaiSiswa() sebagai koleksi pre-loaded.
      */
     public function hitungRekapKelas(array|Collection $kelasSiswaList, string $periode = 'sts', string $sortBy = 'ranking'): array
     {
-        $sampleKelas = $kelasSiswaList instanceof Collection ? $kelasSiswaList->first()?->kelas : ($kelasSiswaList[0]->kelas ?? null);
+        $kelasSiswaList = $kelasSiswaList instanceof Collection ? $kelasSiswaList : collect($kelasSiswaList);
+        $sampleKelas = $kelasSiswaList->first()?->kelas;
         $mapels = $sampleKelas ? $sampleKelas->mataPelajaran() : MataPelajaran::aktif()->get();
         $rekapSiswa = [];
 
@@ -271,8 +309,71 @@ class HitungNilaiService
         $totalKelasSemua = 0;
         $totalSiswaSelesai = 0;
 
+        // -----------------------------------------------------------------------
+        // BULK-FETCH: Ambil semua data dalam 3 query saja (bukan N×3 query)
+        // -----------------------------------------------------------------------
+        $allKelasSiswaIds = $kelasSiswaList->pluck('id')->all();
+
+        $semesterAktif = strtolower($sampleKelas?->tahunAjaran?->semester ?? 'ganjil');
+
+        /** @var Collection $allNilai Semua Nilai untuk periode ini, dikelompokkan per kelas_siswa_id */
+        $allNilai = count($allKelasSiswaIds) > 0
+            ? Nilai::whereIn('kelas_siswa_id', $allKelasSiswaIds)
+                ->where('periode', $periode)
+                ->get()
+                ->groupBy('kelas_siswa_id')
+            : collect();
+
+        /** @var Collection $allNilaiSts Nilai STS sebagai fallback untuk periode SAS, dikelompokkan per kelas_siswa_id */
+        $allNilaiSts = (count($allKelasSiswaIds) > 0 && in_array($periode, ['sas', 'semester']))
+            ? Nilai::whereIn('kelas_siswa_id', $allKelasSiswaIds)
+                ->where('periode', 'sts')
+                ->get()
+                ->groupBy('kelas_siswa_id')
+            : collect();
+
+        /** @var Collection $allRaporMapel Semua NilaiRaporMapel, dikelompokkan per kelas_siswa_id */
+        $allRaporMapel = count($allKelasSiswaIds) > 0
+            ? NilaiRaporMapel::whereIn('kelas_siswa_id', $allKelasSiswaIds)
+                ->where('semester', $semesterAktif)
+                ->get()
+                ->groupBy('kelas_siswa_id')
+            : collect();
+
+        /** @var Collection $allKehadiran Semua Kehadiran untuk periode ini, dikelompokkan per kelas_siswa_id */
+        $allKehadiran = count($allKelasSiswaIds) > 0
+            ? Kehadiran::whereIn('kelas_siswa_id', $allKelasSiswaIds)
+                ->where('periode', $periode)
+                ->get()
+                ->groupBy('kelas_siswa_id')
+            : collect();
+        // -----------------------------------------------------------------------
+
         foreach ($kelasSiswaList as $ks) {
-            $hasil = $this->hitungNilaiSiswa($ks, $periode);
+            // Siapkan koleksi pre-loaded per siswa (keyBy mapel_id)
+            $nilaiSiswa = ($allNilai->get($ks->id) ?? collect())->keyBy('mapel_id');
+
+            // Merge nilai STS sebagai fallback untuk mapel yang tidak ada nilai SAS-nya
+            if (in_array($periode, ['sas', 'semester'])) {
+                $nilaiStsSiswa = ($allNilaiSts->get($ks->id) ?? collect())->keyBy('mapel_id');
+                foreach ($nilaiStsSiswa as $mapelId => $nilaiSts) {
+                    if (! $nilaiSiswa->has($mapelId)) {
+                        $nilaiSiswa->put($mapelId, $nilaiSts);
+                    }
+                }
+            }
+
+            $raporMapelSiswa = ($allRaporMapel->get($ks->id) ?? collect())->keyBy('mapel_id');
+            $kehadiranSiswa = $allKehadiran->get($ks->id) ?? collect();
+
+            $hasil = $this->hitungNilaiSiswa(
+                $ks,
+                $periode,
+                $nilaiSiswa,
+                $raporMapelSiswa,
+                $kehadiranSiswa,
+            );
+
             $rekapSiswa[] = [
                 'kelas_siswa' => $ks,
                 'siswa' => $ks->siswa,

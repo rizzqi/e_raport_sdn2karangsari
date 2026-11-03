@@ -16,6 +16,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class NilaiMapelController extends Controller
@@ -439,84 +440,101 @@ class NilaiMapelController extends Controller
         $bulanSemester = $this->getBulanSemester($semester);
         $allKsIds = $kelas->kelasSiswa()->pluck('id');
 
-        foreach ($allKsIds as $ksId) {
-            $bulans = $formatifData[$ksId] ?? [];
-            $prakBulans = $praktikData[$ksId] ?? [];
-            $terisi = [];
+        DB::transaction(function () use (
+            $allKsIds,
+            $formatifData,
+            $praktikData,
+            $praktik1Data,
+            $praktik2Data,
+            $bulanSemester,
+            $isAgama,
+            $isPjok,
+            $mapel,
+            $tahun,
+            $semester,
+            $bobotFormatif,
+            $bobotUts,
+            $bobotUas
+        ) {
+            foreach ($allKsIds as $ksId) {
+                $bulans = $formatifData[$ksId] ?? [];
+                $prakBulans = $praktikData[$ksId] ?? [];
+                $terisi = [];
 
-            foreach ($bulanSemester as $bNum => $bNama) {
-                $rawVal = $bulans[$bNum] ?? null;
-                $val = null;
-                if ($rawVal !== null && trim((string) $rawVal) !== '') {
-                    $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
-                    $terisi[] = $val;
+                foreach ($bulanSemester as $bNum => $bNama) {
+                    $rawVal = $bulans[$bNum] ?? null;
+                    $val = null;
+                    if ($rawVal !== null && trim((string) $rawVal) !== '') {
+                        $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
+                        $terisi[] = $val;
+                    }
+
+                    $valPrak = null;
+                    if ($isPjok) {
+                        $rawPrak = $prakBulans[$bNum] ?? null;
+                        if ($rawPrak !== null && trim((string) $rawPrak) !== '') {
+                            $valPrak = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawPrak))));
+                            $terisi[] = $valPrak;
+                        }
+                    }
+
+                    NilaiFormatifBulanan::updateOrCreate([
+                        'kelas_siswa_id' => $ksId,
+                        'mapel_id' => $mapel->id,
+                        'tahun' => $tahun,
+                        'bulan' => $bNum,
+                    ], [
+                        'nilai' => $val,
+                        'nilai_praktik' => $valPrak,
+                    ]);
                 }
 
-                $valPrak = null;
-                if ($isPjok) {
-                    $rawPrak = $prakBulans[$bNum] ?? null;
-                    if ($rawPrak !== null && trim((string) $rawPrak) !== '') {
-                        $valPrak = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawPrak))));
-                        $terisi[] = $valPrak;
+                // Praktik 1 & 2 untuk Pendidikan Agama
+                $valPrak1 = null;
+                $valPrak2 = null;
+                if ($isAgama) {
+                    $rawPrak1 = $praktik1Data[$ksId] ?? null;
+                    if ($rawPrak1 !== null && trim((string) $rawPrak1) !== '') {
+                        $valPrak1 = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawPrak1))));
+                        $terisi[] = $valPrak1;
+                    }
+                    $rawPrak2 = $praktik2Data[$ksId] ?? null;
+                    if ($rawPrak2 !== null && trim((string) $rawPrak2) !== '') {
+                        $valPrak2 = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawPrak2))));
+                        $terisi[] = $valPrak2;
                     }
                 }
 
-                NilaiFormatifBulanan::updateOrCreate([
+                // Hitung rata-rata formatif baru dari semua komponen yang sudah terisi
+                $rataFormatif = count($terisi) > 0 ? round(array_sum($terisi) / count($terisi), 1) : null;
+
+                // Sinkronisasi ke NilaiRaporMapel
+                $rapor = NilaiRaporMapel::firstOrNew([
                     'kelas_siswa_id' => $ksId,
                     'mapel_id' => $mapel->id,
                     'tahun' => $tahun,
-                    'bulan' => $bNum,
-                ], [
-                    'nilai' => $val,
-                    'nilai_praktik' => $valPrak,
+                    'semester' => $semester,
                 ]);
-            }
 
-            // Praktik 1 & 2 untuk Pendidikan Agama
-            $valPrak1 = null;
-            $valPrak2 = null;
-            if ($isAgama) {
-                $rawPrak1 = $praktik1Data[$ksId] ?? null;
-                if ($rawPrak1 !== null && trim((string) $rawPrak1) !== '') {
-                    $valPrak1 = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawPrak1))));
-                    $terisi[] = $valPrak1;
+                if (! $rapor->is_locked) {
+                    $rapor->rata_formatif = $rataFormatif;
+                    if ($isAgama) {
+                        $rapor->praktik_1 = $valPrak1;
+                        $rapor->praktik_2 = $valPrak2;
+                    }
+                    $rapor->nilai_rapor = $this->hitungNilaiRapor(
+                        $rataFormatif,
+                        $rapor->nilai_uts,
+                        $rapor->nilai_uas,
+                        $bobotFormatif,
+                        $bobotUts,
+                        $bobotUas
+                    );
+                    $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
+                    $rapor->save();
                 }
-                $rawPrak2 = $praktik2Data[$ksId] ?? null;
-                if ($rawPrak2 !== null && trim((string) $rawPrak2) !== '') {
-                    $valPrak2 = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawPrak2))));
-                    $terisi[] = $valPrak2;
-                }
             }
-
-            // Hitung rata-rata formatif baru dari semua komponen yang sudah terisi
-            $rataFormatif = count($terisi) > 0 ? round(array_sum($terisi) / count($terisi), 1) : null;
-
-            // Sinkronisasi ke NilaiRaporMapel
-            $rapor = NilaiRaporMapel::firstOrNew([
-                'kelas_siswa_id' => $ksId,
-                'mapel_id' => $mapel->id,
-                'tahun' => $tahun,
-                'semester' => $semester,
-            ]);
-
-            if (! $rapor->is_locked) {
-                $rapor->rata_formatif = $rataFormatif;
-                if ($isAgama) {
-                    $rapor->praktik_1 = $valPrak1;
-                    $rapor->praktik_2 = $valPrak2;
-                }
-                $rapor->nilai_rapor = $this->hitungNilaiRapor(
-                    $rataFormatif,
-                    $rapor->nilai_uts,
-                    $rapor->nilai_uas,
-                    $bobotFormatif,
-                    $bobotUts,
-                    $bobotUas
-                );
-                $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
-                $rapor->save();
-            }
-        }
+        });
 
         return redirect()->route('kelas.mapel.nilai', [
             'kelas' => $kelas->id,
@@ -542,43 +560,53 @@ class NilaiMapelController extends Controller
         $bobotUts = $sekolah ? $sekolah->getBobotUts() : 30;
         $bobotUas = $sekolah ? $sekolah->getBobotUas() : 30;
 
-        foreach ($utsData as $ksId => $rawVal) {
-            $val = null;
-            if ($rawVal !== null && trim((string) $rawVal) !== '') {
-                $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
+        DB::transaction(function () use (
+            $utsData,
+            $mapel,
+            $tahun,
+            $semester,
+            $bobotFormatif,
+            $bobotUts,
+            $bobotUas
+        ) {
+            foreach ($utsData as $ksId => $rawVal) {
+                $val = null;
+                if ($rawVal !== null && trim((string) $rawVal) !== '') {
+                    $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
+                }
+
+                // Simpan ke tabel nilai periode sts
+                Nilai::updateOrCreate([
+                    'kelas_siswa_id' => $ksId,
+                    'mapel_id' => $mapel->id,
+                    'periode' => 'sts',
+                ], [
+                    'sumatif' => $val,
+                ]);
+
+                // Sinkronisasi ke NilaiRaporMapel
+                $rapor = NilaiRaporMapel::firstOrNew([
+                    'kelas_siswa_id' => $ksId,
+                    'mapel_id' => $mapel->id,
+                    'tahun' => $tahun,
+                    'semester' => $semester,
+                ]);
+
+                if (! $rapor->is_locked) {
+                    $rapor->nilai_uts = $val;
+                    $rapor->nilai_rapor = $this->hitungNilaiRapor(
+                        $rapor->rata_formatif,
+                        $val,
+                        $rapor->nilai_uas,
+                        $bobotFormatif,
+                        $bobotUts,
+                        $bobotUas
+                    );
+                    $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
+                    $rapor->save();
+                }
             }
-
-            // Simpan ke tabel nilai periode sts
-            Nilai::updateOrCreate([
-                'kelas_siswa_id' => $ksId,
-                'mapel_id' => $mapel->id,
-                'periode' => 'sts',
-            ], [
-                'sumatif' => $val,
-            ]);
-
-            // Sinkronisasi ke NilaiRaporMapel
-            $rapor = NilaiRaporMapel::firstOrNew([
-                'kelas_siswa_id' => $ksId,
-                'mapel_id' => $mapel->id,
-                'tahun' => $tahun,
-                'semester' => $semester,
-            ]);
-
-            if (! $rapor->is_locked) {
-                $rapor->nilai_uts = $val;
-                $rapor->nilai_rapor = $this->hitungNilaiRapor(
-                    $rapor->rata_formatif,
-                    $val,
-                    $rapor->nilai_uas,
-                    $bobotFormatif,
-                    $bobotUts,
-                    $bobotUas
-                );
-                $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
-                $rapor->save();
-            }
-        }
+        });
 
         return redirect()->route('kelas.mapel.nilai', [
             'kelas' => $kelas->id,
@@ -604,43 +632,53 @@ class NilaiMapelController extends Controller
         $bobotUts = $sekolah ? $sekolah->getBobotUts() : 30;
         $bobotUas = $sekolah ? $sekolah->getBobotUas() : 30;
 
-        foreach ($uasData as $ksId => $rawVal) {
-            $val = null;
-            if ($rawVal !== null && trim((string) $rawVal) !== '') {
-                $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
+        DB::transaction(function () use (
+            $uasData,
+            $mapel,
+            $tahun,
+            $semester,
+            $bobotFormatif,
+            $bobotUts,
+            $bobotUas
+        ) {
+            foreach ($uasData as $ksId => $rawVal) {
+                $val = null;
+                if ($rawVal !== null && trim((string) $rawVal) !== '') {
+                    $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
+                }
+
+                // Simpan ke tabel nilai periode sas
+                Nilai::updateOrCreate([
+                    'kelas_siswa_id' => $ksId,
+                    'mapel_id' => $mapel->id,
+                    'periode' => 'sas',
+                ], [
+                    'sumatif' => $val,
+                ]);
+
+                // Sinkronisasi ke NilaiRaporMapel
+                $rapor = NilaiRaporMapel::firstOrNew([
+                    'kelas_siswa_id' => $ksId,
+                    'mapel_id' => $mapel->id,
+                    'tahun' => $tahun,
+                    'semester' => $semester,
+                ]);
+
+                if (! $rapor->is_locked) {
+                    $rapor->nilai_uas = $val;
+                    $rapor->nilai_rapor = $this->hitungNilaiRapor(
+                        $rapor->rata_formatif,
+                        $rapor->nilai_uts,
+                        $val,
+                        $bobotFormatif,
+                        $bobotUts,
+                        $bobotUas
+                    );
+                    $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
+                    $rapor->save();
+                }
             }
-
-            // Simpan ke tabel nilai periode sas
-            Nilai::updateOrCreate([
-                'kelas_siswa_id' => $ksId,
-                'mapel_id' => $mapel->id,
-                'periode' => 'sas',
-            ], [
-                'sumatif' => $val,
-            ]);
-
-            // Sinkronisasi ke NilaiRaporMapel
-            $rapor = NilaiRaporMapel::firstOrNew([
-                'kelas_siswa_id' => $ksId,
-                'mapel_id' => $mapel->id,
-                'tahun' => $tahun,
-                'semester' => $semester,
-            ]);
-
-            if (! $rapor->is_locked) {
-                $rapor->nilai_uas = $val;
-                $rapor->nilai_rapor = $this->hitungNilaiRapor(
-                    $rapor->rata_formatif,
-                    $rapor->nilai_uts,
-                    $val,
-                    $bobotFormatif,
-                    $bobotUts,
-                    $bobotUas
-                );
-                $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
-                $rapor->save();
-            }
-        }
+        });
 
         return redirect()->route('kelas.mapel.nilai', [
             'kelas' => $kelas->id,

@@ -12,6 +12,7 @@ use App\Services\HitungNilaiService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class NilaiFormatifHarianController extends Controller
@@ -287,35 +288,37 @@ class NilaiFormatifHarianController extends Controller
 
         $kelasSiswaList = $kelas->kelasSiswa;
 
-        // 1. Simpan setiap nilai harian
-        foreach ($penilaianList as $p) {
-            $pId = $p->id;
-            $siswaScores = $nilaiData[$pId] ?? [];
+        DB::transaction(function () use ($penilaianList, $nilaiData, $kelasSiswaList, $kelas, $mapel, $tahun, $bulan) {
+            // 1. Simpan setiap nilai harian
+            foreach ($penilaianList as $p) {
+                $pId = $p->id;
+                $siswaScores = $nilaiData[$pId] ?? [];
 
-            foreach ($kelasSiswaList as $ks) {
-                $rawVal = $siswaScores[$ks->id] ?? null;
-                $val = null;
-                if ($rawVal !== null && trim((string) $rawVal) !== '') {
-                    $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
-                }
+                foreach ($kelasSiswaList as $ks) {
+                    $rawVal = $siswaScores[$ks->id] ?? null;
+                    $val = null;
+                    if ($rawVal !== null && trim((string) $rawVal) !== '') {
+                        $val = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawVal))));
+                    }
 
-                if ($val !== null) {
-                    NilaiFormatifHarian::updateOrCreate([
-                        'penilaian_formatif_harian_id' => $pId,
-                        'kelas_siswa_id' => $ks->id,
-                    ], [
-                        'nilai' => $val,
-                    ]);
-                } else {
-                    NilaiFormatifHarian::where('penilaian_formatif_harian_id', $pId)
-                        ->where('kelas_siswa_id', $ks->id)
-                        ->delete();
+                    if ($val !== null) {
+                        NilaiFormatifHarian::updateOrCreate([
+                            'penilaian_formatif_harian_id' => $pId,
+                            'kelas_siswa_id' => $ks->id,
+                        ], [
+                            'nilai' => $val,
+                        ]);
+                    } else {
+                        NilaiFormatifHarian::where('penilaian_formatif_harian_id', $pId)
+                            ->where('kelas_siswa_id', $ks->id)
+                            ->delete();
+                    }
                 }
             }
-        }
 
-        // 2. Hitung rata-rata dan sinkronkan ke NilaiFormatifBulanan serta NilaiRaporMapel
-        $this->sinkronisasiRataRataBulanan($kelas, $mapel, $tahun, $bulan);
+            // 2. Hitung rata-rata dan sinkronkan ke NilaiFormatifBulanan serta NilaiRaporMapel
+            $this->sinkronisasiRataRataBulanan($kelas, $mapel, $tahun, $bulan);
+        });
 
         $namaBulan = NilaiFormatifBulanan::NAMA_BULAN[$bulan] ?? "Bulan {$bulan}";
 

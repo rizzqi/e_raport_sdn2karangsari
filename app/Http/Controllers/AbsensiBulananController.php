@@ -9,6 +9,7 @@ use App\Models\Sekolah;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AbsensiBulananController extends Controller
@@ -87,24 +88,26 @@ class AbsensiBulananController extends Controller
 
         $kelasSiswaList = $kelas->kelasSiswa;
 
-        foreach ($kelasSiswaList as $ks) {
-            $sakit = max(0, (int) ($sakitData[$ks->id] ?? 0));
-            $izin = max(0, (int) ($izinData[$ks->id] ?? 0));
-            $alpa = max(0, (int) ($alpaData[$ks->id] ?? 0));
+        DB::transaction(function () use ($kelas, $kelasSiswaList, $sakitData, $izinData, $alpaData, $tahun, $bulan) {
+            foreach ($kelasSiswaList as $ks) {
+                $sakit = max(0, (int) ($sakitData[$ks->id] ?? 0));
+                $izin = max(0, (int) ($izinData[$ks->id] ?? 0));
+                $alpa = max(0, (int) ($alpaData[$ks->id] ?? 0));
 
-            KehadiranBulanan::updateOrCreate([
-                'kelas_siswa_id' => $ks->id,
-                'tahun' => $tahun,
-                'bulan' => $bulan,
-            ], [
-                'sakit' => $sakit,
-                'izin' => $izin,
-                'alpa' => $alpa,
-            ]);
-        }
+                KehadiranBulanan::updateOrCreate([
+                    'kelas_siswa_id' => $ks->id,
+                    'tahun' => $tahun,
+                    'bulan' => $bulan,
+                ], [
+                    'sakit' => $sakit,
+                    'izin' => $izin,
+                    'alpa' => $alpa,
+                ]);
+            }
 
-        // Sinkronisasi otomatis ke rekap kehadiran rapor (STS & SAS)
-        $this->sinkronisasiKeRaport($kelas, $tahun);
+            // Sinkronisasi otomatis ke rekap kehadiran rapor (STS & SAS)
+            $this->sinkronisasiKeRaport($kelas, $tahun);
+        });
 
         $namaBulan = KehadiranBulanan::NAMA_BULAN[$bulan] ?? "Bulan {$bulan}";
 

@@ -138,6 +138,13 @@ class User extends Authenticatable
 
     /**
      * Cek apakah baris penugasan kelas_guru ($gp) mewakili user ini.
+     *
+     * Prioritas pencocokan:
+     * 1. Kecocokan user_id (akurat dan aman).
+     * 2. Kecocokan nama persis (case-insensitive).
+     * 3. Kecocokan nama setelah membersihkan gelar akademik umum (S.Pd., M.Pd., dll).
+     *    Hanya exact-match setelah normalisasi — tidak menggunakan substring/contains
+     *    untuk menghindari false-positive (mis. "Budi" tidak cocok dengan "Budi Santoso").
      */
     public function isPengampuRecord(KelasGuru $gp): bool
     {
@@ -148,13 +155,16 @@ class User extends Authenticatable
         if (! empty($gp->nama)) {
             $namaGp = strtolower(trim($gp->nama));
             $namaUser = strtolower(trim($this->name));
+
             if ($namaGp === $namaUser) {
                 return true;
             }
 
-            // Bersihkan gelar umum untuk toleransi pencocokan nama
-            $cleanGp = trim(preg_replace('/\b(s\.pd\.?i?|m\.pd\.?|s\.ag|s\.tr\.kom|s\.kom)\b/i', '', $namaGp));
-            $cleanUser = trim(preg_replace('/\b(s\.pd\.?i?|m\.pd\.?|s\.ag|s\.tr\.kom|s\.kom)\b/i', '', $namaUser));
+            // Bersihkan gelar umum, lalu normalkan spasi, lalu exact-match
+            $gelarPattern = '/\b(s\.pd\.?i?|m\.pd\.?|s\.ag|s\.tr\.kom|s\.kom)\b\.?/i';
+            $cleanGp = trim(preg_replace('/\s+/', ' ', preg_replace($gelarPattern, '', $namaGp)));
+            $cleanUser = trim(preg_replace('/\s+/', ' ', preg_replace($gelarPattern, '', $namaUser)));
+
             if ($cleanGp !== '' && $cleanUser !== '' && $cleanGp === $cleanUser) {
                 return true;
             }

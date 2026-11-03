@@ -17,6 +17,10 @@ class KelasPolicy
 
     /**
      * Tentukan apakah user bisa melihat detail kelas.
+     *
+     * Admin dan Kepsek dapat melihat semua kelas.
+     * Wali kelas dapat melihat kelas yang diampunya.
+     * Guru pengampu (baik melalui user_id maupun kecocokan nama) dapat melihat kelasnya.
      */
     public function view(User $user, Kelas $kelas): bool
     {
@@ -24,7 +28,21 @@ class KelasPolicy
             return true;
         }
 
-        return $kelas->wali_id === $user->id;
+        if ((int) $kelas->wali_id === (int) $user->id) {
+            return true;
+        }
+
+        // Guru pengampu: cek via user_id pada tabel kelas_guru
+        if ($kelas->guruPengampu()->where('user_id', $user->id)->exists()) {
+            return true;
+        }
+
+        // Cek pengampu Agama / PJOK via metode model (pencocokan nama)
+        if ($user->isPengampuAgama($kelas) || $user->isPengampuPjok($kelas)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

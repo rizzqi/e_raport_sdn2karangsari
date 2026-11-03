@@ -64,17 +64,7 @@ class KelasController extends Controller
 
     public function show(Kelas $kelas): View
     {
-        $user = auth()->user();
-        if ($user && ! $user->isAdmin() && ! $user->isKepsek()) {
-            $isWali = (int) $kelas->wali_id === (int) $user->id;
-            $isPengampu = $kelas->guruPengampu()->where('user_id', $user->id)->exists()
-                || $user->isPengampuAgama($kelas)
-                || $user->isPengampuPjok($kelas);
-
-            if (! $isWali && ! $isPengampu) {
-                abort(403, 'Anda hanya dapat mengakses kelas yang Anda ampu.');
-            }
-        }
+        $this->authorize('view', $kelas);
 
         $kelas->load(['wali', 'tahunAjaran', 'sekolah', 'kelasSiswa.siswa', 'guruPengampu.mapel', 'guruPengampu.user', 'mapelKkm']);
         $tahunAjaranList = TahunAjaran::orderBy('tahun', 'desc')->get();

@@ -15,6 +15,7 @@ use App\Services\ExcelReader;
 use App\Services\ExcelWriter;
 use App\Services\HitungNilaiService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class NilaiController extends Controller
 {
@@ -89,59 +90,58 @@ class NilaiController extends Controller
         $this->authorizeAksesKelas($kelas);
 
         $periode = $request->input('periode', 'sts');
-
-        // 1. Simpan Nilai Mapel
         $formatifData = $request->input('formatif', []);
         $sumatifData = $request->input('sumatif', []);
-
-        $mapels = $kelas->mataPelajaran();
-
-        foreach ($mapels as $mapel) {
-            $sumatif = isset($sumatifData[$mapel->id]) && $sumatifData[$mapel->id] !== '' ? (float) $sumatifData[$mapel->id] : null;
-            $formatif = isset($formatifData[$mapel->id]) && $formatifData[$mapel->id] !== '' ? (float) $formatifData[$mapel->id] : null;
-
-            if ($sumatif === null && $formatif !== null) {
-                $sumatif = $formatif;
-            }
-
-            if ($sumatif !== null) {
-                $sumatif = max(0, min(100, $sumatif));
-            }
-
-            Nilai::updateOrCreate([
-                'kelas_siswa_id' => $kelasSiswa->id,
-                'mapel_id' => $mapel->id,
-                'periode' => $periode,
-            ], [
-                'formatif' => null,
-                'sumatif' => $sumatif,
-            ]);
-        }
-
-        // 2. Simpan Pembiasaan
         $predikatData = $request->input('predikat', []);
+        $mapels = $kelas->mataPelajaran();
         $pembiasaans = Pembiasaan::aktif()->get();
 
-        foreach ($pembiasaans as $pem) {
-            $predikat = $predikatData[$pem->id] ?? 'Baik';
-            NilaiPembiasaan::updateOrCreate([
+        DB::transaction(function () use ($mapels, $sumatifData, $formatifData, $kelasSiswa, $periode, $predikatData, $pembiasaans, $request) {
+            // 1. Simpan Nilai Mapel
+            foreach ($mapels as $mapel) {
+                $sumatif = isset($sumatifData[$mapel->id]) && $sumatifData[$mapel->id] !== '' ? (float) $sumatifData[$mapel->id] : null;
+                $formatif = isset($formatifData[$mapel->id]) && $formatifData[$mapel->id] !== '' ? (float) $formatifData[$mapel->id] : null;
+
+                if ($sumatif === null && $formatif !== null) {
+                    $sumatif = $formatif;
+                }
+
+                if ($sumatif !== null) {
+                    $sumatif = max(0, min(100, $sumatif));
+                }
+
+                Nilai::updateOrCreate([
+                    'kelas_siswa_id' => $kelasSiswa->id,
+                    'mapel_id' => $mapel->id,
+                    'periode' => $periode,
+                ], [
+                    'formatif' => null,
+                    'sumatif' => $sumatif,
+                ]);
+            }
+
+            // 2. Simpan Pembiasaan
+            foreach ($pembiasaans as $pem) {
+                $predikat = $predikatData[$pem->id] ?? 'Baik';
+                NilaiPembiasaan::updateOrCreate([
+                    'kelas_siswa_id' => $kelasSiswa->id,
+                    'pembiasaan_id' => $pem->id,
+                    'periode' => $periode,
+                ], [
+                    'predikat' => $predikat,
+                ]);
+            }
+
+            // 3. Simpan Kehadiran
+            Kehadiran::updateOrCreate([
                 'kelas_siswa_id' => $kelasSiswa->id,
-                'pembiasaan_id' => $pem->id,
                 'periode' => $periode,
             ], [
-                'predikat' => $predikat,
+                'sakit' => (int) $request->input('sakit', 0),
+                'izin' => (int) $request->input('izin', 0),
+                'alpa' => (int) $request->input('alpa', 0),
             ]);
-        }
-
-        // 3. Simpan Kehadiran
-        Kehadiran::updateOrCreate([
-            'kelas_siswa_id' => $kelasSiswa->id,
-            'periode' => $periode,
-        ], [
-            'sakit' => (int) $request->input('sakit', 0),
-            'izin' => (int) $request->input('izin', 0),
-            'alpa' => (int) $request->input('alpa', 0),
-        ]);
+        });
 
         $nextSiswaId = $request->input('next_siswa_id');
         if ($nextSiswaId) {
@@ -199,27 +199,29 @@ class NilaiController extends Controller
         $formatifData = $request->input('formatif', []);
         $sumatifData = $request->input('sumatif', []);
 
-        foreach ($kelas->kelasSiswa as $ks) {
-            $sumatif = isset($sumatifData[$ks->id]) && $sumatifData[$ks->id] !== '' ? (float) $sumatifData[$ks->id] : null;
-            $formatif = isset($formatifData[$ks->id]) && $formatifData[$ks->id] !== '' ? (float) $formatifData[$ks->id] : null;
+        DB::transaction(function () use ($kelas, $sumatifData, $formatifData, $mapelId, $periode) {
+            foreach ($kelas->kelasSiswa as $ks) {
+                $sumatif = isset($sumatifData[$ks->id]) && $sumatifData[$ks->id] !== '' ? (float) $sumatifData[$ks->id] : null;
+                $formatif = isset($formatifData[$ks->id]) && $formatifData[$ks->id] !== '' ? (float) $formatifData[$ks->id] : null;
 
-            if ($sumatif === null && $formatif !== null) {
-                $sumatif = $formatif;
+                if ($sumatif === null && $formatif !== null) {
+                    $sumatif = $formatif;
+                }
+
+                if ($sumatif !== null) {
+                    $sumatif = max(0, min(100, $sumatif));
+                }
+
+                Nilai::updateOrCreate([
+                    'kelas_siswa_id' => $ks->id,
+                    'mapel_id' => $mapelId,
+                    'periode' => $periode,
+                ], [
+                    'formatif' => null,
+                    'sumatif' => $sumatif,
+                ]);
             }
-
-            if ($sumatif !== null) {
-                $sumatif = max(0, min(100, $sumatif));
-            }
-
-            Nilai::updateOrCreate([
-                'kelas_siswa_id' => $ks->id,
-                'mapel_id' => $mapelId,
-                'periode' => $periode,
-            ], [
-                'formatif' => null,
-                'sumatif' => $sumatif,
-            ]);
-        }
+        });
 
         return redirect()->back()->with('success', 'Nilai kelas untuk mata pelajaran ini berhasil disimpan.');
     }
@@ -539,161 +541,186 @@ class NilaiController extends Controller
         $siaUpdatedCount = 0;
         $pembiasaanTerupdate = [];
 
-        foreach ($dataRows as $row) {
-            $noVal = $colNo !== null ? (int) ExcelReader::cleanNumberString(trim((string) ($row[$colNo] ?? ''))) : null;
-            $nisVal = $colNis !== null ? ExcelReader::cleanNumberString(trim((string) ($row[$colNis] ?? ''))) : '';
-            $namaVal = $colNama !== null ? strtolower(trim(preg_replace('/\s+/', ' ', (string) ($row[$colNama] ?? '')))) : '';
+        DB::transaction(function () use (
+            $dataRows,
+            $colNo,
+            $colNis,
+            $colNama,
+            $colMapelMap,
+            $kelas,
+            $siswaByNis,
+            $siswaByNisn,
+            $siswaByNama,
+            $siswaByNormalizedNama,
+            $kelasSiswaList,
+            $siswaByNoUrut,
+            $periode,
+            $colSakit,
+            $colIzin,
+            $colAlpa,
+            $colPembiasaanMap,
+            &$siswaTerupdate,
+            &$mapelTerupdate,
+            &$kkmTerupdate,
+            &$siaUpdatedCount,
+            &$pembiasaanTerupdate
+        ) {
+            foreach ($dataRows as $row) {
+                $noVal = $colNo !== null ? (int) ExcelReader::cleanNumberString(trim((string) ($row[$colNo] ?? ''))) : null;
+                $nisVal = $colNis !== null ? ExcelReader::cleanNumberString(trim((string) ($row[$colNis] ?? ''))) : '';
+                $namaVal = $colNama !== null ? strtolower(trim(preg_replace('/\s+/', ' ', (string) ($row[$colNama] ?? '')))) : '';
 
-            if ($namaVal === '' && $nisVal === '' && ! $noVal) {
-                continue;
-            }
+                if ($namaVal === '' && $nisVal === '' && ! $noVal) {
+                    continue;
+                }
 
-            // Deteksi baris KKM pada spreadsheet (biasanya Nama atau No/NIS berisi 'KKM')
-            $isKkmRow = ($namaVal === 'kkm' || ($colNo !== null && strtolower(trim((string) ($row[$colNo] ?? ''))) === 'kkm') || ($colNis !== null && strtolower(trim((string) ($row[$colNis] ?? ''))) === 'kkm'));
-            if ($isKkmRow) {
-                foreach ($colMapelMap as $cIdx => $mId) {
-                    $kkmRaw = trim((string) ($row[$cIdx] ?? ''));
-                    $kkmRaw = str_replace(',', '.', $kkmRaw);
-                    if (is_numeric($kkmRaw)) {
-                        $kkmInt = (int) $kkmRaw;
-                        if ($kkmInt > 0 && $kkmInt <= 100) {
-                            $kelas->mapelKkm()->updateOrCreate(
-                                ['mapel_id' => $mId],
-                                ['kkm' => $kkmInt]
-                            );
-                            $kkmTerupdate[$mId] = $kkmInt;
+                // Deteksi baris KKM pada spreadsheet (biasanya Nama atau No/NIS berisi 'KKM')
+                $isKkmRow = ($namaVal === 'kkm' || ($colNo !== null && strtolower(trim((string) ($row[$colNo] ?? ''))) === 'kkm') || ($colNis !== null && strtolower(trim((string) ($row[$colNis] ?? ''))) === 'kkm'));
+                if ($isKkmRow) {
+                    foreach ($colMapelMap as $cIdx => $mId) {
+                        $kkmRaw = trim((string) ($row[$cIdx] ?? ''));
+                        $kkmRaw = str_replace(',', '.', $kkmRaw);
+                        if (is_numeric($kkmRaw)) {
+                            $kkmInt = (int) $kkmRaw;
+                            if ($kkmInt > 0 && $kkmInt <= 100) {
+                                $kelas->mapelKkm()->updateOrCreate(
+                                    ['mapel_id' => $mId],
+                                    ['kkm' => $kkmInt]
+                                );
+                                $kkmTerupdate[$mId] = $kkmInt;
+                            }
+                        }
+                    }
+
+                    continue; // Jangan proses baris KKM sebagai siswa
+                }
+
+                // Cari siswa yang cocok secara berjenjang
+                $matchedKs = null;
+
+                // 1. Berdasarkan NIS
+                if ($nisVal !== '' && isset($siswaByNis[$nisVal])) {
+                    $matchedKs = $siswaByNis[$nisVal];
+                }
+                // 2. Berdasarkan NISN
+                elseif ($nisVal !== '' && isset($siswaByNisn[$nisVal])) {
+                    $matchedKs = $siswaByNisn[$nisVal];
+                }
+                // 3. Berdasarkan Nama Lengkap (persis)
+                elseif ($namaVal !== '' && isset($siswaByNama[$namaVal])) {
+                    $matchedKs = $siswaByNama[$namaVal];
+                }
+                // 4. Berdasarkan Nama Alfanumerik (abaikan titik, koma, spasi ganda)
+                elseif ($namaVal !== '') {
+                    $alphaVal = preg_replace('/[^a-z0-9]/', '', $namaVal);
+                    if ($alphaVal !== '' && isset($siswaByNormalizedNama[$alphaVal])) {
+                        $matchedKs = $siswaByNormalizedNama[$alphaVal];
+                    }
+                }
+
+                // 5. Pencarian fallback kecocokan nama parsial (contains)
+                if (! $matchedKs && $namaVal !== '') {
+                    foreach ($siswaByNama as $nKey => $ks) {
+                        if (str_contains($nKey, $namaVal) || str_contains($namaVal, $nKey)) {
+                            $matchedKs = $ks;
+                            break;
                         }
                     }
                 }
 
-                continue; // Jangan proses baris KKM sebagai siswa
-            }
-
-            // Cari siswa yang cocok secara berjenjang
-            $matchedKs = null;
-
-            // 1. Berdasarkan NIS
-            if ($nisVal !== '' && isset($siswaByNis[$nisVal])) {
-                $matchedKs = $siswaByNis[$nisVal];
-            }
-            // 2. Berdasarkan NISN
-            elseif ($nisVal !== '' && isset($siswaByNisn[$nisVal])) {
-                $matchedKs = $siswaByNisn[$nisVal];
-            }
-            // 3. Berdasarkan Nama Lengkap (persis)
-            elseif ($namaVal !== '' && isset($siswaByNama[$namaVal])) {
-                $matchedKs = $siswaByNama[$namaVal];
-            }
-            // 4. Berdasarkan Nama Alfanumerik (abaikan titik, koma, spasi ganda)
-            elseif ($namaVal !== '') {
-                $alphaVal = preg_replace('/[^a-z0-9]/', '', $namaVal);
-                if ($alphaVal !== '' && isset($siswaByNormalizedNama[$alphaVal])) {
-                    $matchedKs = $siswaByNormalizedNama[$alphaVal];
-                }
-            }
-
-            // 5. Pencarian fallback kecocokan nama parsial (contains)
-            if (! $matchedKs && $namaVal !== '') {
-                foreach ($siswaByNama as $nKey => $ks) {
-                    if (str_contains($nKey, $namaVal) || str_contains($namaVal, $nKey)) {
-                        $matchedKs = $ks;
-                        break;
+                // 6. Pencarian kemiripan nama berbasis kemiripan fonetik / typo (similar_text >= 80%)
+                if (! $matchedKs && $namaVal !== '') {
+                    $bestPct = 0;
+                    $bestKs = null;
+                    foreach ($kelasSiswaList as $ks) {
+                        $dbNama = strtolower(trim(preg_replace('/\s+/', ' ', $ks->siswa->nama)));
+                        similar_text($namaVal, $dbNama, $pct);
+                        if ($pct > $bestPct) {
+                            $bestPct = $pct;
+                            $bestKs = $ks;
+                        }
+                    }
+                    if ($bestPct >= 80 && $bestKs) {
+                        $matchedKs = $bestKs;
                     }
                 }
-            }
 
-            // 6. Pencarian kemiripan nama berbasis kemiripan fonetik / typo (similar_text >= 80%)
-            if (! $matchedKs && $namaVal !== '') {
-                $bestPct = 0;
-                $bestKs = null;
-                foreach ($kelasSiswaList as $ks) {
-                    $dbNama = strtolower(trim(preg_replace('/\s+/', ' ', $ks->siswa->nama)));
-                    similar_text($namaVal, $dbNama, $pct);
-                    if ($pct > $bestPct) {
-                        $bestPct = $pct;
-                        $bestKs = $ks;
-                    }
+                // 7. Pencarian fallback berdasarkan Nomor Urut Absen Kelas (jika NIS kosong & nama tidak cocok)
+                if (! $matchedKs && $noVal && isset($siswaByNoUrut[$noVal])) {
+                    $matchedKs = $siswaByNoUrut[$noVal];
                 }
-                if ($bestPct >= 80 && $bestKs) {
-                    $matchedKs = $bestKs;
-                }
-            }
 
-            // 7. Pencarian fallback berdasarkan Nomor Urut Absen Kelas (jika NIS kosong & nama tidak cocok)
-            if (! $matchedKs && $noVal && isset($siswaByNoUrut[$noVal])) {
-                $matchedKs = $siswaByNoUrut[$noVal];
-            }
-
-            if (! $matchedKs) {
-                continue;
-            }
-
-            // Simpan nilai untuk tiap mapel yang terdeteksi
-            foreach ($colMapelMap as $cIdx => $mId) {
-                $cellVal = trim((string) ($row[$cIdx] ?? ''));
-                if ($cellVal === '' || $cellVal === '-') {
+                if (! $matchedKs) {
                     continue;
                 }
 
-                $cellVal = str_replace(',', '.', $cellVal);
-                if (is_numeric($cellVal)) {
-                    $score = (float) $cellVal;
-                    $score = max(0, min(100, $score));
+                // Simpan nilai untuk tiap mapel yang terdeteksi
+                foreach ($colMapelMap as $cIdx => $mId) {
+                    $cellVal = trim((string) ($row[$cIdx] ?? ''));
+                    if ($cellVal === '' || $cellVal === '-') {
+                        continue;
+                    }
 
-                    Nilai::updateOrCreate([
+                    $cellVal = str_replace(',', '.', $cellVal);
+                    if (is_numeric($cellVal)) {
+                        $score = (float) $cellVal;
+                        $score = max(0, min(100, $score));
+
+                        Nilai::updateOrCreate([
+                            'kelas_siswa_id' => $matchedKs->id,
+                            'mapel_id' => $mId,
+                            'periode' => $periode,
+                        ], [
+                            'formatif' => null,
+                            'sumatif' => $score,
+                        ]);
+
+                        $siswaTerupdate[$matchedKs->id] = true;
+                        $mapelTerupdate[$mId] = true;
+                    }
+                }
+
+                // Simpan data Kehadiran (SIA) jika kolomnya terdeteksi di baris
+                if ($colSakit !== null || $colIzin !== null || $colAlpa !== null) {
+                    $sakitVal = $colSakit !== null ? max(0, (int) ExcelReader::cleanNumberString(trim((string) ($row[$colSakit] ?? '0')))) : 0;
+                    $izinVal = $colIzin !== null ? max(0, (int) ExcelReader::cleanNumberString(trim((string) ($row[$colIzin] ?? '0')))) : 0;
+                    $alpaVal = $colAlpa !== null ? max(0, (int) ExcelReader::cleanNumberString(trim((string) ($row[$colAlpa] ?? '0')))) : 0;
+
+                    Kehadiran::updateOrCreate([
                         'kelas_siswa_id' => $matchedKs->id,
-                        'mapel_id' => $mId,
                         'periode' => $periode,
                     ], [
-                        'formatif' => null,
-                        'sumatif' => $score,
+                        'sakit' => $sakitVal,
+                        'izin' => $izinVal,
+                        'alpa' => $alpaVal,
                     ]);
 
+                    $siaUpdatedCount++;
                     $siswaTerupdate[$matchedKs->id] = true;
-                    $mapelTerupdate[$mId] = true;
-                }
-            }
-
-            // Simpan data Kehadiran (SIA) jika kolomnya terdeteksi di baris
-            if ($colSakit !== null || $colIzin !== null || $colAlpa !== null) {
-                $sakitVal = $colSakit !== null ? max(0, (int) ExcelReader::cleanNumberString(trim((string) ($row[$colSakit] ?? '0')))) : 0;
-                $izinVal = $colIzin !== null ? max(0, (int) ExcelReader::cleanNumberString(trim((string) ($row[$colIzin] ?? '0')))) : 0;
-                $alpaVal = $colAlpa !== null ? max(0, (int) ExcelReader::cleanNumberString(trim((string) ($row[$colAlpa] ?? '0')))) : 0;
-
-                Kehadiran::updateOrCreate([
-                    'kelas_siswa_id' => $matchedKs->id,
-                    'periode' => $periode,
-                ], [
-                    'sakit' => $sakitVal,
-                    'izin' => $izinVal,
-                    'alpa' => $alpaVal,
-                ]);
-
-                $siaUpdatedCount++;
-                $siswaTerupdate[$matchedKs->id] = true;
-            }
-
-            // Simpan Nilai Pembiasaan jika kolomnya terdeteksi di baris
-            foreach ($colPembiasaanMap as $cIdx => $pId) {
-                $rawPred = trim((string) ($row[$cIdx] ?? ''));
-                if ($rawPred === '' || $rawPred === '-') {
-                    continue;
                 }
 
-                $pred = $this->normalizePredikat($rawPred);
+                // Simpan Nilai Pembiasaan jika kolomnya terdeteksi di baris
+                foreach ($colPembiasaanMap as $cIdx => $pId) {
+                    $rawPred = trim((string) ($row[$cIdx] ?? ''));
+                    if ($rawPred === '' || $rawPred === '-') {
+                        continue;
+                    }
 
-                NilaiPembiasaan::updateOrCreate([
-                    'kelas_siswa_id' => $matchedKs->id,
-                    'pembiasaan_id' => $pId,
-                    'periode' => $periode,
-                ], [
-                    'predikat' => $pred,
-                ]);
+                    $pred = $this->normalizePredikat($rawPred);
 
-                $pembiasaanTerupdate[$pId] = true;
-                $siswaTerupdate[$matchedKs->id] = true;
+                    NilaiPembiasaan::updateOrCreate([
+                        'kelas_siswa_id' => $matchedKs->id,
+                        'pembiasaan_id' => $pId,
+                        'periode' => $periode,
+                    ], [
+                        'predikat' => $pred,
+                    ]);
+
+                    $pembiasaanTerupdate[$pId] = true;
+                    $siswaTerupdate[$matchedKs->id] = true;
+                }
             }
-        }
+        });
 
         return [
             'sukses' => count($siswaTerupdate),
@@ -1498,27 +1525,39 @@ class NilaiController extends Controller
             $scopeMapel = 'seluruh mata pelajaran';
         }
 
-        $deletedNilaiCount = $queryNilai->delete();
-
-        // Opsi: Kosongkan Kehadiran jika dicentang
+        $deletedNilaiCount = 0;
         $deletedKehadiranCount = 0;
-        if ($request->boolean('kosongkan_kehadiran')) {
-            $queryKehadiran = Kehadiran::whereIn('kelas_siswa_id', $kelasSiswaIds);
-            if ($periode !== 'semua') {
-                $queryKehadiran->where('periode', $periode);
-            }
-            $deletedKehadiranCount = $queryKehadiran->delete();
-        }
-
-        // Opsi: Kosongkan Pembiasaan jika dicentang
         $deletedPembiasaanCount = 0;
-        if ($request->boolean('kosongkan_pembiasaan')) {
-            $queryPembiasaan = NilaiPembiasaan::whereIn('kelas_siswa_id', $kelasSiswaIds);
-            if ($periode !== 'semua') {
-                $queryPembiasaan->where('periode', $periode);
+
+        DB::transaction(function () use (
+            $queryNilai,
+            $request,
+            $kelasSiswaIds,
+            $periode,
+            &$deletedNilaiCount,
+            &$deletedKehadiranCount,
+            &$deletedPembiasaanCount
+        ) {
+            $deletedNilaiCount = $queryNilai->delete();
+
+            // Opsi: Kosongkan Kehadiran jika dicentang
+            if ($request->boolean('kosongkan_kehadiran')) {
+                $queryKehadiran = Kehadiran::whereIn('kelas_siswa_id', $kelasSiswaIds);
+                if ($periode !== 'semua') {
+                    $queryKehadiran->where('periode', $periode);
+                }
+                $deletedKehadiranCount = $queryKehadiran->delete();
             }
-            $deletedPembiasaanCount = $queryPembiasaan->delete();
-        }
+
+            // Opsi: Kosongkan Pembiasaan jika dicentang
+            if ($request->boolean('kosongkan_pembiasaan')) {
+                $queryPembiasaan = NilaiPembiasaan::whereIn('kelas_siswa_id', $kelasSiswaIds);
+                if ($periode !== 'semua') {
+                    $queryPembiasaan->where('periode', $periode);
+                }
+                $deletedPembiasaanCount = $queryPembiasaan->delete();
+            }
+        });
 
         $periodeLabel = ($periode === 'semua') ? 'Semua Periode (STS & SAS)' : strtoupper($periode);
         $extraMsg = [];

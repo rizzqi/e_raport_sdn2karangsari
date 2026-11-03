@@ -93,8 +93,10 @@ class ExcelReader
             }
         }
 
-        // 2. Read sheet1
-        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        // 2. Tentukan path worksheet pertama secara dinamis via workbook.xml
+        //    agar tidak terpaku pada nama file 'sheet1.xml' yang bisa berbeda
+        //    tergantung urutan sheet atau versi aplikasi spreadsheet.
+        $sheetXml = self::resolveFirstSheetXml($zip);
         $zip->close();
 
         if ($sheetXml === false) {
@@ -296,6 +298,52 @@ class ExcelReader
         }
 
         return $val;
+    }
+
+    /**
+     * Cari dan baca isi XML dari worksheet pertama pada file XLSX.
+     * Menggunakan sheet1.xml sebagai default utama, dengan fallback dinamis
+     * ke relasi workbook atau berkas worksheet pertama yang ditemukan di arsip.
+     */
+    private static function resolveFirstSheetXml(ZipArchive $zip): string|false
+    {
+        // 1. Jalur cepat: default standar Excel
+        $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        if ($xml !== false) {
+            return $xml;
+        }
+
+        // 2. Baca relasi workbook untuk menemukan target sheet pertama
+        $relsXml = $zip->getFromName('xl/_rels/workbook.xml.rels');
+        if ($relsXml !== false) {
+            $rels = @simplexml_load_string($relsXml);
+            if ($rels) {
+                foreach ($rels->Relationship as $rel) {
+                    $type = (string) $rel['Type'];
+                    if (str_contains($type, '/worksheet')) {
+                        $target = (string) $rel['Target'];
+                        $path = str_starts_with($target, 'worksheets/') ? 'xl/'.$target : 'xl/worksheets/'.basename($target);
+                        $sheetContent = $zip->getFromName($path);
+                        if ($sheetContent !== false) {
+                            return $sheetContent;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Fallback pencarian: ambil file XML pertama di dalam xl/worksheets/
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $filename = $zip->getNameIndex($i);
+            if (str_starts_with($filename, 'xl/worksheets/') && str_ends_with($filename, '.xml')) {
+                $sheetContent = $zip->getFromIndex($i);
+                if ($sheetContent !== false) {
+                    return $sheetContent;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static function colLetterToIndex(string $letters): int

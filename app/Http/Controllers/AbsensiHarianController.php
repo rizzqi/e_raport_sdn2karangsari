@@ -452,22 +452,24 @@ class AbsensiHarianController extends Controller
             ->whereMonth('tanggal', $bulan)
             ->get();
 
-        foreach ($kelasSiswaList as $ks) {
-            $siswaAbsen = $allAbsen->where('kelas_siswa_id', $ks->id);
-            $s = $siswaAbsen->where('status', 'S')->count();
-            $i = $siswaAbsen->where('status', 'I')->count();
-            $a = $siswaAbsen->where('status', 'A')->count();
+        DB::transaction(function () use ($kelasSiswaList, $allAbsen, $tahun, $bulan) {
+            foreach ($kelasSiswaList as $ks) {
+                $siswaAbsen = $allAbsen->where('kelas_siswa_id', $ks->id);
+                $s = $siswaAbsen->where('status', 'S')->count();
+                $i = $siswaAbsen->where('status', 'I')->count();
+                $a = $siswaAbsen->where('status', 'A')->count();
 
-            KehadiranBulanan::updateOrCreate([
-                'kelas_siswa_id' => $ks->id,
-                'tahun' => $tahun,
-                'bulan' => $bulan,
-            ], [
-                'sakit' => $s,
-                'izin' => $i,
-                'alpa' => $a,
-            ]);
-        }
+                KehadiranBulanan::updateOrCreate([
+                    'kelas_siswa_id' => $ks->id,
+                    'tahun' => $tahun,
+                    'bulan' => $bulan,
+                ], [
+                    'sakit' => $s,
+                    'izin' => $i,
+                    'alpa' => $a,
+                ]);
+            }
+        });
 
         $namaBulan = KehadiranBulanan::NAMA_BULAN[$bulan] ?? "Bulan {$bulan}";
 
