@@ -35,7 +35,7 @@
         {{-- ========================================================================= --}}
         {{-- PANEL KIRI: FOTO GEDUNG SEKOLAH SD DENGAN OVERLAY & BRANDING ELEGAN      --}}
         {{-- ========================================================================= --}}
-        <div class="relative flex min-h-[380px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-6 sm:p-10 lg:min-h-dvh lg:w-[58%] xl:w-[60%] lg:p-12 xl:p-16">
+        <div class="relative flex min-h-[220px] sm:min-h-[280px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-5 sm:p-8 lg:min-h-dvh lg:w-[58%] xl:w-[60%] lg:p-12 xl:p-16">
             
             {{-- Foto Gedung Asli --}}
             <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 hover:scale-105"
@@ -46,20 +46,20 @@
             <div class="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-950/40 to-black/30"></div>
 
             {{-- Header Kiri Atas: Logo Sekolah + Identitas Instansi --}}
-            <div class="relative z-10 flex items-center gap-4">
-                <div class="size-16 shrink-0 overflow-hidden rounded-2xl bg-white/20 p-1 shadow-2xl backdrop-blur-md ring-2 ring-white/30 sm:size-20">
+            <div class="relative z-10 flex items-center gap-3 sm:gap-4">
+                <div class="size-13 sm:size-16 shrink-0 overflow-hidden rounded-2xl bg-white/20 p-1 shadow-2xl backdrop-blur-md ring-2 ring-white/30 lg:size-20">
                     <img src="{{ asset('images/logo-sdn2.jpg') }}" 
                          alt="Logo SDN 2 Karangsari" 
                          class="h-full w-full rounded-xl object-cover shadow-inner">
                 </div>
                 <div class="text-white">
-                    <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/30 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-emerald-200 backdrop-blur-sm ring-1 ring-emerald-400/30">
-                        <i class="fa-solid fa-school text-[9px]"></i> SD Negeri
+                    <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/30 px-2.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-emerald-200 backdrop-blur-sm ring-1 ring-emerald-400/30">
+                        <i class="fa-solid fa-school text-[8px] sm:text-[9px]"></i> SD Negeri
                     </div>
-                    <h1 class="mt-1 text-xl font-black uppercase tracking-tight text-white drop-shadow-md sm:text-2xl lg:text-3xl">
+                    <h1 class="mt-0.5 sm:mt-1 text-lg font-black uppercase tracking-tight text-white drop-shadow-md sm:text-2xl lg:text-3xl">
                         SDN 2 Karangsari
                     </h1>
-                    <p class="text-xs font-medium text-emerald-100/90 sm:text-sm">
+                    <p class="text-[11px] font-medium text-emerald-100/90 sm:text-sm">
                         Kecamatan Sempu, Kabupaten Banyuwangi
                     </p>
                 </div>
@@ -94,7 +94,7 @@
             </div>
 
             {{-- Footer Kiri Bawah --}}
-            <div class="relative z-10 text-xs text-emerald-200/80">
+            <div class="relative z-10 text-[11px] sm:text-xs text-emerald-200/80 hidden sm:block">
                 <i class="fa-solid fa-location-dot mr-1.5 text-amber-400"></i>
                 Jl. Parijatah No. 45 Karangsari, Kec. Sempu, Kab. Banyuwangi, Jawa Timur
             </div>
