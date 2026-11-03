@@ -33,17 +33,36 @@
     <style>
         @media (min-width: 1024px) {
             body { overflow-x: hidden; }
+            .clip-wave {
+                clip-path: url(#waveClipPath);
+                -webkit-clip-path: url(#waveClipPath);
+            }
         }
     </style>
 </head>
 <body class="min-h-dvh bg-slate-50 text-slate-900 antialiased selection:bg-emerald-600 selection:text-white">
 
-    <div class="relative flex min-h-dvh w-full flex-col lg:flex-row overflow-hidden">
+    <div class="relative flex min-h-dvh w-full flex-col lg:flex-row overflow-hidden bg-slate-50">
+
+        {{-- Definisikan ClipPath SVG Global (Responsive berdasar objectBoundingBox 0..1) --}}
+        <svg class="absolute h-0 w-0" aria-hidden="true" focusable="false">
+            <defs>
+                <clipPath id="waveClipPath" clipPathUnits="objectBoundingBox">
+                    <path d="M 0,0 
+                             L 0.94,0 
+                             C 0.99,0.12 1.00,0.22 0.92,0.36 
+                             C 0.83,0.50 1.00,0.64 0.94,0.78 
+                             C 0.88,0.89 0.96,0.95 0.91,1.00 
+                             L 0,1.00 Z" />
+                </clipPath>
+            </defs>
+        </svg>
 
         {{-- ============================================================ --}}
         {{-- PANEL KIRI: Background Gedung + Logo Sekolah + Info Branding --}}
+        {{-- Terpotong secara presisi dengan bentuk Wave S-Curve Organik   --}}
         {{-- ============================================================ --}}
-        <div class="relative flex min-h-[360px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-6 sm:p-10 lg:min-h-dvh lg:w-[58%] xl:w-[60%] lg:p-14 xl:p-16">
+        <div class="relative flex min-h-[360px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-6 sm:p-10 lg:min-h-dvh lg:w-[58%] xl:w-[60%] lg:p-14 xl:p-16 lg:clip-wave z-10">
             
             {{-- Background Foto Gedung Sekolah --}}
             <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 hover:scale-105"
@@ -121,77 +140,35 @@
         </div>
 
         {{-- ============================================================ --}}
-        {{-- WAVE DIVIDER ORGANIK MEWAH & ELEGAN (MULTI-TIER CURVE)       --}}
-        {{-- Mengalir anggun dengan gradien emerald, emas hangat & teal   --}}
+        {{-- PITA GELOMBANG AKSEN (RIBBONS) DI TEPI KURVA CLIP           --}}
+        {{-- Menghias lekukan dengan aksen emas & emerald lembut           --}}
         {{-- ============================================================ --}}
-        <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[45%] lg:block" style="width: 240px; height: 100%;">
-            <svg class="h-full w-full" viewBox="0 0 240 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <div class="pointer-events-none absolute inset-y-0 left-[53%] xl:left-[55.5%] z-20 hidden lg:block" style="width: 120px; height: 100%;">
+            <svg class="h-full w-full" viewBox="0 0 120 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                    {{-- Gradien Emas / Amber Halus untuk Aksen Kemewahan --}}
-                    <linearGradient id="waveGold" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.85" />
-                        <stop offset="50%" stop-color="#fbbf24" stop-opacity="0.75" />
-                        <stop offset="100%" stop-color="#d97706" stop-opacity="0.9" />
+                    <linearGradient id="ribbonGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.9" />
+                        <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.6" />
                     </linearGradient>
-
-                    {{-- Gradien Emerald Mewah Berkilau --}}
-                    <linearGradient id="waveEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#047857" stop-opacity="0.9" />
-                        <stop offset="50%" stop-color="#10b981" stop-opacity="0.85" />
-                        <stop offset="100%" stop-color="#059669" stop-opacity="0.95" />
+                    <linearGradient id="ribbonEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.8" />
+                        <stop offset="100%" stop-color="#059669" stop-opacity="0.5" />
                     </linearGradient>
-
-                    {{-- Gradien Teal Sejuk --}}
-                    <linearGradient id="waveTeal" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#0d9488" stop-opacity="0.7" />
-                        <stop offset="100%" stop-color="#14b8a6" stop-opacity="0.6" />
-                    </linearGradient>
-
-                    {{-- Filter Drop Shadow Halus --}}
-                    <filter id="softShadow" x="-20%" y="-10%" width="150%" height="120%">
-                        <feDropShadow dx="-4" dy="4" stdDeviation="8" flood-color="#022c22" flood-opacity="0.25"/>
-                    </filter>
                 </defs>
 
-                <!-- Layer 1: Ambient Depth Shadow -->
-                <path d="M 0 0 
-                         C 110 130, 220 230, 90 380 
-                         C -20 510, 210 650, 110 790 
-                         C 20 900, 150 950, 110 1000 
-                         L 240 1000 L 240 0 Z" 
-                      fill="rgba(2, 44, 34, 0.2)" />
+                <!-- Garis/Pita Berkelok Aksen Emas Lembut -->
+                <path d="M 20 0 
+                         C 85 120, 95 220, 25 360 
+                         C -45 500, 95 640, 45 780 
+                         C -5 890, 60 950, 20 1000" 
+                      fill="none" stroke="url(#ribbonGold)" stroke-width="6" stroke-linecap="round" opacity="0.85" />
 
-                <!-- Layer 2: Aksen Emas Lembut (Glow Ribbons) -->
-                <path d="M 12 0 
-                         C 125 130, 225 240, 98 385 
-                         C -10 515, 205 655, 118 795 
-                         C 28 905, 145 955, 115 1000 
-                         L 240 1000 L 240 0 Z" 
-                      fill="url(#waveGold)" opacity="0.6" />
-
-                <!-- Layer 3: Aksen Teal Segar -->
-                <path d="M 28 0 
-                         C 138 135, 220 245, 108 390 
-                         C 2 520, 195 660, 128 800 
-                         C 38 910, 138 958, 120 1000 
-                         L 240 1000 L 240 0 Z" 
-                      fill="url(#waveTeal)" />
-
-                <!-- Layer 4: Ribbon Emerald Mewah dengan Shadow -->
-                <path d="M 45 0 
-                         C 152 140, 212 250, 120 398 
-                         C 15 528, 182 668, 138 808 
-                         C 50 915, 130 962, 125 1000 
-                         L 240 1000 L 240 0 Z" 
-                      fill="url(#waveEmerald)" filter="url(#softShadow)" />
-
-                <!-- Layer 5: Kurva Putih Utama yang Menyatu Halus ke Form Kanan -->
-                <path d="M 72 0 
-                         C 175 145, 200 260, 135 410 
-                         C 32 540, 165 680, 150 820 
-                         C 68 925, 120 968, 135 1000 
-                         L 240 1000 L 240 0 Z" 
-                      fill="#f8fafc" />
+                <!-- Garis/Pita Berkelok Aksen Emerald Cerah -->
+                <path d="M 32 0 
+                         C 97 120, 107 220, 37 360 
+                         C -33 500, 107 640, 57 780 
+                         C 7 890, 72 950, 32 1000" 
+                      fill="none" stroke="url(#ribbonEmerald)" stroke-width="4" stroke-linecap="round" opacity="0.7" />
             </svg>
         </div>
 
