@@ -121,41 +121,76 @@
         </div>
 
         {{-- ============================================================ --}}
-        {{-- WAVE DIVIDER ORGANIK (ALAH MYUT)                            --}}
-        {{-- Multi-layer gelombang yang memotong panel hijau ke putih     --}}
+        {{-- WAVE DIVIDER ORGANIK MEWAH & ELEGAN (MULTI-TIER CURVE)       --}}
+        {{-- Mengalir anggun dengan gradien emerald, emas hangat & teal   --}}
         {{-- ============================================================ --}}
-        <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[50%] lg:block" style="width: 160px; height: 100%;">
-            <svg class="h-full w-full" viewBox="0 0 160 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Drop shadow lembut di balik gelombang -->
+        <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[45%] lg:block" style="width: 240px; height: 100%;">
+            <svg class="h-full w-full" viewBox="0 0 240 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    {{-- Gradien Emas / Amber Halus untuk Aksen Kemewahan --}}
+                    <linearGradient id="waveGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.85" />
+                        <stop offset="50%" stop-color="#fbbf24" stop-opacity="0.75" />
+                        <stop offset="100%" stop-color="#d97706" stop-opacity="0.9" />
+                    </linearGradient>
+
+                    {{-- Gradien Emerald Mewah Berkilau --}}
+                    <linearGradient id="waveEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#047857" stop-opacity="0.9" />
+                        <stop offset="50%" stop-color="#10b981" stop-opacity="0.85" />
+                        <stop offset="100%" stop-color="#059669" stop-opacity="0.95" />
+                    </linearGradient>
+
+                    {{-- Gradien Teal Sejuk --}}
+                    <linearGradient id="waveTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#0d9488" stop-opacity="0.7" />
+                        <stop offset="100%" stop-color="#14b8a6" stop-opacity="0.6" />
+                    </linearGradient>
+
+                    {{-- Filter Drop Shadow Halus --}}
+                    <filter id="softShadow" x="-20%" y="-10%" width="150%" height="120%">
+                        <feDropShadow dx="-4" dy="4" stdDeviation="8" flood-color="#022c22" flood-opacity="0.25"/>
+                    </filter>
+                </defs>
+
+                <!-- Layer 1: Ambient Depth Shadow -->
                 <path d="M 0 0 
-                         C 80 120, 160 220, 60 360 
-                         C -30 480, 150 620, 70 760 
-                         C 0 880, 105 940, 80 1000 
-                         L 160 1000 L 160 0 Z" 
-                      fill="rgba(0, 0, 0, 0.08)" />
+                         C 110 130, 220 230, 90 380 
+                         C -20 510, 210 650, 110 790 
+                         C 20 900, 150 950, 110 1000 
+                         L 240 1000 L 240 0 Z" 
+                      fill="rgba(2, 44, 34, 0.2)" />
 
-                <!-- Layer Gelombang Aksen 1: Emerald Cerah -->
+                <!-- Layer 2: Aksen Emas Lembut (Glow Ribbons) -->
                 <path d="M 12 0 
-                         C 92 120, 155 230, 65 365 
-                         C -20 485, 142 625, 75 765 
-                         C 5 885, 98 945, 75 1000 
-                         L 160 1000 L 160 0 Z" 
-                      fill="#059669" opacity="0.4" />
+                         C 125 130, 225 240, 98 385 
+                         C -10 515, 205 655, 118 795 
+                         C 28 905, 145 955, 115 1000 
+                         L 240 1000 L 240 0 Z" 
+                      fill="url(#waveGold)" opacity="0.6" />
 
-                <!-- Layer Gelombang Aksen 2: Teal / Emas Hangat -->
+                <!-- Layer 3: Aksen Teal Segar -->
                 <path d="M 28 0 
-                         C 102 130, 150 240, 70 375 
-                         C -10 495, 135 635, 82 775 
-                         C 18 890, 92 950, 72 1000 
-                         L 160 1000 L 160 0 Z" 
-                      fill="#10b981" opacity="0.7" />
+                         C 138 135, 220 245, 108 390 
+                         C 2 520, 195 660, 128 800 
+                         C 38 910, 138 958, 120 1000 
+                         L 240 1000 L 240 0 Z" 
+                      fill="url(#waveTeal)" />
 
-                <!-- Layer Utama: Putih Bersih menyatu ke Panel Kanan -->
-                <path d="M 50 0 
-                         C 120 140, 145 250, 80 385 
-                         C 8 505, 125 645, 90 785 
-                         C 30 895, 85 955, 68 1000 
-                         L 160 1000 L 160 0 Z" 
+                <!-- Layer 4: Ribbon Emerald Mewah dengan Shadow -->
+                <path d="M 45 0 
+                         C 152 140, 212 250, 120 398 
+                         C 15 528, 182 668, 138 808 
+                         C 50 915, 130 962, 125 1000 
+                         L 240 1000 L 240 0 Z" 
+                      fill="url(#waveEmerald)" filter="url(#softShadow)" />
+
+                <!-- Layer 5: Kurva Putih Utama yang Menyatu Halus ke Form Kanan -->
+                <path d="M 72 0 
+                         C 175 145, 200 260, 135 410 
+                         C 32 540, 165 680, 150 820 
+                         C 68 925, 120 968, 135 1000 
+                         L 240 1000 L 240 0 Z" 
                       fill="#f8fafc" />
             </svg>
         </div>
