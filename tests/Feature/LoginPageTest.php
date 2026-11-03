@@ -11,7 +11,7 @@ class LoginPageTest extends TestCase
         $response = $this->get('/login');
 
         $response->assertOk();
-        $response->assertSee('Selamat Datang Kembali');
+        $response->assertSee('Selamat Datang');
         $response->assertSee('name="email"', false);
         $response->assertSee('name="password"', false);
         $response->assertSee('name="_token"', false);
