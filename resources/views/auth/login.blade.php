@@ -101,68 +101,75 @@
         </div>
 
         {{-- ========================================================================= --}}
-        {{-- WAVE DIVIDER PRESISI 100% (MENEMPEL SEMPURNA ANTARA KIRI & KANAN)         --}}
+        {{-- WAVE DIVIDER PRESISI TINGGI & TEBAL (LEBIH BESAR, CURVY & ELEGAN)        --}}
         {{-- Mengalir indah dari atas ke bawah membelah panel foto dan panel form       --}}
         {{-- ========================================================================= --}}
-        <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[99%] lg:block" style="width: 140px; height: 100%;">
-            <svg class="h-full w-full" viewBox="0 0 140 1000" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[99%] lg:block" style="width: 220px; height: 100%;">
+            <svg class="h-full w-full" viewBox="0 0 220 1000" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                    {{-- Gradien Emas Hangat --}}
+                    {{-- Gradien Emas / Amber Cerah Mewah --}}
                     <linearGradient id="waveGold" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" stop-color="#f59e0b" />
-                        <stop offset="40%" stop-color="#fbbf24" />
-                        <stop offset="80%" stop-color="#d97706" />
-                        <stop offset="100%" stop-color="#b45309" />
+                        <stop offset="35%" stop-color="#fbbf24" />
+                        <stop offset="70%" stop-color="#f59e0b" />
+                        <stop offset="100%" stop-color="#d97706" />
                     </linearGradient>
 
-                    {{-- Gradien Emerald Zamrud --}}
+                    {{-- Gradien Emerald Zamrud Pekat Elegan --}}
                     <linearGradient id="waveEmerald" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#059669" />
-                        <stop offset="50%" stop-color="#10b981" />
-                        <stop offset="100%" stop-color="#047857" />
+                        <stop offset="0%" stop-color="#047857" />
+                        <stop offset="45%" stop-color="#10b981" />
+                        <stop offset="85%" stop-color="#059669" />
+                        <stop offset="100%" stop-color="#064e3b" />
                     </linearGradient>
 
-                    {{-- Gradien Teal --}}
+                    {{-- Gradien Teal Bahari Modern --}}
                     <linearGradient id="waveTeal" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" stop-color="#0d9488" />
                         <stop offset="50%" stop-color="#14b8a6" />
                         <stop offset="100%" stop-color="#0f766e" />
                     </linearGradient>
+
+                    {{-- Shadow Lembut untuk Efek 3D Timbul --}}
+                    <filter id="waveSoftShadow" x="-20%" y="-10%" width="150%" height="120%">
+                        <feDropShadow dx="-6" dy="4" stdDeviation="8" flood-color="#022c22" flood-opacity="0.25" />
+                    </filter>
                 </defs>
 
                 {{-- Bentuk Latar Putih Pembatas (Menutup area kanan persis dengan background form #ffffff) --}}
-                <path d="M 60 0 
-                         C 130 180, 140 280, 75 420 
-                         C 10 560, 130 700, 80 840 
-                         C 50 920, 110 970, 70 1000 
-                         L 140 1000 L 140 0 Z" 
+                <path d="M 85 0 
+                         C 190 180, 205 280, 110 430 
+                         C 15 580, 185 710, 120 850 
+                         C 70 930, 155 975, 95 1000 
+                         L 220 1000 L 220 0 Z" 
                       fill="#ffffff" />
 
-                {{-- Pita 1: Emas Hangat (Paling Luar menyentuh panel kiri) --}}
-                <path d="M 60 0 
-                         C 130 180, 140 280, 75 420 
-                         C 10 560, 130 700, 80 840 
-                         C 50 920, 110 970, 70 1000" 
+                {{-- Pita 1: Emas Hangat (Paling Luar menyentuh foto gedung, lebih tebal & terlihat jelas) --}}
+                <path d="M 85 0 
+                         C 190 180, 205 280, 110 430 
+                         C 15 580, 185 710, 120 850 
+                         C 70 930, 155 975, 95 1000" 
                       stroke="url(#waveGold)" 
-                      stroke-width="14" 
-                      stroke-linecap="round" />
+                      stroke-width="24" 
+                      stroke-linecap="round"
+                      filter="url(#waveSoftShadow)" />
 
-                {{-- Pita 2: Teal Segar (Tengah) --}}
-                <path d="M 65 0 
-                         C 135 180, 145 280, 80 420 
-                         C 15 560, 135 700, 85 840 
-                         C 55 920, 115 970, 75 1000" 
+                {{-- Pita 2: Teal Bahari (Tengah) --}}
+                <path d="M 94 0 
+                         C 199 180, 214 280, 119 430 
+                         C 24 580, 194 710, 129 850 
+                         C 79 930, 164 975, 104 1000" 
                       stroke="url(#waveTeal)" 
-                      stroke-width="9" 
+                      stroke-width="15" 
                       stroke-linecap="round" />
 
-                {{-- Pita 3: Emerald Kaya (Menempel ke putih) --}}
-                <path d="M 70 0 
-                         C 140 180, 150 280, 85 420 
-                         C 20 560, 140 700, 90 840 
-                         C 60 920, 120 970, 80 1000" 
+                {{-- Pita 3: Emerald Zamrud Utama (Tebal & Menyatu Halus ke Form Putih) --}}
+                <path d="M 103 0 
+                         C 208 180, 223 280, 128 430 
+                         C 33 580, 203 710, 138 850 
+                         C 88 930, 173 975, 113 1000" 
                       stroke="url(#waveEmerald)" 
-                      stroke-width="5" 
+                      stroke-width="8" 
                       stroke-linecap="round" />
             </svg>
         </div>
