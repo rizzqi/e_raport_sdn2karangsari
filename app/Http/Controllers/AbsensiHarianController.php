@@ -298,15 +298,27 @@ class AbsensiHarianController extends Controller
 
                 $ket = isset($keteranganData[$ksId]) ? trim((string) $keteranganData[$ksId]) : null;
 
-                AbsensiHarian::updateOrCreate([
-                    'kelas_siswa_id' => $ksId,
-                    'mapel_id' => $mapelId,
-                    'tanggal' => $tanggal,
-                ], [
-                    'status' => $cleanStatus,
-                    'keterangan' => $ket,
-                    'created_by' => $userId,
-                ]);
+                // Gunakan first()+fill()+save() alih-alih updateOrCreate() agar aman
+                // dengan partial unique index pada SQLite maupun MySQL/MariaDB.
+                // updateOrCreate() menggunakan INSERT lalu retry saat duplicate key,
+                // yang tidak kompatibel dengan partial unique index di SQLite.
+                $record = AbsensiHarian::where('kelas_siswa_id', $ksId)
+                    ->whereDate('tanggal', $tanggal)
+                    ->when($mapelId === null, fn ($q) => $q->whereNull('mapel_id'))
+                    ->when($mapelId !== null, fn ($q) => $q->where('mapel_id', $mapelId))
+                    ->first();
+
+                if ($record === null) {
+                    $record = new AbsensiHarian;
+                    $record->kelas_siswa_id = $ksId;
+                    $record->mapel_id = $mapelId;
+                    $record->tanggal = $tanggal;
+                    $record->created_by = $userId;
+                }
+
+                $record->status = $cleanStatus;
+                $record->keterangan = $ket;
+                $record->save();
 
                 $updatedCount++;
             }
