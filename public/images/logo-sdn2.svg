@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Outer circle border -->
+  <circle cx="100" cy="100" r="96" fill="#065f46" stroke="#d1fae5" stroke-width="3"/>
+  <!-- Inner ring -->
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="4 2"/>
+
+  <!-- Roof / Atap sekolah -->
+  <polygon points="100,28 148,60 52,60" fill="#d1fae5"/>
+  <polygon points="100,22 152,62 48,62" fill="none" stroke="#6ee7b7" stroke-width="1.5"/>
+
+  <!-- Flag pole -->
+  <rect x="98" y="22" width="4" height="12" fill="#fbbf24" rx="1"/>
+  <!-- Flag -->
+  <polygon points="102,22 118,26 102,30" fill="#ef4444"/>
+
+  <!-- Building body -->
+  <rect x="58" y="60" width="84" height="52" fill="#ecfdf5" rx="2"/>
+  <!-- Pillar left -->
+  <rect x="62" y="64" width="8" height="48" fill="#6ee7b7" rx="1"/>
+  <!-- Pillar center-left -->
+  <rect x="78" y="64" width="8" height="48" fill="#6ee7b7" rx="1"/>
+  <!-- Pillar center-right -->
+  <rect x="114" y="64" width="8" height="48" fill="#6ee7b7" rx="1"/>
+  <!-- Pillar right -->
+  <rect x="130" y="64" width="8" height="48" fill="#6ee7b7" rx="1"/>
+
+  <!-- Windows row -->
+  <rect x="68" y="70" width="8" height="10" fill="#a7f3d0" rx="1"/>
+  <rect x="86" y="70" width="8" height="10" fill="#a7f3d0" rx="1"/>
+  <rect x="104" y="70" width="8" height="10" fill="#a7f3d0" rx="1"/>
+  <rect x="122" y="70" width="8" height="10" fill="#a7f3d0" rx="1"/>
+
+  <!-- Door -->
+  <rect x="90" y="89" width="20" height="23" fill="#6ee7b7" rx="2"/>
+  <circle cx="100" cy="101" r="1.5" fill="#065f46"/>
+
+  <!-- Ground -->
+  <rect x="48" y="112" width="104" height="4" fill="#34d399" rx="1"/>
+
+  <!-- Stars / ornament top -->
+  <circle cx="100" cy="48" r="2.5" fill="#fbbf24"/>
+
+  <!-- Text: SD NEGERI 2 -->
+  <text x="100" y="135" text-anchor="middle" font-family="'Arial', sans-serif" font-size="9.5" font-weight="900" fill="#d1fae5" letter-spacing="1.5">SD NEGERI 2</text>
+
+  <!-- Text: KARANGSARI -->
+  <text x="100" y="148" text-anchor="middle" font-family="'Arial', sans-serif" font-size="8" font-weight="700" fill="#6ee7b7" letter-spacing="1.2">KARANGSARI</text>
+
+  <!-- Text: BANYUWANGI kecil -->
+  <text x="100" y="160" text-anchor="middle" font-family="'Arial', sans-serif" font-size="6.5" fill="#34d399" letter-spacing="0.8">BANYUWANGI</text>
+
+  <!-- Ornament bottom arc -->
+  <path d="M 55 170 Q 100 180 145 170" stroke="#34d399" stroke-width="1.5" fill="none"/>
+</svg>
+

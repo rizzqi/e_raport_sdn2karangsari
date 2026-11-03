@@ -27,127 +27,106 @@
 
     @vite(['resources/css/app.css'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body { overflow: hidden; }
+        @media (max-width: 1023px) { body { overflow: auto; } }
+    </style>
 </head>
-<body class="grid min-h-dvh bg-slate-50 text-slate-900 antialiased selection:bg-emerald-600 selection:text-white lg:grid-cols-[47%_53%]">
+<body class="min-h-dvh bg-white text-slate-900 antialiased selection:bg-emerald-600 selection:text-white">
 
-    <!-- PANEL KIRI: banner ramping di mobile, branding penuh di desktop -->
-    <aside class="relative overflow-hidden bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950 text-white">
-        <div class="pointer-events-none absolute inset-0">
-            <div class="absolute -top-40 -left-40 size-96 rounded-full bg-teal-500/20 blur-3xl"></div>
-            <div class="absolute bottom-0 right-0 size-80 rounded-full bg-emerald-400/10 blur-3xl"></div>
-            <div class="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:22px_22px]"></div>
-        </div>
+    <div class="relative flex min-h-dvh w-full overflow-hidden">
 
-        <div class="relative z-10 flex h-full flex-col p-6 sm:p-10 lg:p-12">
-            <div class="flex items-center gap-4 lg:flex-col lg:items-start lg:gap-5 lg:pt-12">
-                <div class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 p-2 shadow-lg shadow-emerald-950/50 ring-1 ring-white/15 lg:size-20">
-                    @if($logoUrl)
-                        <img src="{{ $logoUrl }}" alt="Logo SDN 2 Karangsari" class="h-full w-full object-contain">
-                    @else
-                        <i class="fa-solid fa-school text-2xl text-emerald-300"></i>
-                    @endif
-                </div>
-                <div class="lg:mt-6">
-                    <h1 class="text-lg font-extrabold uppercase leading-snug tracking-tight lg:text-2xl">SD Negeri 2 Karangsari</h1>
-                    <p class="mt-1 text-xs font-semibold uppercase tracking-wider text-emerald-300 lg:text-sm">E-Raport Kurikulum Merdeka</p>
-                    <p class="mt-1 hidden text-xs text-emerald-100/60 lg:block">Kecamatan Sempu, Kabupaten Banyuwangi</p>
+        {{-- ============================================================ --}}
+        {{-- PANEL KIRI: Logo + Form Login (latar putih bersih)           --}}
+        {{-- ============================================================ --}}
+        <div class="relative z-10 flex w-full flex-col bg-white lg:w-[48%] xl:w-[44%]">
+
+            {{-- Header logo --}}
+            <div class="flex items-center gap-3 px-8 pt-8 sm:px-12 lg:px-10 xl:px-14">
+                <img src="{{ asset('images/logo-sdn2.svg') }}"
+                     alt="Logo SD Negeri 2 Karangsari"
+                     class="h-14 w-14 shrink-0 drop-shadow-md">
+                <div class="leading-tight">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-emerald-700">SD Negeri 2</p>
+                    <p class="text-sm font-extrabold uppercase tracking-wide text-slate-800">Karangsari</p>
+                    <p class="text-[10px] text-slate-400">Sempu, Banyuwangi</p>
                 </div>
             </div>
 
-            <div class="my-auto hidden flex-col gap-4 lg:my-8 lg:flex">
-                <p class="text-[11px] font-bold uppercase tracking-widest text-emerald-300/80">Aplikasi untuk guru &amp; admin</p>
-                <ul class="space-y-3 lg:space-y-5">
-                    <li class="flex items-center gap-3.5">
-                        <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15"><i class="fa-solid fa-file-pen text-sm text-emerald-300"></i></span>
-                        <div><p class="text-sm font-semibold">Kelola nilai &amp; raport digital</p><p class="text-xs text-emerald-100/60">Formatif, harian, hingga rekap semester</p></div>
-                    </li>
-                    <li class="flex items-center gap-3.5">
-                        <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15"><i class="fa-solid fa-calendar-check text-sm text-emerald-300"></i></span>
-                        <div><p class="text-sm font-semibold">Absensi harian &amp; rekap bulanan</p><p class="text-xs text-emerald-100/60">Kehadiran siswa tercatat rapi</p></div>
-                    </li>
-                    <li class="flex items-center gap-3.5">
-                        <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15"><i class="fa-solid fa-print text-sm text-emerald-300"></i></span>
-                        <div><p class="text-sm font-semibold">Cetak raport, STS &amp; SAS</p><p class="text-xs text-emerald-100/60">Satu klik, siap cetak</p></div>
-                    </li>
-                </ul>
-            </div>
+            {{-- Form area --}}
+            <div class="my-auto px-8 py-10 sm:px-12 lg:px-10 xl:px-14">
+                <div class="mb-7">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Selamat Datang</h1>
+                    <p class="mt-1.5 text-sm text-slate-500">Masuk untuk mengelola nilai, raport, dan absensi.</p>
+                </div>
 
-            <div class="mt-auto hidden text-xs text-emerald-100/50 lg:block">
-                Jl. Parijatah No. 45 Karangsari, Sempu, Banyuwangi
-            </div>
-        </div>
-    </aside>
-
-    <!-- PANEL KANAN: form login -->
-    <main class="flex min-h-dvh flex-col px-4 py-8 sm:px-10 lg:px-16 xl:px-32">
-        <div class="mx-auto my-auto w-full max-w-md">
-            <div class="mb-6 sm:mb-8">
-                <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Selamat Datang Kembali</h2>
-                <p class="mt-1 text-sm text-slate-500">Masuk untuk mengelola nilai, raport, dan absensi.</p>
-            </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-8">
+                {{-- Alert: success --}}
                 @if(session('success'))
-                    <div class="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded-xl flex items-start gap-2.5 shadow-2xs">
-                        <div class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <div class="mb-4 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs shadow-2xs">
+                        <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
                             <i class="fa-solid fa-circle-check text-xs"></i>
                         </div>
-                        <div class="flex-1 min-w-0">
+                        <div class="min-w-0 flex-1">
                             <p class="font-bold text-emerald-950">Berhasil</p>
-                            <p class="text-[11px] text-emerald-700 mt-0.5">{{ session('success') }}</p>
+                            <p class="mt-0.5 text-[11px] text-emerald-700">{{ session('success') }}</p>
                         </div>
-                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="text-emerald-500 hover:text-emerald-700 transition p-0.5">
+                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="p-0.5 text-emerald-500 transition hover:text-emerald-700">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
                 @endif
 
+                {{-- Alert: info --}}
                 @if(session('info'))
-                    <div class="mb-4 p-3.5 bg-blue-50 border border-blue-200 text-blue-900 text-xs rounded-xl flex items-start gap-2.5 shadow-2xs">
-                        <div class="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <div class="mb-4 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 p-3.5 text-xs shadow-2xs">
+                        <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
                             <i class="fa-solid fa-circle-info text-xs"></i>
                         </div>
-                        <div class="flex-1 min-w-0">
+                        <div class="min-w-0 flex-1">
                             <p class="font-bold text-blue-950">Informasi</p>
-                            <p class="text-[11px] text-blue-700 mt-0.5">{{ session('info') }}</p>
+                            <p class="mt-0.5 text-[11px] text-blue-700">{{ session('info') }}</p>
                         </div>
-                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="text-blue-500 hover:text-blue-700 transition p-0.5">
+                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="p-0.5 text-blue-500 transition hover:text-blue-700">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
                 @endif
 
+                {{-- Alert: warning --}}
                 @if(session('warning'))
-                    <div class="mb-4 p-3.5 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl flex items-start gap-2.5 shadow-2xs">
-                        <div class="w-6 h-6 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <div class="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs shadow-2xs">
+                        <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
                             <i class="fa-solid fa-triangle-exclamation text-xs"></i>
                         </div>
-                        <div class="flex-1 min-w-0">
+                        <div class="min-w-0 flex-1">
                             <p class="font-bold text-amber-950">Peringatan</p>
-                            <p class="text-[11px] text-amber-700 mt-0.5">{{ session('warning') }}</p>
+                            <p class="mt-0.5 text-[11px] text-amber-700">{{ session('warning') }}</p>
                         </div>
-                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="text-amber-500 hover:text-amber-700 transition p-0.5">
+                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="p-0.5 text-amber-500 transition hover:text-amber-700">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
                 @endif
 
+                {{-- Alert: errors --}}
                 @if(isset($errors) && $errors->any())
-                    <div class="mb-4 p-3.5 bg-rose-50 border border-rose-200 text-rose-900 text-xs rounded-xl flex items-start gap-2.5 shadow-2xs">
-                        <div class="w-6 h-6 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <div class="mb-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs shadow-2xs">
+                        <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-600">
                             <i class="fa-solid fa-circle-exclamation text-xs"></i>
                         </div>
-                        <div class="flex-1 min-w-0">
+                        <div class="min-w-0 flex-1">
                             <p class="font-bold text-rose-950">Gagal Masuk</p>
-                            <p class="text-[11px] text-rose-700 mt-0.5">{{ $errors->first() }}</p>
+                            <p class="mt-0.5 text-[11px] text-rose-700">{{ $errors->first() }}</p>
                         </div>
-                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="text-rose-500 hover:text-rose-700 transition p-0.5">
+                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="p-0.5 text-rose-500 transition hover:text-rose-700">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
                 @endif
 
-                <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
+                {{-- Login form --}}
+                <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
                     @csrf
 
                     <div>
@@ -181,7 +160,7 @@
 
                     <div class="flex items-center pt-0.5">
                         <label class="flex cursor-pointer select-none items-center">
-                            <input type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 mr-2">
+                            <input type="checkbox" name="remember" class="mr-2 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
                             <span class="text-sm font-medium text-slate-700">Ingat Saya</span>
                         </label>
                     </div>
@@ -194,7 +173,7 @@
                 </form>
 
                 @if(config('app.demo_accounts'))
-                <!-- Akses Cepat (Rapi & Terpadu) -->
+                {{-- Divider demo --}}
                 <div class="relative my-5">
                     <div class="absolute inset-0 flex items-center">
                         <div class="w-full border-t border-slate-200"></div>
@@ -206,13 +185,12 @@
                     </div>
                 </div>
 
-                <!-- Status Helper Text -->
                 <div class="flex items-center justify-between mb-2 px-0.5 min-h-[18px]">
                     <span class="text-[10px] font-semibold text-slate-500">Klik untuk isi otomatis:</span>
                     <span id="quick-status" class="text-[10px] font-semibold text-emerald-600 transition-all duration-200"></span>
                 </div>
 
-                <!-- Akun Administrator -->
+                {{-- Admin --}}
                 <button type="button" onclick="setDemo('admin@sdn2karangsari.sch.id', 'password', 'Administrator')"
                     class="w-full mb-2 p-2.5 rounded-xl border border-slate-200/90 bg-slate-50/80 hover:bg-emerald-50/50 hover:border-emerald-300 text-left transition flex items-center justify-between group">
                     <div class="flex items-center gap-2.5 min-w-0">
@@ -233,77 +211,115 @@
                     </span>
                 </button>
 
-                <!-- Akun Wali Kelas 1 s/d 6 -->
+                {{-- Wali kelas grid --}}
                 <div class="grid grid-cols-2 gap-2">
-                    <!-- Kelas 1 -->
-                    <button type="button" onclick="setDemo('wali1@sdn2karangsari.sch.id', 'password', 'Kelas 1')"
+                    @foreach([
+                        ['wali1@sdn2karangsari.sch.id', 'Kelas 1', 'Dinda Asni F.', '1'],
+                        ['wali2@sdn2karangsari.sch.id', 'Kelas 2', 'Umi Faiqotur R.', '2'],
+                        ['wali3@sdn2karangsari.sch.id', 'Kelas 3', 'Erna Sugiartiningsih', '3'],
+                        ['wali4@sdn2karangsari.sch.id', 'Kelas 4', 'Wahyu Siska N.', '4'],
+                        ['wali5@sdn2karangsari.sch.id', 'Kelas 5', 'Kiki Susanto', '5'],
+                        ['wali6@sdn2karangsari.sch.id', 'Kelas 6', 'Diah Puji L.', '6'],
+                    ] as [$email, $label, $teacher, $num])
+                    <button type="button" onclick="setDemo('{{ $email }}', 'password', '{{ $label }}')"
                         class="p-2 rounded-xl border border-slate-200/90 bg-slate-50/80 hover:bg-emerald-50/50 hover:border-emerald-300 text-left transition flex items-center gap-2 group">
-                        <div class="w-7 h-7 rounded-lg bg-slate-200/80 group-hover:bg-emerald-600 group-hover:text-white text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 transition">1</div>
+                        <div class="w-7 h-7 rounded-lg bg-slate-200/80 group-hover:bg-emerald-600 group-hover:text-white text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 transition">{{ $num }}</div>
                         <div class="min-w-0 flex-1">
-                            <span class="font-bold text-xs text-slate-800 block truncate group-hover:text-emerald-800 transition">Kelas 1</span>
-                            <span class="text-[10px] text-slate-500 block truncate" title="Dinda Asni F, S.Pd.">Dinda Asni F.</span>
+                            <span class="font-bold text-xs text-slate-800 block truncate group-hover:text-emerald-800 transition">{{ $label }}</span>
+                            <span class="text-[10px] text-slate-500 block truncate">{{ $teacher }}</span>
                         </div>
                     </button>
-
-                    <!-- Kelas 2 -->
-                    <button type="button" onclick="setDemo('wali2@sdn2karangsari.sch.id', 'password', 'Kelas 2')"
-                        class="p-2 rounded-xl border border-slate-200/90 bg-slate-50/80 hover:bg-emerald-50/50 hover:border-emerald-300 text-left transition flex items-center gap-2 group">
-                        <div class="w-7 h-7 rounded-lg bg-slate-200/80 group-hover:bg-emerald-600 group-hover:text-white text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 transition">2</div>
-                        <div class="min-w-0 flex-1">
-                            <span class="font-bold text-xs text-slate-800 block truncate group-hover:text-emerald-800 transition">Kelas 2</span>
-                            <span class="text-[10px] text-slate-500 block truncate" title="Umi Faiqotur Rizkiyani, S.Pd">Umi Faiqotur R.</span>
-                        </div>
-                    </button>
-
-                    <!-- Kelas 3 -->
-                    <button type="button" onclick="setDemo('wali3@sdn2karangsari.sch.id', 'password', 'Kelas 3')"
-                        class="p-2 rounded-xl border border-slate-200/90 bg-slate-50/80 hover:bg-emerald-50/50 hover:border-emerald-300 text-left transition flex items-center gap-2 group">
-                        <div class="w-7 h-7 rounded-lg bg-slate-200/80 group-hover:bg-emerald-600 group-hover:text-white text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 transition">3</div>
-                        <div class="min-w-0 flex-1">
-                            <span class="font-bold text-xs text-slate-800 block truncate group-hover:text-emerald-800 transition">Kelas 3</span>
-                            <span class="text-[10px] text-slate-500 block truncate" title="Erna Sugiartiningsih, S.Pd">Erna Sugiartiningsih</span>
-                        </div>
-                    </button>
-
-                    <!-- Kelas 4 -->
-                    <button type="button" onclick="setDemo('wali4@sdn2karangsari.sch.id', 'password', 'Kelas 4')"
-                        class="p-2 rounded-xl border border-slate-200/90 bg-slate-50/80 hover:bg-emerald-50/50 hover:border-emerald-300 text-left transition flex items-center gap-2 group">
-                        <div class="w-7 h-7 rounded-lg bg-slate-200/80 group-hover:bg-emerald-600 group-hover:text-white text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 transition">4</div>
-                        <div class="min-w-0 flex-1">
-                            <span class="font-bold text-xs text-slate-800 block truncate group-hover:text-emerald-800 transition">Kelas 4</span>
-                            <span class="text-[10px] text-slate-500 block truncate" title="Wahyu Siska Novita, S.Pd.">Wahyu Siska N.</span>
-                        </div>
-                    </button>
-
-                    <!-- Kelas 5 -->
-                    <button type="button" onclick="setDemo('wali5@sdn2karangsari.sch.id', 'password', 'Kelas 5')"
-                        class="p-2 rounded-xl border border-slate-200/90 bg-slate-50/80 hover:bg-emerald-50/50 hover:border-emerald-300 text-left transition flex items-center gap-2 group">
-                        <div class="w-7 h-7 rounded-lg bg-slate-200/80 group-hover:bg-emerald-600 group-hover:text-white text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 transition">5</div>
-                        <div class="min-w-0 flex-1">
-                            <span class="font-bold text-xs text-slate-800 block truncate group-hover:text-emerald-800 transition">Kelas 5</span>
-                            <span class="text-[10px] text-slate-500 block truncate" title="Kiki Susanto, S.Pd">Kiki Susanto</span>
-                        </div>
-                    </button>
-
-                    <!-- Kelas 6 -->
-                    <button type="button" onclick="setDemo('wali6@sdn2karangsari.sch.id', 'password', 'Kelas 6')"
-                        class="p-2 rounded-xl border border-slate-200/90 bg-slate-50/80 hover:bg-emerald-50/50 hover:border-emerald-300 text-left transition flex items-center gap-2 group">
-                        <div class="w-7 h-7 rounded-lg bg-slate-200/80 group-hover:bg-emerald-600 group-hover:text-white text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 transition">6</div>
-                        <div class="min-w-0 flex-1">
-                            <span class="font-bold text-xs text-slate-800 block truncate group-hover:text-emerald-800 transition">Kelas 6</span>
-                            <span class="text-[10px] text-slate-500 block truncate" title="Diah Puji Lestari, S.Pd">Diah Puji L.</span>
-                        </div>
-                    </button>
+                    @endforeach
                 </div>
                 @endif
             </div>
 
-            <footer class="mt-8 space-y-1 text-center text-xs text-slate-500">
-                <p class="font-medium text-slate-600">&copy; {{ date('Y') }} SD Negeri 2 Karangsari &bull; Kurikulum Merdeka</p>
-                <p class="text-[11px] text-slate-400">Jl. Parijatah No. 45 Karangsari, Sempu, Banyuwangi</p>
+            {{-- Footer --}}
+            <footer class="px-8 pb-6 text-center text-xs text-slate-400 sm:px-12 lg:px-10 xl:px-14">
+                <p>&copy; {{ date('Y') }} SD Negeri 2 Karangsari &bull; Kurikulum Merdeka</p>
+                <p class="text-[10px]">Jl. Parijatah No. 45 Karangsari, Sempu, Banyuwangi</p>
             </footer>
         </div>
-    </main>
+
+        {{-- ============================================================ --}}
+        {{-- WAVE DIVIDER SVG — absolut, menutupi batas kiri-kanan        --}}
+        {{-- ============================================================ --}}
+        <div class="pointer-events-none absolute inset-y-0 left-0 z-20 hidden lg:block" style="width: 56%; min-width: 400px;">
+            <svg class="absolute inset-y-0 right-0 h-full" style="width: 120px; margin-right: -1px;"
+                 viewBox="0 0 120 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Shadow/depth layer -->
+                <path d="M 0 0 L 60 0
+                         C 100 100, 20 200, 80 300
+                         C 120 380, 10 470, 70 560
+                         C 110 640, 20 730, 75 820
+                         C 95 860, 60 880, 60 900
+                         L 0 900 Z"
+                      fill="rgba(0,0,0,0.15)"/>
+                <!-- Emerald accent wave behind white -->
+                <path d="M 0 0 L 55 0
+                         C 95 100, 15 200, 75 300
+                         C 115 380, 5 470, 65 560
+                         C 105 640, 15 730, 70 820
+                         C 90 860, 55 880, 55 900
+                         L 0 900 Z"
+                      fill="#059669"/>
+                <!-- Main white wave -->
+                <path d="M 0 0 L 48 0
+                         C 90 100, 8 200, 68 300
+                         C 108 380, 0 470, 58 560
+                         C 100 640, 8 730, 64 820
+                         C 86 860, 50 880, 50 900
+                         L 0 900 Z"
+                      fill="white"/>
+            </svg>
+        </div>
+
+        {{-- ============================================================ --}}
+        {{-- PANEL KANAN: Foto Gedung Sekolah                             --}}
+        {{-- ============================================================ --}}
+        <div class="relative hidden flex-1 overflow-hidden lg:flex">
+            {{-- Background gedung --}}
+            <div class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                 style="background-image: url('{{ asset('images/gedung.jpg') }}');">
+            </div>
+
+            {{-- Overlay gradien hijau agar teks terbaca --}}
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-950/60 via-emerald-900/30 to-transparent"></div>
+
+            {{-- Konten atas (badge) --}}
+            <div class="relative z-10 flex w-full flex-col justify-between p-10">
+                <div class="flex justify-end">
+                    <div class="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold text-white backdrop-blur-sm ring-1 ring-white/20">
+                        <i class="fa-solid fa-graduation-cap text-emerald-300"></i>
+                        <span>Kurikulum Merdeka</span>
+                    </div>
+                </div>
+
+                {{-- Quote/tagline bawah --}}
+                <div class="max-w-xs">
+                    <p class="text-2xl font-extrabold leading-tight text-white drop-shadow-lg sm:text-3xl">
+                        E-Raport<br>
+                        <span class="text-emerald-300">Digital</span>
+                    </p>
+                    <p class="mt-2 text-sm font-medium text-white/80">
+                        Sistem penilaian dan pelaporan berbasis digital untuk SD Negeri 2 Karangsari.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/80 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                            <i class="fa-solid fa-file-pen text-[9px]"></i> Nilai & Raport
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/80 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                            <i class="fa-solid fa-calendar-check text-[9px]"></i> Absensi
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/80 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                            <i class="fa-solid fa-print text-[9px]"></i> Cetak
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
 
     <script>
         @if(config('app.demo_accounts'))
@@ -313,7 +329,6 @@
             emailInput.value = email;
             passInput.value = pass;
 
-            // Highlight visual feedback
             emailInput.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
             passInput.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
             setTimeout(() => {
@@ -321,13 +336,10 @@
                 passInput.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
             }, 600);
 
-            // Feedback status text
             const statusEl = document.getElementById('quick-status');
             if (statusEl) {
                 statusEl.innerHTML = '<i class="fa-solid fa-check mr-1"></i>' + (label || 'Akun') + ' siap';
-                setTimeout(() => {
-                    statusEl.textContent = '';
-                }, 2500);
+                setTimeout(() => { statusEl.textContent = ''; }, 2500);
             }
         }
         @endif
