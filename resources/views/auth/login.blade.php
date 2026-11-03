@@ -54,20 +54,20 @@
                 </div>
             </div>
 
-            <div class="my-auto hidden flex-col gap-4 sm:flex lg:my-8">
+            <div class="my-auto hidden flex-col gap-4 lg:my-8 lg:flex">
                 <p class="text-[11px] font-bold uppercase tracking-widest text-emerald-300/80">Aplikasi untuk guru &amp; admin</p>
                 <ul class="space-y-3 lg:space-y-5">
                     <li class="flex items-center gap-3.5">
                         <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15"><i class="fa-solid fa-file-pen text-sm text-emerald-300"></i></span>
-                        <span><p class="text-sm font-semibold">Kelola nilai &amp; raport digital</p><p class="text-xs text-emerald-100/60">Formatif, harian, hingga rekap semester</p></span>
+                        <div><p class="text-sm font-semibold">Kelola nilai &amp; raport digital</p><p class="text-xs text-emerald-100/60">Formatif, harian, hingga rekap semester</p></div>
                     </li>
                     <li class="flex items-center gap-3.5">
                         <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15"><i class="fa-solid fa-calendar-check text-sm text-emerald-300"></i></span>
-                        <span><p class="text-sm font-semibold">Absensi harian &amp; rekap bulanan</p><p class="text-xs text-emerald-100/60">Kehadiran siswa tercatat rapi</p></span>
+                        <div><p class="text-sm font-semibold">Absensi harian &amp; rekap bulanan</p><p class="text-xs text-emerald-100/60">Kehadiran siswa tercatat rapi</p></div>
                     </li>
                     <li class="flex items-center gap-3.5">
                         <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15"><i class="fa-solid fa-print text-sm text-emerald-300"></i></span>
-                        <span><p class="text-sm font-semibold">Cetak raport, STS &amp; SAS</p><p class="text-xs text-emerald-100/60">Satu klik, siap cetak</p></span>
+                        <div><p class="text-sm font-semibold">Cetak raport, STS &amp; SAS</p><p class="text-xs text-emerald-100/60">Satu klik, siap cetak</p></div>
                     </li>
                 </ul>
             </div>
@@ -96,7 +96,7 @@
                             <p class="font-bold text-emerald-950">Berhasil</p>
                             <p class="text-[11px] text-emerald-700 mt-0.5">{{ session('success') }}</p>
                         </div>
-                        <button onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700 transition p-0.5">
+                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="text-emerald-500 hover:text-emerald-700 transition p-0.5">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
@@ -111,7 +111,7 @@
                             <p class="font-bold text-blue-950">Informasi</p>
                             <p class="text-[11px] text-blue-700 mt-0.5">{{ session('info') }}</p>
                         </div>
-                        <button onclick="this.parentElement.remove()" class="text-blue-500 hover:text-blue-700 transition p-0.5">
+                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="text-blue-500 hover:text-blue-700 transition p-0.5">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
@@ -126,7 +126,7 @@
                             <p class="font-bold text-amber-950">Peringatan</p>
                             <p class="text-[11px] text-amber-700 mt-0.5">{{ session('warning') }}</p>
                         </div>
-                        <button onclick="this.parentElement.remove()" class="text-amber-500 hover:text-amber-700 transition p-0.5">
+                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="text-amber-500 hover:text-amber-700 transition p-0.5">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
@@ -141,7 +141,7 @@
                             <p class="font-bold text-rose-950">Gagal Masuk</p>
                             <p class="text-[11px] text-rose-700 mt-0.5">{{ $errors->first() }}</p>
                         </div>
-                        <button onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 transition p-0.5">
+                        <button onclick="this.parentElement.remove()" aria-label="Tutup notifikasi" class="text-rose-500 hover:text-rose-700 transition p-0.5">
                             <i class="fa-solid fa-xmark text-xs"></i>
                         </button>
                     </div>
@@ -173,7 +173,7 @@
                                 placeholder="••••••••">
                             <button type="button" onclick="togglePassword()"
                                 class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 transition hover:text-slate-600"
-                                title="Tampilkan / Sembunyikan sandi">
+                                title="Tampilkan / Sembunyikan sandi" aria-label="Tampilkan kata sandi">
                                 <i id="eye-icon" class="fa-regular fa-eye text-sm"></i>
                             </button>
                         </div>
