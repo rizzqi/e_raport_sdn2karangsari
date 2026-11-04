@@ -14,7 +14,7 @@ if exist "%CONFIG_FILE%" (
 
 if "%SERVER_IP%"=="" (
     echo.
-    echo Masukkan IP Tailscale Server Anda (contoh: 100.80.25.10):
+    echo Masukkan IP Tailscale Server Anda [contoh: 100.80.25.10]:
     set /p SERVER_IP="IP Server: "
     if not "!SERVER_IP!"=="" (
         echo !SERVER_IP!>"%CONFIG_FILE%"

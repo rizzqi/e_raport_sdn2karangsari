@@ -67,25 +67,29 @@ Sistem Informasi Pengolahan Nilai dan Pencetakan Raport Digital Kurikulum Merdek
 
 ## 🛠️ Instalasi & Menjalankan Aplikasi
 
-1. **Jalankan Apache & MySQL di XAMPP Control Panel**.
-2. **Konfigurasi Database** di `.env`:
+### Penggunaan Lokal (Menggunakan SQLite - Praktis Tanpa XAMPP)
+1. **Konfigurasi Database** di `.env`:
    ```env
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=e_raport_sdn2karangsari
-   DB_USERNAME=root
-   DB_PASSWORD=
+   DB_CONNECTION=sqlite
    ```
-3. **Migrasi & Seeding Data Awal**:
-   ```bash
-   php artisan migrate:fresh --seed
-   ```
-4. **Jalankan Server Lokal**:
+2. **Siapkan Database**:
+   - Untuk data riil dari backup:
+     ```bash
+     php artisan db:import-backup --fresh
+     ```
+   - Atau untuk migrasi standar dengan data seeder demo:
+     ```bash
+     php artisan migrate:fresh --seed
+     ```
+3. **Jalankan Server Lokal**:
    ```bash
    php artisan serve
    ```
-   Buka peramban di: `http://127.0.0.1:8000` atau melalui Apache XAMPP: `http://localhost/e_raport_sdn2karangsari/public/`.
+   Atau cukup klik dua kali file `Jalankan_eRaport.bat`.
+   Buka peramban di: `http://127.0.0.1:8000`.
+
+### Penggunaan di Server Produksi (MySQL / MariaDB)
+Atur `.env` server Anda sesuai kredensial database (contoh: `DB_CONNECTION=mysql`, `DB_DATABASE=db_eraport`). Deploy otomatis dapat menggunakan skrip `deploy.sh` atau `deploy-server.ps1`.
 
 ---
 
