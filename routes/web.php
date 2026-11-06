@@ -5,6 +5,7 @@ use App\Http\Controllers\AbsensiHarianController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KelasController;
+use App\Http\Controllers\KenaikanKelasController;
 use App\Http\Controllers\MataPelajaranController;
 use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\NilaiFormatifBulananController;
@@ -68,6 +69,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/download-docx/{kelasSiswa}', [RaportController::class, 'downloadDocx'])->name('raport.download.docx');
         Route::get('/download-pdf/{kelasSiswa}', [RaportController::class, 'downloadPdf'])->name('raport.download.pdf');
         Route::get('/riwayat', [RaportController::class, 'riwayatCetak'])->name('raport.riwayat');
+        Route::delete('/riwayat', [RaportController::class, 'kosongkanRiwayat'])->name('raport.riwayat.kosongkan');
+        Route::delete('/riwayat/{raport}', [RaportController::class, 'hapusRiwayat'])->name('raport.riwayat.hapus');
     });
 
     // Modul Kelas & Siswa (Lihat Data)
@@ -152,6 +155,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/kelas/{kelas}/penempatan', [PenempatanSiswaController::class, 'index'])->name('penempatan.index');
         Route::post('/kelas/{kelas}/penempatan', [PenempatanSiswaController::class, 'assign'])->name('penempatan.assign');
         Route::delete('/kelas/{kelas}/penempatan/{kelasSiswa}', [PenempatanSiswaController::class, 'remove'])->name('penempatan.remove');
+
+        // Kenaikan Kelas, Pemindahan Rombel, & Kelulusan Siswa (HANYA ADMIN)
+        Route::get('/kelas-mutasi', [KenaikanKelasController::class, 'index'])->name('kelas.mutasi.index');
+        Route::post('/kelas-mutasi/kenaikan', [KenaikanKelasController::class, 'prosesKenaikan'])->name('kelas.mutasi.kenaikan');
+        Route::post('/kelas-mutasi/kelulusan', [KenaikanKelasController::class, 'prosesKelulusan'])->name('kelas.mutasi.kelulusan');
 
         // Input & Edit Kelas
         Route::post('/kelas', [KelasController::class, 'store'])->name('kelas.store');

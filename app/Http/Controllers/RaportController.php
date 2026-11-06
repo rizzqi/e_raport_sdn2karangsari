@@ -13,6 +13,7 @@ use App\Services\HitungNilaiService;
 use App\Services\RaportDocxService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class RaportController extends Controller
@@ -393,6 +394,78 @@ class RaportController extends Controller
         $riwayatList = $query->paginate(25);
 
         return view('raport.riwayat', compact('riwayatList'));
+    }
+
+    /**
+     * Kosongkan seluruh riwayat cetak raport sesuai wewenang peran
+     */
+    public function kosongkanRiwayat(Request $request): RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user) {
+            abort(403);
+        }
+
+        $query = Raport::query();
+
+        if ($user->isWali()) {
+            $waliKelasIds = $user->kelasWali()->pluck('id');
+            $query->whereHas('kelasSiswa', function ($q) use ($waliKelasIds) {
+                $q->whereIn('kelas_id', $waliKelasIds);
+            });
+        } elseif (! $user->isAdmin() && ! $user->isKepsek()) {
+            abort(403, 'Anda tidak memiliki hak untuk mengosongkan riwayat cetak.');
+        }
+
+        if ($request->filled('periode') && in_array(strtolower($request->periode), ['sts', 'sas'])) {
+            $query->where('periode', strtolower($request->periode));
+            $periodeLabel = strtoupper($request->periode);
+            $pesan = "Riwayat cetak raport periode {$periodeLabel} berhasil dikosongkan.";
+        } else {
+            $pesan = 'Seluruh riwayat cetak raport berhasil dikosongkan.';
+        }
+
+        $records = (clone $query)->get();
+        foreach ($records as $r) {
+            if ($r->file_path && $r->file_path !== 'PDF_STREAM' && file_exists($r->file_path)) {
+                @unlink($r->file_path);
+            }
+        }
+
+        $query->delete();
+
+        return redirect()->route('raport.riwayat')
+            ->with('success', $pesan);
+    }
+
+    /**
+     * Hapus satu baris catatan riwayat cetak raport
+     */
+    public function hapusRiwayat(Raport $raport): RedirectResponse
+    {
+        $user = auth()->user();
+        if (! $user) {
+            abort(403);
+        }
+
+        if ($user->isWali()) {
+            $waliKelasIds = $user->kelasWali()->pluck('id')->toArray();
+            $kelasId = $raport->kelasSiswa?->kelas_id;
+            if (! in_array($kelasId, $waliKelasIds)) {
+                abort(403, 'Anda tidak berhak menghapus riwayat cetak kelas lain.');
+            }
+        } elseif (! $user->isAdmin() && ! $user->isKepsek()) {
+            abort(403, 'Anda tidak memiliki hak untuk menghapus catatan riwayat cetak.');
+        }
+
+        if ($raport->file_path && $raport->file_path !== 'PDF_STREAM' && file_exists($raport->file_path)) {
+            @unlink($raport->file_path);
+        }
+
+        $raport->delete();
+
+        return redirect()->route('raport.riwayat')
+            ->with('success', 'Catatan riwayat cetak berhasil dihapus.');
     }
 
     /**

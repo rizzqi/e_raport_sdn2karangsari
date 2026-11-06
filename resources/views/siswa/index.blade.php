@@ -26,6 +26,11 @@
 
         @if(auth()->user()->isAdmin())
             <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('kelas.mutasi.index') }}"
+                    class="inline-flex items-center px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-bold rounded-xl text-xs transition shadow-2xs"
+                    title="Kenaikan Kelas & Kelulusan Siswa">
+                    <i class="fa-solid fa-graduation-cap mr-1.5 text-indigo-600"></i> Kenaikan & Kelulusan
+                </a>
                 <a href="{{ route('siswa.template.import') }}" id="topDownloadTemplateBtn"
                     class="inline-flex items-center px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition border border-slate-200" title="Unduh format template Excel/CSV">
                     <i class="fa-solid fa-file-arrow-down mr-1.5 text-emerald-600"></i> Unduh Format Excel

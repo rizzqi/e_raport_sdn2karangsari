@@ -21,6 +21,9 @@
         </div>
 
         <div class="flex items-center space-x-2">
+            <a href="{{ route('kelas.mutasi.index', ['kelas_asal_id' => $kelas->id]) }}" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-300 font-bold rounded-xl text-xs transition flex items-center shadow-xs" title="Kenaikan / Pindah Kelas">
+                <i class="fa-solid fa-graduation-cap mr-1.5 text-indigo-600"></i> Kenaikan / Pindah Kelas
+            </a>
             <a href="{{ route('siswa.index', ['open_import' => 1, 'kelas_id' => $kelas->id]) }}" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold rounded-xl text-xs transition flex items-center shadow-sm" title="Impor file Excel langsung ke kelas ini">
                 <i class="fa-solid fa-file-excel mr-1.5 text-emerald-600"></i> Impor Excel ke {{ $kelas->nama }}
             </a>

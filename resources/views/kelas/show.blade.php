@@ -240,6 +240,10 @@
                                class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
                                 <i class="fa-solid fa-user-plus w-5 text-indigo-500 mr-2 text-center"></i> Penempatan Siswa
                             </a>
+                            <a href="{{ route('kelas.mutasi.index', ['kelas_asal_id' => $kelas->id]) }}"
+                               class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                                <i class="fa-solid fa-graduation-cap w-5 text-indigo-500 mr-2 text-center"></i> Kenaikan / Pindah Kelas
+                            </a>
                         @endif
                     </div>
 

@@ -23,10 +23,16 @@
         </div>
 
         @if(auth()->user()->isAdmin())
-            <button onclick="document.getElementById('modalTambahKelas').classList.remove('hidden')"
-                class="inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-600/20 hover:shadow-emerald-600/30 hover:-translate-y-0.5 transition-all duration-200">
-                <i class="fa-solid fa-plus mr-1.5"></i> Tambah Kelas Baru
-            </button>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('kelas.mutasi.index') }}"
+                   class="inline-flex items-center justify-center px-4 py-2.5 bg-white hover:bg-slate-50 text-indigo-700 hover:text-indigo-800 border border-indigo-200 font-bold rounded-xl text-xs shadow-xs transition hover:-translate-y-0.5">
+                    <i class="fa-solid fa-graduation-cap mr-1.5 text-indigo-600"></i> Kenaikan & Kelulusan
+                </a>
+                <button onclick="document.getElementById('modalTambahKelas').classList.remove('hidden')"
+                    class="inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-600/20 hover:shadow-emerald-600/30 hover:-translate-y-0.5 transition-all duration-200">
+                    <i class="fa-solid fa-plus mr-1.5"></i> Tambah Kelas Baru
+                </button>
+            </div>
         @endif
     </div>
 
