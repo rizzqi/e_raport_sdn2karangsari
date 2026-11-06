@@ -23,7 +23,7 @@ class KenaikanKelasController extends Controller
             $activeTab = 'kenaikan';
         }
 
-        $tahunAktif = TahunAjaran::where('status', 'aktif')->first();
+        $tahunAktif = TahunAjaran::aktif()->first();
 
         // Ambil semua kelas diurutkan berdasarkan tahun ajaran dan nama kelas
         $kelasList = Kelas::with(['tahunAjaran', 'wali'])
