@@ -56,11 +56,10 @@ while ($true) {
     Write-Host "  [3]  Full Deploy: GitHub + Server Auto-Pull & Update (Rilis Resmi)" -ForegroundColor White
     Write-Host "  [4]  Cek Status Server & Health Check" -ForegroundColor White
     Write-Host "  [5]  Jalankan Local Dev Server (php artisan serve)" -ForegroundColor White
-    Write-Host "  [6]  Ubah Target IP Server (Saat ini: $serverIp)" -ForegroundColor DarkGray
     Write-Host "  [0]  Keluar" -ForegroundColor White
     Write-Host ""
 
-    $pilihan = Read-Host "Pilih menu [0-6]"
+    $pilihan = Read-Host "Pilih menu [0-5]"
     if ([string]::IsNullOrWhiteSpace($pilihan)) {
         continue
     }
@@ -278,23 +277,9 @@ echo "--------------------------------------------------------"
             exit 0
         }
 
-        "6" {
-            # -------------------------------------------------------------
-            # [6] Ubah Target IP Server
-            # -------------------------------------------------------------
-            Write-Host ""
-            Write-Host "IP Server saat ini: $serverIp" -ForegroundColor Cyan
-            $newIp = Read-Host "Masukkan IP Server Baru [contoh: 100.99.65.48]"
-            if (-not [string]::IsNullOrWhiteSpace($newIp)) {
-                $serverIp = $newIp.Trim()
-                Set-Content -Path $configFile -Value $serverIp
-                Write-Host "[INFO] IP Server berhasil diperbarui menjadi $serverIp" -ForegroundColor Green
-            }
-        }
-
         default {
             Write-Host ""
-            Write-Host "[WARNING] Pilihan '$pilihan' tidak valid, silakan masukkan angka 0 s/d 6." -ForegroundColor Yellow
+            Write-Host "[WARNING] Pilihan '$pilihan' tidak valid, silakan masukkan angka 0 s/d 5." -ForegroundColor Yellow
             Start-Sleep -Seconds 1
         }
     }

@@ -47,9 +47,15 @@ Antarmuka terminal menyajikan pilihan menu berurutan:
    * Membuka peramban ke `http://127.0.0.1:8000`.
    * Menjalankan `php artisan serve --host=127.0.0.1 --port=8000`.
 
-6. **[6] Konfigurasi Target IP Server**
-   * Mengelola berkas `.server_ip` lokal yang diabaikan oleh git.
-   * Default target IP server: `100.99.65.48`.
+6. **[0] Keluar**
+   * Mengakhiri sesi interaktif toolkit.
+
+---
+
+## Konfigurasi Target Server
+* Target IP server disimpan secara otomatis di berkas lokal `.server_ip` (nilai default: `100.99.65.48`).
+* Berkas ini dibaca setiap kali skrip dijalankan dan diabaikan oleh Git agar tidak terekspos.
+* Jika IP server Tailscale berubah di kemudian hari, cukup ubah nilai di dalam berkas `.server_ip`.
 
 ---
 
@@ -62,3 +68,4 @@ Antarmuka terminal menyajikan pilihan menu berurutan:
    * Skrip `deploy.sh` di server harus selalu menerima argumen nama branch (`$1`, default `main`) agar peralihan cabang di server berjalan otomatis dan aman.
 3. **Penyimpanan Kredensial**:
    * Seluruh akses remote server diarahkan melalui jaringan privat **Tailscale SSH**. Jangan membuka port SSH langsung ke IP publik tanpa proteksi VPN atau firewall.
+
