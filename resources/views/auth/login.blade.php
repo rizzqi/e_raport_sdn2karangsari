@@ -35,15 +35,15 @@
         {{-- ========================================================================= --}}
         {{-- PANEL KIRI: FOTO GEDUNG SEKOLAH SD DENGAN OVERLAY & BRANDING ELEGAN      --}}
         {{-- ========================================================================= --}}
-        <div class="relative flex min-h-[220px] sm:min-h-[280px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-5 sm:p-8 lg:min-h-dvh lg:w-[58%] xl:w-[60%] lg:p-12 xl:p-16">
+        <div class="relative flex min-h-[220px] sm:min-h-[280px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-5 sm:p-8 lg:min-h-dvh lg:w-[50%] xl:w-[52%] lg:p-12 xl:p-16">
             
             {{-- Foto Gedung Asli --}}
             <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 hover:scale-105"
                  style="background-image: url('{{ asset('images/gedung.jpg') }}');">
             </div>
 
-            {{-- Overlay Gradien Halus Agar Foto Tetap Cerah dan Terlihat Bagus --}}
-            <div class="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-950/40 to-black/30"></div>
+            {{-- Overlay Gradien Elegan & Bersih --}}
+            <div class="absolute inset-0 bg-gradient-to-t from-emerald-950/95 via-emerald-950/65 to-black/40"></div>
 
             {{-- Header Kiri Atas: Logo Sekolah + Identitas Instansi --}}
             <div class="relative z-10 flex items-center gap-3 sm:gap-4">
@@ -68,11 +68,11 @@
             {{-- Konten Tengah Kiri: Headline & Deskripsi Sistem --}}
             <div class="relative z-10 my-auto hidden py-8 lg:block">
                 <div class="mb-4 inline-flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-200 backdrop-blur-md ring-1 ring-white/20">
-                    <i class="fa-solid fa-graduation-cap text-amber-300"></i> Kurikulum Merdeka
+                    <i class="fa-solid fa-graduation-cap text-emerald-300"></i> Kurikulum Merdeka
                 </div>
                 <h2 class="text-3xl font-black text-white sm:text-4xl lg:text-5xl leading-tight drop-shadow-lg">
                     Sistem E-Raport &amp;<br>
-                    <span class="bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300 bg-clip-text text-transparent">
+                    <span class="text-emerald-300">
                         Administrasi Digital
                     </span>
                 </h2>
@@ -95,91 +95,15 @@
 
             {{-- Footer Kiri Bawah --}}
             <div class="relative z-10 text-[11px] sm:text-xs text-emerald-200/80 hidden sm:block">
-                <i class="fa-solid fa-location-dot mr-1.5 text-amber-400"></i>
+                <i class="fa-solid fa-location-dot mr-1.5 text-emerald-400"></i>
                 Jl. Parijatah No. 45 Karangsari, Kec. Sempu, Kab. Banyuwangi, Jawa Timur
             </div>
         </div>
 
         {{-- ========================================================================= --}}
-        {{-- WAVE DIVIDER ORGANIK TEGAS & SOLID (SESUAI REFERENSI TERBARU)             --}}
-        {{-- Lapisan bold & tegas (Emerald, Teal Bahari, Emas Amber & Putih Bersih)    --}}
-        {{-- Menutupi celah secara presisi tanpa ada garis hijau mengganggu             --}}
+        {{-- PANEL KANAN: FORM LOGIN BERSIH, MINIMALIS & ELEGAN                        --}}
         {{-- ========================================================================= --}}
-        <div class="pointer-events-none absolute inset-y-0 left-[58%] xl:left-[60%] z-20 hidden -translate-x-[90%] lg:block" style="width: 320px; height: 100%;">
-            <svg class="h-full w-full" viewBox="0 0 320 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    {{-- Gradien Emas Amber Cerah Tegas --}}
-                    <linearGradient id="refWaveAmber" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#f59e0b" />
-                        <stop offset="35%" stop-color="#fbbf24" />
-                        <stop offset="70%" stop-color="#f59e0b" />
-                        <stop offset="100%" stop-color="#d97706" />
-                    </linearGradient>
-
-                    {{-- Gradien Teal Bahari Solid --}}
-                    <linearGradient id="refWaveTeal" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#0d9488" />
-                        <stop offset="50%" stop-color="#14b8a6" />
-                        <stop offset="100%" stop-color="#0f766e" />
-                    </linearGradient>
-
-                    {{-- Gradien Emerald Zamrud Kaya & Solid --}}
-                    <linearGradient id="refWaveEmerald" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#047857" />
-                        <stop offset="45%" stop-color="#059669" />
-                        <stop offset="85%" stop-color="#10b981" />
-                        <stop offset="100%" stop-color="#064e3b" />
-                    </linearGradient>
-
-                    {{-- Filter Soft Drop Shadow Mewah --}}
-                    <filter id="refWaveShadow" x="-30%" y="-10%" width="160%" height="120%">
-                        <feDropShadow dx="-10" dy="6" stdDeviation="12" flood-color="#022c22" flood-opacity="0.35" />
-                    </filter>
-                </defs>
-
-                {{-- LAYER 1: Gelombang Emas Amber Solid & Lebar (Luar Menghadap Foto Gedung) --}}
-                <path d="M 50 0 
-                         C 160 110, 210 210, 100 330 
-                         C -5 450, 195 560, 110 680 
-                         C 30 790, 230 890, 120 980 
-                         C 80 1010, 140 1020, 100 1000 
-                         L 320 1000 L 320 0 Z" 
-                      fill="url(#refWaveAmber)" 
-                      filter="url(#refWaveShadow)" />
-
-                {{-- LAYER 2: Gelombang Teal Bahari Solid & Tegas (Tengah) --}}
-                <path d="M 85 0 
-                         C 190 120, 235 220, 130 345 
-                         C 25 465, 220 575, 140 695 
-                         C 60 805, 250 900, 150 985 
-                         C 110 1010, 160 1020, 130 1000 
-                         L 320 1000 L 320 0 Z" 
-                      fill="url(#refWaveTeal)" />
-
-                {{-- LAYER 3: Gelombang Emerald Zamrud Solid & Tebal --}}
-                <path d="M 120 0 
-                         C 220 130, 260 230, 160 360 
-                         C 55 480, 245 590, 170 710 
-                         C 90 820, 270 910, 180 990 
-                         C 140 1010, 180 1020, 160 1000 
-                         L 320 1000 L 320 0 Z" 
-                      fill="url(#refWaveEmerald)" />
-
-                {{-- LAYER 4 (UTAMA): Gelombang Putih Solid Menutup dan Menyatu 100% ke Form Login --}}
-                <path d="M 155 0 
-                         C 250 140, 285 240, 190 375 
-                         C 85 495, 270 605, 200 725 
-                         C 120 835, 290 920, 210 995 
-                         C 170 1010, 200 1020, 190 1000 
-                         L 320 1000 L 320 0 Z" 
-                      fill="#ffffff" />
-            </svg>
-        </div>
-
-        {{-- ========================================================================= --}}
-        {{-- PANEL KANAN: FORM LOGIN BERSIH & PRESISI (DI SEBELAH KANAN)               --}}
-        {{-- ========================================================================= --}}
-        <main class="relative z-10 flex min-h-dvh flex-1 flex-col justify-between bg-white px-6 py-10 sm:px-12 md:px-16 lg:px-12 xl:px-16 shadow-xl">
+        <main class="relative z-10 flex min-h-dvh flex-1 flex-col justify-between bg-white px-6 py-10 sm:px-12 md:px-16 lg:px-12 xl:px-16 lg:border-l lg:border-slate-200/80 shadow-2xl">
             
             {{-- Badge Atas: Portal Resmi --}}
             <div class="flex items-center justify-between">
