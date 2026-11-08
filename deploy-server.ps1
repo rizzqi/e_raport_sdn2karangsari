@@ -126,7 +126,7 @@ while ($true) {
 
             Write-Host ""
             Write-Host "Menghubungi server via SSH ($serverIp)..." -ForegroundColor Yellow
-            $quickCmd = "cd /var/www/e_raport_sdn2karangsari && git fetch origin $targetBranch && (git checkout $targetBranch 2>/dev/null || git checkout -b $targetBranch origin/$targetBranch) && git pull origin $targetBranch && php artisan optimize:clear && php artisan optimize"
+            $quickCmd = "cd /var/www/e_raport_sdn2karangsari && rm -f package-lock.json && git fetch origin $targetBranch && (git checkout $targetBranch 2>/dev/null || git checkout -b $targetBranch origin/$targetBranch) && git reset --hard origin/$targetBranch && php artisan optimize:clear && php artisan optimize"
 
             ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8 "root@$serverIp" $quickCmd
 
@@ -193,7 +193,7 @@ while ($true) {
             Write-Host "Menjalankan deploy.sh lengkap di /var/www/e_raport_sdn2karangsari..." -ForegroundColor DarkGray
             Write-Host ""
 
-            ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8 "root@$serverIp" "cd /var/www/e_raport_sdn2karangsari && bash deploy.sh $targetBranch"
+            ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8 "root@$serverIp" "cd /var/www/e_raport_sdn2karangsari && rm -f package-lock.json && bash deploy.sh $targetBranch"
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host ""

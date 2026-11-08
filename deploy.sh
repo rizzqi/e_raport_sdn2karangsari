@@ -11,7 +11,10 @@ echo "=================================================="
 echo "[1/6] Menarik commit terbaru dari GitHub (branch: $BRANCH)..."
 git fetch origin $BRANCH
 git checkout $BRANCH 2>/dev/null || git checkout -b $BRANCH origin/$BRANCH
-git pull origin $BRANCH
+# Bersihkan file yang menghalangi merge otomatis
+rm -f package-lock.json
+git reset --hard origin/$BRANCH
+
 
 # Update dependensi Composer
 echo "[2/6] Menginstal dependensi Composer..."
