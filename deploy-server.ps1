@@ -172,11 +172,24 @@ while ($true) {
             Write-Host "[1/2] Mendorong branch '$targetBranch' ke GitHub..." -ForegroundColor Yellow
             git push origin $targetBranch
             if ($LASTEXITCODE -ne 0) {
+                Write-Host ""
+                Write-Host "  [PANDUAN GIT] Push ditolak (non-fast-forward / branch tertinggal):" -ForegroundColor Yellow
+                Write-Host "  1. Ambil update dari GitHub: git pull origin $targetBranch" -ForegroundColor DarkGray
+                Write-Host "  2. Jika fitur baru ada di branch 'yayaya', gabungkan terlebih dahulu:" -ForegroundColor DarkGray
+                Write-Host "     git checkout $targetBranch && git merge yayaya" -ForegroundColor DarkGray
+                Write-Host ""
                 Write-Warning "Peringatan saat push ke GitHub. Melanjutkan deploy ke server..."
             }
 
             Write-Host ""
             Write-Host "[2/2] Menghubungi Server via SSH ($serverIp)..." -ForegroundColor Yellow
+            if ($serverIp.StartsWith("100.")) {
+                $tsProcess = Get-Process -Name "*tailscale*" -ErrorAction SilentlyContinue
+                if (-not $tsProcess) {
+                    Write-Host "  [PERINGATAN] Aplikasi Tailscale di Windows tampaknya belum berjalan." -ForegroundColor Yellow
+                    Write-Host "  Pastikan Anda telah membuka dan menghubungkan (Connect) aplikasi Tailscale di laptop." -ForegroundColor Yellow
+                }
+            }
             Write-Host "Menjalankan deploy.sh lengkap di /var/www/e_raport_sdn2karangsari..." -ForegroundColor DarkGray
             Write-Host ""
 
@@ -188,6 +201,12 @@ while ($true) {
             } else {
                 Write-Host ""
                 Write-Host "  [GAGAL] Full Deploy ke server mengalami kendala." -ForegroundColor Red
+                if ($serverIp.StartsWith("100.")) {
+                    Write-Host "  Kemungkinan kendala jaringan Tailscale ($serverIp):" -ForegroundColor Yellow
+                    Write-Host "  1. Buka aplikasi Tailscale di Windows dan pastikan status 'Connected'." -ForegroundColor DarkGray
+                    Write-Host "  2. Pastikan server target sedang menyala dan tailscaled aktif." -ForegroundColor DarkGray
+                    Write-Host "  3. Coba tes koneksi dengan: ping $serverIp" -ForegroundColor DarkGray
+                }
             }
             Write-Host ""
             Read-Host "Tekan Enter untuk kembali ke menu..."
