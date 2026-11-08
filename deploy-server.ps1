@@ -262,11 +262,38 @@ echo "--------------------------------------------------------"
             # -------------------------------------------------------------
             Write-Host ""
             Write-Host "=== [5] MENJALANKAN LOCAL DEV SERVER ===" -ForegroundColor Cyan
-            $sqlitePath = Join-Path $PSScriptRoot "database\database.sqlite"
-            if (-not (Test-Path $sqlitePath)) {
-                Write-Host "[INFO] Menyiapkan database SQLite baru..." -ForegroundColor Yellow
-                New-Item -ItemType File -Path $sqlitePath -Force | Out-Null
-                php artisan migrate --force
+            
+            # Cek driver database dari .env
+            $dbDriver = "mysql"
+            $envPath = Join-Path $PSScriptRoot ".env"
+            if (Test-Path $envPath) {
+                $envMatch = Get-Content $envPath | Select-String -Pattern "^DB_CONNECTION=(.*)$"
+                if ($envMatch) {
+                    $dbDriver = $envMatch.Matches.Groups[1].Value.Trim()
+                }
+            }
+
+            if ($dbDriver -eq "sqlite") {
+                $sqlitePath = Join-Path $PSScriptRoot "database\database.sqlite"
+                if (-not (Test-Path $sqlitePath)) {
+                    Write-Host "[INFO] Menyiapkan database SQLite baru..." -ForegroundColor Yellow
+                    New-Item -ItemType File -Path $sqlitePath -Force | Out-Null
+                    php artisan migrate --force
+                }
+            } else {
+                # Driver MySQL: Periksa apakah service MySQL XAMPP sudah aktif
+                $mysqlProcess = Get-Process -Name mysqld -ErrorAction SilentlyContinue
+                if (-not $mysqlProcess) {
+                    if (Test-Path "C:\xampp\mysql\bin\mysqld.exe") {
+                        Write-Host "[INFO] Menyalakan MySQL XAMPP..." -ForegroundColor Yellow
+                        Start-Process -FilePath "C:\xampp\mysql\bin\mysqld.exe" -ArgumentList "--defaults-file=C:\xampp\mysql\bin\my.ini","--standalone" -WindowStyle Hidden
+                        Start-Sleep -Seconds 2
+                    } else {
+                        Write-Host "[WARNING] MySQL belum aktif. Pastikan service MySQL di XAMPP Control Panel sudah di-START." -ForegroundColor Yellow
+                    }
+                } else {
+                    Write-Host "[OK] MySQL Service terdeteksi aktif." -ForegroundColor Green
+                }
             }
 
             Write-Host "[INFO] Membuka web browser ke http://127.0.0.1:8000 ..." -ForegroundColor Green
