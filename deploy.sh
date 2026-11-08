@@ -1,13 +1,17 @@
 #!/bin/bash
 set -e
 
+BRANCH=${1:-main}
+
 echo "=================================================="
-echo "  Deploy E-Raport SDN 2 Karangsari"
+echo "  Deploy E-Raport SDN 2 Karangsari (Branch: $BRANCH)"
 echo "=================================================="
 
 # Tarik commit terbaru dari GitHub
-echo "[1/6] Menarik commit terbaru dari GitHub..."
-git pull origin main
+echo "[1/6] Menarik commit terbaru dari GitHub (branch: $BRANCH)..."
+git fetch origin $BRANCH
+git checkout $BRANCH 2>/dev/null || git checkout -b $BRANCH origin/$BRANCH
+git pull origin $BRANCH
 
 # Update dependensi Composer
 echo "[2/6] Menginstal dependensi Composer..."
