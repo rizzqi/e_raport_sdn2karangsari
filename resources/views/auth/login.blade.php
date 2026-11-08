@@ -35,15 +35,15 @@
         {{-- ========================================================================= --}}
         {{-- PANEL KIRI: FOTO GEDUNG SEKOLAH SD DENGAN OVERLAY & BRANDING ELEGAN      --}}
         {{-- ========================================================================= --}}
-        <div class="relative flex min-h-[220px] sm:min-h-[280px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-5 sm:p-8 lg:min-h-dvh lg:w-[50%] xl:w-[52%] lg:p-12 xl:p-16">
+        <div class="relative flex min-h-[240px] sm:min-h-[300px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-6 sm:p-8 lg:min-h-dvh lg:flex-1 lg:p-12 xl:p-16">
             
             {{-- Foto Gedung Asli --}}
             <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 hover:scale-105"
                  style="background-image: url('{{ asset('images/gedung.jpg') }}');">
             </div>
 
-            {{-- Overlay Gradien Elegan & Bersih --}}
-            <div class="absolute inset-0 bg-gradient-to-t from-emerald-950/95 via-emerald-950/65 to-black/40"></div>
+            {{-- Overlay Gradien Gelap Elegan Agar Foto Tetap Cerah & Teks Sangat Terbaca --}}
+            <div class="absolute inset-0 bg-gradient-to-t from-emerald-950/95 via-emerald-950/75 to-black/50"></div>
 
             {{-- Header Kiri Atas: Logo Sekolah + Identitas Instansi --}}
             <div class="relative z-10 flex items-center gap-3 sm:gap-4">
@@ -67,29 +67,31 @@
 
             {{-- Konten Tengah Kiri: Headline & Deskripsi Sistem --}}
             <div class="relative z-10 my-auto hidden py-8 lg:block">
-                <div class="mb-4 inline-flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-200 backdrop-blur-md ring-1 ring-white/20">
-                    <i class="fa-solid fa-graduation-cap text-emerald-300"></i> Kurikulum Merdeka
-                </div>
-                <h2 class="text-3xl font-black text-white sm:text-4xl lg:text-5xl leading-tight drop-shadow-lg">
-                    Sistem E-Raport &amp;<br>
-                    <span class="text-emerald-300">
-                        Administrasi Digital
-                    </span>
-                </h2>
-                <p class="mt-4 max-w-lg text-xs leading-relaxed text-emerald-50/80 sm:text-sm lg:text-base drop-shadow">
-                    Aplikasi pelaporan hasil belajar siswa terpadu untuk pendataan nilai formatif, sumatif, rekapitulasi absensi, dan pencetakan raport digital.
-                </p>
+                <div class="rounded-3xl bg-black/35 p-8 backdrop-blur-md border border-white/10 max-w-xl shadow-2xl">
+                    <div class="mb-4 inline-flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-200 backdrop-blur-md ring-1 ring-white/20">
+                        <i class="fa-solid fa-graduation-cap text-emerald-300"></i> Kurikulum Merdeka
+                    </div>
+                    <h2 class="text-3xl font-black text-white sm:text-4xl leading-tight drop-shadow-lg">
+                        Sistem E-Raport &amp;<br>
+                        <span class="text-emerald-300">
+                            Administrasi Digital
+                        </span>
+                    </h2>
+                    <p class="mt-3 text-xs leading-relaxed text-emerald-50/90 sm:text-sm drop-shadow">
+                        Aplikasi pelaporan hasil belajar siswa terpadu untuk pendataan nilai formatif, sumatif, rekapitulasi absensi, dan pencetakan raport digital.
+                    </p>
 
-                <div class="mt-8 flex flex-wrap gap-2.5">
-                    <span class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/15">
-                        <i class="fa-solid fa-file-pen text-emerald-300"></i> Nilai Formatif &amp; Sumatif
-                    </span>
-                    <span class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/15">
-                        <i class="fa-solid fa-calendar-check text-emerald-300"></i> Absensi Otomatis
-                    </span>
-                    <span class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/15">
-                        <i class="fa-solid fa-print text-emerald-300"></i> Cetak Siap Pakai
-                    </span>
+                    <div class="mt-6 flex flex-wrap gap-2">
+                        <span class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/15">
+                            <i class="fa-solid fa-file-pen text-emerald-300"></i> Nilai Formatif &amp; Sumatif
+                        </span>
+                        <span class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/15">
+                            <i class="fa-solid fa-calendar-check text-emerald-300"></i> Absensi Otomatis
+                        </span>
+                        <span class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/15">
+                            <i class="fa-solid fa-print text-emerald-300"></i> Cetak Siap Pakai
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -101,9 +103,9 @@
         </div>
 
         {{-- ========================================================================= --}}
-        {{-- PANEL KANAN: FORM LOGIN BERSIH, MINIMALIS & ELEGAN                        --}}
+        {{-- PANEL KANAN: FORM LOGIN BERSIH, LEBAR NYAMAN & PRESISI (480px-520px)        --}}
         {{-- ========================================================================= --}}
-        <main class="relative z-10 flex min-h-dvh flex-1 flex-col justify-between bg-white px-6 py-10 sm:px-12 md:px-16 lg:px-12 xl:px-16 lg:border-l lg:border-slate-200/80 shadow-2xl">
+        <main class="relative z-10 flex min-h-dvh w-full flex-col justify-between bg-white px-6 py-10 sm:px-10 md:px-14 lg:w-[480px] xl:w-[520px] lg:shrink-0 lg:border-l lg:border-slate-200 shadow-2xl">
             
             {{-- Badge Atas: Portal Resmi --}}
             <div class="flex items-center justify-between">
