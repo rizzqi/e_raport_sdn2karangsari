@@ -254,6 +254,49 @@
                 </div>
             </div>
 
+            <!-- BAR STATUS KELENGKAPAN NILAI & FILTER CEPAT -->
+            <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl {{ $countBelumLengkap > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }} flex items-center justify-center text-base shrink-0 shadow-2xs font-bold" id="iconKelengkapanBox">
+                        <i class="fa-solid {{ $countBelumLengkap > 0 ? 'fa-clipboard-question' : 'fa-circle-check' }}" id="iconKelengkapan"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-extrabold text-sm text-slate-900">Kelengkapan Nilai Siswa</h3>
+                            <span id="badgeSummaryKelengkapan" class="px-2 py-0.5 rounded-full text-[11px] font-black {{ $countBelumLengkap > 0 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300' }}">
+                                <span id="labelBelumLengkap">{{ $countBelumLengkap > 0 ? $countBelumLengkap . ' Belum Lengkap' : 'Semua Lengkap' }}</span>
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5">
+                            Total <strong>{{ $totalSiswa }} siswa</strong>: <span id="textStatLengkap" class="font-semibold text-emerald-700">{{ $countLengkap }} lengkap</span>, <span id="textStatBelumLengkap" class="font-semibold text-amber-700">{{ $countBelumLengkap }} belum lengkap</span> pada mata pelajaran {{ $mapel->nama }}.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tombol Filter Cepat -->
+                <div class="flex flex-wrap items-center gap-1.5 self-start md:self-auto shrink-0 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs font-bold">
+                    <button type="button" onclick="setFilterKelengkapan('semua')" id="btnFilterSemua"
+                            class="filter-pill-btn px-3 py-1.5 rounded-lg transition-all shadow-xs bg-white text-slate-900 border border-slate-200">
+                        <span>Semua</span>
+                        <span class="ml-1 text-[11px] font-mono px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-700" id="badgeFilterSemua">{{ $totalSiswa }}</span>
+                    </button>
+
+                    <button type="button" onclick="setFilterKelengkapan('belum')" id="btnFilterBelum"
+                            class="filter-pill-btn px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-amber-800 hover:bg-white/60">
+                        <i class="fa-solid fa-circle-exclamation text-amber-500 mr-1"></i>
+                        <span>Belum Lengkap</span>
+                        <span class="ml-1 text-[11px] font-mono px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-900" id="badgeFilterBelum">{{ $countBelumLengkap }}</span>
+                    </button>
+
+                    <button type="button" onclick="setFilterKelengkapan('lengkap')" id="btnFilterLengkap"
+                            class="filter-pill-btn px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-emerald-800 hover:bg-white/60">
+                        <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>
+                        <span>Lengkap</span>
+                        <span class="ml-1 text-[11px] font-mono px-1.5 py-0.2 rounded-md bg-emerald-100 text-emerald-900" id="badgeFilterLengkap">{{ $countLengkap }}</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- FORM NILAI TERPADU -->
             <form id="formNilaiTerpadu" action="{{ route('kelas.mapel.nilai.simpan-terpadu', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="POST">
                 @csrf
@@ -307,15 +350,36 @@
                                         $saranDef = $d['saranDefault'] ?? '';
                                         $hasCatatan = !empty(trim($catatan));
                                     @endphp
-                                    <tr class="hover:bg-slate-50/80 transition" id="row_student_{{ $ks->id }}">
+                                    <tr class="hover:bg-slate-50/80 transition student-grade-row" id="row_student_{{ $ks->id }}" data-ks-id="{{ $ks->id }}" data-complete="{{ ($valUts !== null && $valUas !== null) ? 'true' : 'false' }}">
                                         <!-- No -->
                                         <td class="py-3 px-3 text-center font-bold text-slate-400 border-r border-slate-200">
                                             {{ $idx + 1 }}
                                         </td>
 
-                                        <!-- Nama Siswa -->
+                                        <!-- Nama Siswa & Badge Kelengkapan -->
                                         <td class="py-3 px-4 border-r border-slate-200">
-                                            <div class="font-bold text-slate-900 text-sm">{{ $ks->siswa->nama }}</div>
+                                            <div class="flex items-center justify-between gap-2">
+                                                <div class="font-bold text-slate-900 text-sm">{{ $ks->siswa->nama }}</div>
+                                                <div id="badge_status_{{ $ks->id }}" class="shrink-0">
+                                                    @if($valUts !== null && $valUas !== null)
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Nilai STS & SAS sudah lengkap">
+                                                            <i class="fa-solid fa-circle-check text-[9px]"></i> Lengkap
+                                                        </span>
+                                                    @elseif($valUts === null && $valUas === null)
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi STS dan SAS">
+                                                            <i class="fa-solid fa-clock text-[9px]"></i> Belum STS &amp; SAS
+                                                        </span>
+                                                    @elseif($valUts === null)
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi STS">
+                                                            <i class="fa-solid fa-pen text-[9px]"></i> Perlu STS
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi SAS">
+                                                            <i class="fa-solid fa-pen text-[9px]"></i> Perlu SAS
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
                                             <div class="text-[11px] text-slate-400 font-mono mt-0.5">
                                                 NIS: {{ $ks->siswa->nis ?? '-' }} &bull; NISN: {{ $ks->siswa->nisn ?? '-' }}
                                             </div>
@@ -426,6 +490,18 @@
                                         </td>
                                     </tr>
                                 @endforelse
+                                <tr id="rowEmptyFilter" style="display: none;">
+                                    <td colspan="8" class="py-12 text-center text-slate-400">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <i class="fa-solid fa-filter-circle-xmark text-3xl text-slate-300 mb-2"></i>
+                                            <p class="font-bold text-slate-700 text-sm">Tidak ada siswa pada kategori filter ini</p>
+                                            <p class="text-xs text-slate-400 mt-0.5">Semua data siswa pada filter yang dipilih tidak ditemukan.</p>
+                                            <button type="button" onclick="setFilterKelengkapan('semua')" class="mt-3 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                                                Tampilkan Semua Siswa
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -1148,6 +1224,131 @@
             } else {
                 predikatBadgeEl.textContent = '–';
                 predikatBadgeEl.className = 'text-slate-300 font-bold';
+            }
+        }
+
+        // Update atribut data-complete dan status badge kelengkapan pada baris
+        const rowEl = document.getElementById('row_student_' + ksId);
+        const badgeStatusEl = document.getElementById('badge_status_' + ksId);
+        const isComplete = (sts !== null && sas !== null);
+
+        if (rowEl) {
+            rowEl.dataset.complete = isComplete ? 'true' : 'false';
+        }
+
+        if (badgeStatusEl) {
+            if (isComplete) {
+                badgeStatusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Nilai STS & SAS sudah lengkap"><i class="fa-solid fa-circle-check text-[9px]"></i> Lengkap</span>';
+            } else if (sts === null && sas === null) {
+                badgeStatusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi STS dan SAS"><i class="fa-solid fa-clock text-[9px]"></i> Belum STS &amp; SAS</span>';
+            } else if (sts === null) {
+                badgeStatusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi STS"><i class="fa-solid fa-pen text-[9px]"></i> Perlu STS</span>';
+            } else {
+                badgeStatusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi SAS"><i class="fa-solid fa-pen text-[9px]"></i> Perlu SAS</span>';
+            }
+        }
+
+        updateGlobalCounters();
+
+        if (currentFilter !== 'semua') {
+            applyCurrentFilter();
+        }
+    }
+
+    // Manajemen Filter Kelengkapan (Semua / Belum Lengkap / Lengkap)
+    let currentFilter = 'semua';
+
+    function setFilterKelengkapan(mode) {
+        currentFilter = mode;
+        const btnSemua = document.getElementById('btnFilterSemua');
+        const btnBelum = document.getElementById('btnFilterBelum');
+        const btnLengkap = document.getElementById('btnFilterLengkap');
+
+        // Reset style tombol filter
+        [btnSemua, btnBelum, btnLengkap].forEach(b => {
+            if (!b) return;
+            b.className = 'filter-pill-btn px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-white/60';
+        });
+
+        if (mode === 'semua' && btnSemua) {
+            btnSemua.className = 'filter-pill-btn px-3 py-1.5 rounded-lg transition-all shadow-xs bg-white text-slate-900 border border-slate-200 font-bold';
+        } else if (mode === 'belum' && btnBelum) {
+            btnBelum.className = 'filter-pill-btn px-3 py-1.5 rounded-lg transition-all shadow-xs bg-white text-amber-800 border border-amber-300 font-bold';
+        } else if (mode === 'lengkap' && btnLengkap) {
+            btnLengkap.className = 'filter-pill-btn px-3 py-1.5 rounded-lg transition-all shadow-xs bg-white text-emerald-800 border border-emerald-300 font-bold';
+        }
+
+        applyCurrentFilter();
+    }
+
+    function applyCurrentFilter() {
+        const rows = document.querySelectorAll('.student-grade-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const isComplete = row.dataset.complete === 'true';
+            let show = true;
+            if (currentFilter === 'belum') {
+                show = !isComplete;
+            } else if (currentFilter === 'lengkap') {
+                show = isComplete;
+            }
+
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+
+        const emptyRow = document.getElementById('rowEmptyFilter');
+        if (emptyRow) {
+            emptyRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+        }
+    }
+
+    function updateGlobalCounters() {
+        const rows = document.querySelectorAll('.student-grade-row');
+        let lengkap = 0;
+        let belum = 0;
+
+        rows.forEach(row => {
+            if (row.dataset.complete === 'true') {
+                lengkap++;
+            } else {
+                belum++;
+            }
+        });
+
+        const badgeFilterBelum = document.getElementById('badgeFilterBelum');
+        const badgeFilterLengkap = document.getElementById('badgeFilterLengkap');
+        const textStatLengkap = document.getElementById('textStatLengkap');
+        const textStatBelumLengkap = document.getElementById('textStatBelumLengkap');
+        const labelBelumLengkap = document.getElementById('labelBelumLengkap');
+        const badgeSummary = document.getElementById('badgeSummaryKelengkapan');
+        const iconKelengkapanBox = document.getElementById('iconKelengkapanBox');
+        const iconKelengkapan = document.getElementById('iconKelengkapan');
+
+        if (badgeFilterBelum) badgeFilterBelum.textContent = belum;
+        if (badgeFilterLengkap) badgeFilterLengkap.textContent = lengkap;
+        if (textStatLengkap) textStatLengkap.textContent = lengkap + ' lengkap';
+        if (textStatBelumLengkap) textStatBelumLengkap.textContent = belum + ' belum lengkap';
+        if (labelBelumLengkap) {
+            labelBelumLengkap.textContent = belum > 0 ? (belum + ' Belum Lengkap') : 'Semua Lengkap';
+        }
+
+        if (badgeSummary) {
+            if (belum > 0) {
+                badgeSummary.className = 'px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-300';
+            } else {
+                badgeSummary.className = 'px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300';
+            }
+        }
+
+        if (iconKelengkapanBox && iconKelengkapan) {
+            if (belum > 0) {
+                iconKelengkapanBox.className = 'w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0 shadow-2xs font-bold';
+                iconKelengkapan.className = 'fa-solid fa-clipboard-question';
+            } else {
+                iconKelengkapanBox.className = 'w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base shrink-0 shadow-2xs font-bold';
+                iconKelengkapan.className = 'fa-solid fa-circle-check';
             }
         }
     }

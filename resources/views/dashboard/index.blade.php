@@ -123,13 +123,13 @@
 
     <!-- 3. Hub Pintasan Fitur Cepat (Alur Kerja Cepat Guru & Wali) -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <a href="{{ route('kelas.index') }}" class="group p-4 bg-white hover:bg-emerald-50/60 rounded-2xl border border-slate-200/80 hover:border-emerald-300 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-3">
+        <a href="{{ route('input-nilai') }}" class="group p-4 bg-white hover:bg-emerald-50/60 rounded-2xl border border-slate-200/80 hover:border-emerald-300 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg shrink-0 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-200 shadow-2xs">
                 <i class="fa-solid fa-pen-to-square"></i>
             </div>
             <div class="min-w-0">
                 <p class="font-bold text-xs sm:text-sm text-slate-800 group-hover:text-emerald-800 truncate">Input Nilai</p>
-                <p class="text-[11px] text-slate-400 truncate">Formatif & sumatif</p>
+                <p class="text-[11px] text-slate-400 truncate">Formatif, STS, SAS &amp; Rapor</p>
             </div>
         </a>
 
@@ -250,7 +250,7 @@
                     <!-- Tombol Aksi HP -->
                     <div class="flex flex-wrap items-center gap-1.5 pt-1">
                         @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $k->wali_id))
-                            <a href="{{ route('nilai.input.kelas', $k->id) }}"
+                            <a href="{{ route('kelas.input-nilai', $k->id) }}"
                                class="flex-1 min-w-[120px] py-2 px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center justify-center gap-1.5 transition">
                                 <i class="fa-solid fa-pen-to-square"></i>
                                 <span>Input Nilai</span>
@@ -393,9 +393,9 @@
                             <td class="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
                                 @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $k->wali_id))
                                     <!-- Tombol Utama: Input Nilai (Hijau #059669) -->
-                                    <a href="{{ route('nilai.input.kelas', $k->id) }}"
+                                    <a href="{{ route('kelas.input-nilai', $k->id) }}"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs hover:shadow transition"
-                                        title="Input Nilai Format Matriks">
+                                        title="Buka Lembar Input Nilai & Rapor">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                         <span>Input Nilai</span>
                                     </a>

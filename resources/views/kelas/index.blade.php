@@ -146,7 +146,7 @@
                             <i class="fa-solid fa-users mr-1.5 text-slate-400"></i> Siswa
                         </a>
                         @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
-                            <a href="{{ route('nilai.input.kelas', $kelas->id) }}" class="py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-center transition flex items-center justify-center font-bold shadow-sm hover:shadow">
+                            <a href="{{ route('kelas.input-nilai', $kelas->id) }}" class="py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-center transition flex items-center justify-center font-bold shadow-sm hover:shadow">
                                 <i class="fa-solid fa-pen-to-square mr-1.5"></i> Input Nilai
                             </a>
                         @else

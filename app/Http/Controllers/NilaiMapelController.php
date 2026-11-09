@@ -25,6 +25,41 @@ use Illuminate\View\View;
 class NilaiMapelController extends Controller
 {
     /**
+     * Entry Point Cepat: Tombol "Input Nilai" langsung membuka Nilai Rapor sesuai kelas wali kelas yang login.
+     */
+    public function redirectInputNilaiUser(Request $request): RedirectResponse
+    {
+        $user = auth()->user();
+
+        // 1. Jika user adalah Wali Kelas, langsung arahkan ke kelas binaannya
+        $kelas = $user->kelasWali()->first();
+
+        // 2. Jika bukan wali kelas atau belum memiliki kelas binaan, cari dari penugasan guru
+        if (! $kelas) {
+            $penugasan = $user->penugasanGuru()->with('kelas')->first();
+            if ($penugasan && $penugasan->kelas) {
+                $kelas = $penugasan->kelas;
+            }
+        }
+
+        // 3. Jika admin atau belum memiliki relasi kelas khusus, ambil kelas aktif pertama
+        if (! $kelas) {
+            $tahunAktif = \App\Models\TahunAjaran::aktif()->first();
+            $query = Kelas::query();
+            if ($tahunAktif) {
+                $query->where('tahun_ajaran_id', $tahunAktif->id);
+            }
+            $kelas = $query->orderBy('nama')->first() ?? Kelas::first();
+        }
+
+        if (! $kelas) {
+            return redirect()->route('kelas.index')->with('warning', 'Belum ada rombel kelas yang terdaftar.');
+        }
+
+        return redirect()->route('kelas.input-nilai', $kelas->id);
+    }
+
+    /**
      * Entry Point Terpadu: Input Nilai Kelas (Formatif, UTS, Semester, Nilai Rapor Semua Mapel).
      */
     public function inputNilai(Kelas $kelas, Request $request): View
@@ -416,6 +451,18 @@ class NilaiMapelController extends Controller
             ->distinct('kelas_siswa_id')
             ->count('kelas_siswa_id');
 
+        // Hitung kelengkapan nilai siswa pada mapel aktif
+        $countLengkap = 0;
+        $countBelumLengkap = 0;
+        foreach ($siswaData as $sd) {
+            $isComplete = ($sd['nilaiUts'] !== null && $sd['nilaiUas'] !== null);
+            if ($isComplete) {
+                $countLengkap++;
+            } else {
+                $countBelumLengkap++;
+            }
+        }
+
         return view('kelas.mapel.nilai', compact(
             'kelas',
             'mapel',
@@ -455,7 +502,9 @@ class NilaiMapelController extends Controller
             'periodeSia',
             'kehadiranList',
             'nilaiPemGroup',
-            'countPembiasaan'
+            'countPembiasaan',
+            'countLengkap',
+            'countBelumLengkap'
         ));
     }
 

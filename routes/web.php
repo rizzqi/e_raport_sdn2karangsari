@@ -35,6 +35,7 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/input-nilai', [NilaiMapelController::class, 'redirectInputNilaiUser'])->name('input-nilai');
     Route::get('/absensi-harian', [AbsensiHarianController::class, 'index'])->name('absensi-harian.index');
 
     // Profil Pengguna & Ubah Kata Sandi

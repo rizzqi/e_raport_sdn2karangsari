@@ -117,9 +117,15 @@
                         <span>Dashboard</span>
                     </a>
 
-                    <a href="{{ route('kelas.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        <i class="fa-solid fa-chalkboard-user w-4 text-center {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
-                        <span>Kelas & Nilai</span>
+                    <!-- Tombol Cepat: Input Nilai Langsung Sesuai Kelas Wali yang Login -->
+                    <a href="{{ route('input-nilai') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('input-nilai') || request()->routeIs('kelas.input-nilai') || (request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-emerald-600 text-white font-black shadow-md border border-emerald-400/40 ring-1 ring-emerald-300/30' : 'text-emerald-300 hover:text-white hover:bg-white/10 font-bold' }}" title="Langsung Buka Lembar Nilai Rapor Kelas Saya">
+                        <i class="fa-solid fa-pen-to-square w-4 text-center {{ request()->routeIs('input-nilai') || request()->routeIs('kelas.input-nilai') || (request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'text-white' : 'text-emerald-400' }}"></i>
+                        <span>Input Nilai</span>
+                    </a>
+
+                    <a href="{{ route('kelas.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                        <i class="fa-solid fa-chalkboard-user w-4 text-center {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
+                        <span>Kelas</span>
                     </a>
 
                     <a href="{{ route('absensi-harian.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
@@ -273,9 +279,13 @@
                     <i class="fa-solid fa-house w-6 text-center mr-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white' : 'text-emerald-400' }}"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ route('kelas.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
-                    <i class="fa-solid fa-chalkboard-user w-6 text-center mr-2 text-sm {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') ? 'text-white' : 'text-emerald-400' }}"></i>
-                    <span>Kelas & Nilai</span>
+                <a href="{{ route('input-nilai') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('input-nilai') || request()->routeIs('kelas.input-nilai') || (request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-emerald-300 hover:bg-white/10 font-bold' }}">
+                    <i class="fa-solid fa-pen-to-square w-6 text-center mr-2 text-sm text-emerald-400"></i>
+                    <span>Input Nilai (Kelas Saya)</span>
+                </a>
+                <a href="{{ route('kelas.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
+                    <i class="fa-solid fa-chalkboard-user w-6 text-center mr-2 text-sm {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'text-white' : 'text-emerald-400' }}"></i>
+                    <span>Daftar Kelas</span>
                 </a>
                 <a href="{{ route('absensi-harian.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'bg-amber-500 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
                     <i class="fa-solid fa-calendar-check w-6 text-center mr-2 text-sm {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'text-white' : 'text-amber-400' }}"></i>
@@ -509,10 +519,10 @@
                 <span class="text-[9.5px] mt-1 tracking-tight">Beranda</span>
             </a>
 
-            <!-- 2. Kelas & Nilai -->
-            <a href="{{ route('kelas.index') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('absensi-harian.*') && !request()->routeIs('kelas.absensi-harian.*') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
-                <i class="fa-solid fa-chalkboard-user text-base {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('absensi-harian.*') && !request()->routeIs('kelas.absensi-harian.*') ? 'scale-110' : '' }}"></i>
-                <span class="text-[9.5px] mt-1 tracking-tight">Kelas</span>
+            <!-- 2. Input Nilai Langsung -->
+            <a href="{{ route('input-nilai') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ request()->routeIs('input-nilai') || request()->routeIs('kelas.input-nilai') || (request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                <i class="fa-solid fa-pen-to-square text-base {{ request()->routeIs('input-nilai') || request()->routeIs('kelas.input-nilai') || (request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'scale-110 text-emerald-400' : '' }}"></i>
+                <span class="text-[9.5px] mt-1 tracking-tight">Input Nilai</span>
             </a>
 
             <!-- 3. Tombol Tengah Menonjol: Absensi Harian Guru -->

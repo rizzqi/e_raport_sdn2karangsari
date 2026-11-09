@@ -142,4 +142,45 @@ class NilaiTerpaduMapelTest extends TestCase
         $response->assertSee('Alpa (A)');
         $response->assertSee('Isi semua Baik');
     }
+
+    public function test_tombol_input_nilai_mengarahkan_wali_kelas_langsung_ke_kelas_binaannya(): void
+    {
+        $wali = User::where('role', 'wali')->first();
+        $kelas = Kelas::where('wali_id', $wali->id)->first();
+        if (! $kelas) {
+            $kelas = Kelas::first();
+            $kelas->update(['wali_id' => $wali->id]);
+        }
+
+        $response = $this->actingAs($wali)->get(route('input-nilai'));
+
+        $response->assertRedirect(route('kelas.input-nilai', $kelas->id));
+    }
+
+    public function test_tombol_input_nilai_mengarahkan_admin_ke_kelas_pertama(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::orderBy('nama')->first();
+
+        $response = $this->actingAs($admin)->get(route('input-nilai'));
+
+        $response->assertRedirect(route('kelas.input-nilai', $kelas->id));
+    }
+
+    public function test_halaman_input_nilai_menampilkan_status_kelengkapan_dan_filter_belum_lengkap(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $mapel = MataPelajaran::first();
+
+        $response = $this->actingAs($admin)->get(route('kelas.mapel.nilai', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Kelengkapan Nilai Siswa');
+        $response->assertSee('Belum Lengkap');
+        $response->assertSee('Lengkap');
+    }
 }
