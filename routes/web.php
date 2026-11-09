@@ -128,6 +128,8 @@ Route::middleware('auth')->group(function () {
 
         // Modul 4 Lembar Nilai per Mapel (Formatif, UTS, Semester, Nilai Rapor)
         Route::get('/mapel/{mapel}/nilai', [NilaiMapelController::class, 'index'])->name('kelas.mapel.nilai');
+        Route::post('/mapel/{mapel}/nilai/simpan-terpadu', [NilaiMapelController::class, 'simpanTerpadu'])->name('kelas.mapel.nilai.simpan-terpadu');
+        Route::post('/mapel/{mapel}/nilai/simpan-catatan-ajax', [NilaiMapelController::class, 'simpanCatatanAjax'])->name('kelas.mapel.nilai.simpan-catatan-ajax');
         Route::post('/mapel/{mapel}/nilai/formatif', [NilaiMapelController::class, 'simpanFormatif'])->name('kelas.mapel.nilai.formatif');
         Route::post('/mapel/{mapel}/nilai/uts', [NilaiMapelController::class, 'simpanUts'])->name('kelas.mapel.nilai.uts');
         Route::post('/mapel/{mapel}/nilai/uas', [NilaiMapelController::class, 'simpanUas'])->name('kelas.mapel.nilai.uas');

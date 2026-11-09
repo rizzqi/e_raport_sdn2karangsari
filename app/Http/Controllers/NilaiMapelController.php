@@ -8,12 +8,15 @@ use App\Models\KelasSiswa;
 use App\Models\MataPelajaran;
 use App\Models\Nilai;
 use App\Models\NilaiFormatifBulanan;
+use App\Models\NilaiPembiasaan;
 use App\Models\NilaiRaporMapel;
+use App\Models\Pembiasaan;
 use App\Models\PenilaianFormatifHarian;
 use App\Models\Sekolah;
 use App\Services\HitungNilaiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +31,7 @@ class NilaiMapelController extends Controller
     {
         $this->authorizeAkses($kelas);
 
-        $tab = $request->input('tab', 'formatif');
+        $tab = $request->input('tab', 'mapel');
         $allMapel = $kelas->mataPelajaran();
 
         $mapelId = $request->input('mapel_id');
@@ -44,7 +47,7 @@ class NilaiMapelController extends Controller
     }
 
     /**
-     * Tampilan Utama: 4 Lembar per Mata Pelajaran (Formatif, UTS, Semester, Nilai Rapor).
+     * Tampilan Utama: Input Nilai Terpadu per Mapel (Formatif, STS, SAS, Nilai Rapor) & Tab Pembiasaan.
      */
     public function index(Kelas $kelas, ?MataPelajaran $mapel, Request $request): View
     {
@@ -60,9 +63,12 @@ class NilaiMapelController extends Controller
         // Tentukan daftar bulan sesuai semester aktif
         $bulanSemester = $this->getBulanSemester($semester);
 
-        $tab = $request->input('tab', 'formatif');
-        if (! in_array($tab, ['formatif', 'uts', 'uas', 'rapor'])) {
-            $tab = 'formatif';
+        $tab = $request->input('tab', 'mapel');
+        if (in_array($tab, ['uts', 'uas'])) {
+            $tab = 'mapel';
+        }
+        if (! in_array($tab, ['mapel', 'pembiasaan', 'formatif', 'rapor'])) {
+            $tab = 'mapel';
         }
 
         // Daftar semua mata pelajaran di kelas ini
@@ -201,6 +207,8 @@ class NilaiMapelController extends Controller
                 $isAnyLocked = true;
             }
 
+            $saranDefault = $mapel ? $this->generateSaranCatatan($mapel->nama, $predikat, $kelas->fase ?? 'A', $nilaiRapor) : '';
+
             $siswaData[$ks->id] = [
                 'kelasSiswa' => $ks,
                 'siswa' => $ks->siswa,
@@ -217,6 +225,7 @@ class NilaiMapelController extends Controller
                 'predikat' => $predikat,
                 'keteranganPredikat' => NilaiRaporMapel::getKeteranganPredikat($predikat),
                 'catatan' => $catatan,
+                'saranDefault' => $saranDefault,
                 'isLocked' => $isLocked,
                 'recRapor' => $recRapor,
             ];
@@ -378,6 +387,35 @@ class NilaiMapelController extends Controller
             ->selectRaw('bulan, count(*) as total')
             ->pluck('total', 'bulan') : collect();
 
+        // Progres Pengisian per Mata Pelajaran (Jumlah siswa yang sudah memiliki nilai rapor / UTS / UAS)
+        $progressMapel = NilaiRaporMapel::whereIn('kelas_siswa_id', $ksIds)
+            ->where('tahun', $tahun)
+            ->where('semester', $semester)
+            ->where(function ($q) {
+                $q->whereNotNull('nilai_rapor')
+                    ->orWhereNotNull('nilai_uts')
+                    ->orWhereNotNull('nilai_uas');
+            })
+            ->selectRaw('mapel_id, count(DISTINCT kelas_siswa_id) as total')
+            ->groupBy('mapel_id')
+            ->pluck('total', 'mapel_id');
+
+        // Data Tab Pembiasaan & Kehadiran (SIA)
+        $periodeSia = $semester === 'genap' ? 'sas' : 'sts';
+        $pembiasaans = Pembiasaan::aktif()->orderBy('urutan')->get();
+        $kehadiranList = Kehadiran::whereIn('kelas_siswa_id', $ksIds)
+            ->where('periode', $periodeSia)
+            ->get()
+            ->keyBy('kelas_siswa_id');
+        $nilaiPemGroup = NilaiPembiasaan::whereIn('kelas_siswa_id', $ksIds)
+            ->where('periode', $periodeSia)
+            ->get()
+            ->groupBy('kelas_siswa_id');
+        $countPembiasaan = NilaiPembiasaan::whereIn('kelas_siswa_id', $ksIds)
+            ->where('periode', $periodeSia)
+            ->distinct('kelas_siswa_id')
+            ->count('kelas_siswa_id');
+
         return view('kelas.mapel.nilai', compact(
             'kelas',
             'mapel',
@@ -410,8 +448,191 @@ class NilaiMapelController extends Controller
             'jenisFormatif',
             'isAgama',
             'isPjok',
-            'harianCountPerBulan'
+            'harianCountPerBulan',
+            'totalSiswa',
+            'progressMapel',
+            'pembiasaans',
+            'periodeSia',
+            'kehadiranList',
+            'nilaiPemGroup',
+            'countPembiasaan'
         ));
+    }
+
+    /**
+     * Simpan Nilai Terpadu: Formatif (40%), STS (30%), SAS (30%), Nilai Rapor & Predikat.
+     */
+    public function simpanTerpadu(Kelas $kelas, MataPelajaran $mapel, Request $request): RedirectResponse
+    {
+        $this->authorizeAkses($kelas);
+
+        $tahun = (int) $request->input('tahun', now()->year);
+        $semester = strtolower($request->input('semester', 'ganjil'));
+        $stsData = $request->input('sts', []);
+        $sasData = $request->input('sas', []);
+        $catatanData = $request->input('catatan', []);
+
+        $sekolah = $kelas->sekolah ?? Sekolah::first();
+        $bobotFormatif = $sekolah ? $sekolah->getBobotFormatif() : 40;
+        $bobotUts = $sekolah ? $sekolah->getBobotUts() : 30;
+        $bobotUas = $sekolah ? $sekolah->getBobotUas() : 30;
+
+        $bulanSemester = $this->getBulanSemester($semester);
+        $allKsIds = $kelas->kelasSiswa()->pluck('id');
+
+        // Ambil data nilai formatif bulanan yang ada
+        $allFormatif = NilaiFormatifBulanan::whereIn('kelas_siswa_id', $allKsIds)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->whereIn('bulan', array_keys($bulanSemester))
+            ->get()
+            ->groupBy('kelas_siswa_id');
+
+        $isAgama = $mapel->getJenisFormatif() === 'agama';
+
+        DB::transaction(function () use (
+            $allKsIds,
+            $stsData,
+            $sasData,
+            $catatanData,
+            $allFormatif,
+            $mapel,
+            $tahun,
+            $semester,
+            $bobotFormatif,
+            $bobotUts,
+            $bobotUas,
+            $isAgama
+        ) {
+            foreach ($allKsIds as $ksId) {
+                $fList = $allFormatif->get($ksId, collect());
+                $terisiFormatif = $fList->whereNotNull('nilai')->pluck('nilai')->map(fn ($v) => (float) $v)->toArray();
+
+                $rapor = NilaiRaporMapel::firstOrNew([
+                    'kelas_siswa_id' => $ksId,
+                    'mapel_id' => $mapel->id,
+                    'tahun' => $tahun,
+                    'semester' => $semester,
+                ]);
+
+                if ($rapor->is_locked) {
+                    continue;
+                }
+
+                if ($isAgama) {
+                    if ($rapor->praktik_1 !== null) {
+                        $terisiFormatif[] = (float) $rapor->praktik_1;
+                    }
+                    if ($rapor->praktik_2 !== null) {
+                        $terisiFormatif[] = (float) $rapor->praktik_2;
+                    }
+                }
+
+                $rataFormatif = count($terisiFormatif) > 0 ? round(array_sum($terisiFormatif) / count($terisiFormatif), 1) : null;
+
+                // Parse STS (UTS)
+                $rawSts = $stsData[$ksId] ?? null;
+                $valSts = null;
+                if ($rawSts !== null && trim((string) $rawSts) !== '') {
+                    $valSts = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawSts))));
+                    Nilai::updateOrCreate([
+                        'kelas_siswa_id' => $ksId,
+                        'mapel_id' => $mapel->id,
+                        'periode' => 'sts',
+                    ], [
+                        'sumatif' => $valSts,
+                    ]);
+                } else {
+                    Nilai::where('kelas_siswa_id', $ksId)
+                        ->where('mapel_id', $mapel->id)
+                        ->where('periode', 'sts')
+                        ->update(['sumatif' => null]);
+                }
+
+                // Parse SAS (UAS)
+                $rawSas = $sasData[$ksId] ?? null;
+                $valSas = null;
+                if ($rawSas !== null && trim((string) $rawSas) !== '') {
+                    $valSas = max(0, min(100, (float) str_replace(',', '.', trim((string) $rawSas))));
+                    Nilai::updateOrCreate([
+                        'kelas_siswa_id' => $ksId,
+                        'mapel_id' => $mapel->id,
+                        'periode' => 'sas',
+                    ], [
+                        'sumatif' => $valSas,
+                    ]);
+                } else {
+                    Nilai::where('kelas_siswa_id', $ksId)
+                        ->where('mapel_id', $mapel->id)
+                        ->where('periode', 'sas')
+                        ->update(['sumatif' => null]);
+                }
+
+                // Hitung Nilai Rapor & Predikat
+                $nilaiRapor = $this->hitungNilaiRapor(
+                    $rataFormatif,
+                    $valSts,
+                    $valSas,
+                    $bobotFormatif,
+                    $bobotUts,
+                    $bobotUas
+                );
+                $predikat = NilaiRaporMapel::hitungPredikat($nilaiRapor);
+
+                $rapor->rata_formatif = $rataFormatif;
+                $rapor->nilai_uts = $valSts;
+                $rapor->nilai_uas = $valSas;
+                $rapor->nilai_rapor = $nilaiRapor;
+                $rapor->predikat = $predikat;
+                if (isset($catatanData[$ksId])) {
+                    $rapor->catatan = trim((string) $catatanData[$ksId]);
+                }
+                $rapor->save();
+            }
+        });
+
+        return redirect()->route('kelas.mapel.nilai', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+            'tab' => 'mapel',
+            'tahun' => $tahun,
+        ])->with('success', 'Nilai STS, SAS, dan Nilai Rapor untuk '.$mapel->nama.' berhasil disimpan.');
+    }
+
+    /**
+     * AJAX Endpoint: Simpan Catatan Guru per Siswa.
+     */
+    public function simpanCatatanAjax(Kelas $kelas, MataPelajaran $mapel, Request $request): JsonResponse
+    {
+        $this->authorizeAkses($kelas);
+
+        $ksId = (int) $request->input('kelas_siswa_id');
+        $catatan = trim((string) $request->input('catatan'));
+        $tahun = (int) $request->input('tahun', now()->year);
+        $semester = strtolower($request->input('semester', 'ganjil'));
+
+        $rapor = NilaiRaporMapel::firstOrNew([
+            'kelas_siswa_id' => $ksId,
+            'mapel_id' => $mapel->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+        ]);
+
+        if ($rapor->is_locked) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nilai rapor terkunci dan tidak dapat diubah.',
+            ], 403);
+        }
+
+        $rapor->catatan = $catatan;
+        $rapor->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Catatan capaian kompetensi berhasil disimpan!',
+            'catatan' => $catatan,
+        ]);
     }
 
     /**
