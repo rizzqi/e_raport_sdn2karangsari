@@ -12,127 +12,176 @@
             $sekolah = null;
         }
         $logoUrl = null;
-        if ($sekolah && $sekolah->logo_kanan && file_exists(public_path('storage/' . $sekolah->logo_kanan))) {
+        if (file_exists(public_path('images/logo-sdn2.png'))) {
+            $logoUrl = asset('images/logo-sdn2.png');
+        } elseif (file_exists(public_path('images/logo-sdn2.jpg'))) {
+            $logoUrl = asset('images/logo-sdn2.jpg');
+        } elseif ($sekolah && $sekolah->logo_kanan && file_exists(public_path('storage/' . $sekolah->logo_kanan))) {
             $logoUrl = asset('storage/' . $sekolah->logo_kanan);
         } elseif ($sekolah && $sekolah->logo && file_exists(public_path('storage/' . $sekolah->logo))) {
             $logoUrl = asset('storage/' . $sekolah->logo);
-        } elseif (file_exists(public_path('images/logo-sdn2.jpg'))) {
-            $logoUrl = asset('images/logo-sdn2.jpg');
         }
     @endphp
 
     @if($logoUrl)
-        <link rel="icon" type="image/jpeg" href="{{ $logoUrl }}">
+        <link rel="icon" type="image/png" href="{{ $logoUrl }}">
     @endif
 
     @vite(['resources/css/app.css'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
-<body class="relative min-h-dvh w-full overflow-x-hidden bg-slate-50 text-slate-800 antialiased selection:bg-emerald-600 selection:text-white">
+<body class="relative min-h-screen w-full overflow-x-hidden bg-[#0a1e3f] text-slate-800 antialiased selection:bg-blue-600 selection:text-white flex flex-col justify-between">
 
-    <div class="relative flex min-h-dvh w-full flex-col lg:flex-row">
+    {{-- ========================================================================= --}}
+    {{-- BACKGROUND DEKORATIF: OVERLAY FOTO + GRADASI BIRU RESMI + GELOMBANG EMAS  --}}
+    {{-- ========================================================================= --}}
+    <div class="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        {{-- Foto Gedung / Lingkungan Sekolah sebagai Ambient Texture --}}
+        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25 mix-blend-luminosity scale-105"
+             style="background-image: url('{{ asset('images/gedung.jpg') }}');">
+        </div>
 
-        {{-- ========================================================================= --}}
-        {{-- PANEL KIRI: FOTO GEDUNG SEKOLAH SD DENGAN OVERLAY & BRANDING ELEGAN      --}}
-        {{-- ========================================================================= --}}
-        <div class="relative flex min-h-[240px] sm:min-h-[300px] w-full flex-col justify-between overflow-hidden bg-emerald-950 p-6 sm:p-8 lg:min-h-dvh lg:flex-1 lg:p-12 xl:p-16">
-            
-            {{-- Foto Gedung Asli --}}
-            <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 hover:scale-105"
-                 style="background-image: url('{{ asset('images/gedung.jpg') }}');">
+        {{-- Gradasi Biru Navy Elegan Khas Pendidikan (Persis Mockup) --}}
+        <div class="absolute inset-0 bg-gradient-to-br from-[#0c2b5e]/95 via-[#0d346c]/90 to-[#07172f]/95"></div>
+
+        {{-- Ornamen Gelombang Pojok Kiri Atas (Kuning Emas, Cyan & Biru Royal) --}}
+        <div class="absolute -top-12 -left-12 w-[340px] sm:w-[460px] h-[340px] sm:h-[460px]">
+            <svg viewBox="0 0 400 400" class="h-full w-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M 0,0 L 260,0 C 260,150 150,260 0,260 Z" fill="#f59e0b" opacity="0.95" />
+                <path d="M 0,0 L 220,0 C 220,130 130,220 0,220 Z" fill="#0284c7" opacity="0.85" />
+                <path d="M 0,0 L 180,0 C 180,100 100,180 0,180 Z" fill="#1e40af" opacity="0.9" />
+            </svg>
+        </div>
+
+        {{-- Pola Titik-Titik Dekoratif (Dot Matrix) Kiri Atas --}}
+        <div class="absolute top-20 left-12 sm:left-24 w-36 h-36 opacity-30"
+             style="background-image: radial-gradient(#ffffff 2px, transparent 2px); background-size: 16px 16px;">
+        </div>
+
+        {{-- Ornamen Gelombang Bawah (Emas & Biru Royal) --}}
+        <div class="absolute bottom-12 left-0 w-80 h-32">
+            <svg viewBox="0 0 320 120" class="h-full w-full" fill="none">
+                <path d="M 0,40 C 100,30 180,90 280,120 L 0,120 Z" fill="#f59e0b" opacity="0.9" />
+                <path d="M 0,70 C 90,60 160,100 240,120 L 0,120 Z" fill="#1d4ed8" opacity="0.8" />
+            </svg>
+        </div>
+
+        <div class="absolute bottom-12 right-0 w-64 h-28">
+            <svg viewBox="0 0 260 110" class="h-full w-full" fill="none">
+                <path d="M 120,110 C 180,60 220,50 260,30 L 260,110 Z" fill="#f59e0b" opacity="0.9" />
+                <path d="M 160,110 C 200,80 230,70 260,50 L 260,110 Z" fill="#1d4ed8" opacity="0.8" />
+            </svg>
+        </div>
+    </div>
+
+    {{-- ========================================================================= --}}
+    {{-- BAGIAN ATAS: LOGO & IDENTITAS INSTANSI (TANPA TAHUN AJARAN)                --}}
+    {{-- ========================================================================= --}}
+    <header class="relative z-20 w-full px-6 pt-6 sm:px-12 sm:pt-8 flex items-center justify-between">
+        {{-- Pill Brand Header (Putih dengan Logo & Nama Sekolah) --}}
+        <div class="inline-flex items-center gap-3.5 rounded-full bg-white px-5 py-2.5 shadow-xl shadow-black/15 ring-1 ring-slate-100/90">
+            <div class="size-11 sm:size-12 shrink-0 overflow-hidden rounded-full bg-slate-50 p-1 flex items-center justify-center">
+                <img src="{{ $logoUrl }}" alt="Logo SDN 2 Karangsari" class="h-full w-full object-contain">
             </div>
-
-            {{-- Overlay Gradien Gelap Elegan Agar Foto Tetap Cerah & Teks Sangat Terbaca --}}
-            <div class="absolute inset-0 bg-gradient-to-t from-emerald-950/95 via-emerald-950/75 to-black/50"></div>
-
-            {{-- Header Kiri Atas: Logo Sekolah + Identitas Instansi --}}
-            <div class="relative z-10 flex items-center gap-3 sm:gap-4">
-                <div class="size-13 sm:size-16 shrink-0 overflow-hidden rounded-2xl bg-white/20 p-1 shadow-2xl backdrop-blur-md ring-2 ring-white/30 lg:size-20">
-                    <img src="{{ asset('images/logo-sdn2.jpg') }}" 
-                         alt="Logo SDN 2 Karangsari" 
-                         class="h-full w-full rounded-xl object-cover shadow-inner">
-                </div>
-                <div class="text-white">
-                    <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/30 px-2.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-emerald-200 backdrop-blur-sm ring-1 ring-emerald-400/30">
-                        <i class="fa-solid fa-school text-[8px] sm:text-[9px]"></i> SD Negeri
-                    </div>
-                    <h1 class="mt-0.5 sm:mt-1 text-lg font-black uppercase tracking-tight text-white drop-shadow-md sm:text-2xl lg:text-3xl">
-                        SDN 2 Karangsari
-                    </h1>
-                    <p class="text-[11px] font-medium text-emerald-100/90 sm:text-sm">
-                        Kecamatan Sempu, Kabupaten Banyuwangi
-                    </p>
-                </div>
-            </div>
-
-            {{-- Konten Tengah Kiri: Headline & Deskripsi Sistem --}}
-            <div class="relative z-10 my-auto hidden py-8 lg:block">
-                <div class="rounded-3xl bg-black/35 p-8 backdrop-blur-md border border-white/10 max-w-xl shadow-2xl">
-                    <div class="mb-4 inline-flex items-center gap-2 rounded-xl bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-200 backdrop-blur-md ring-1 ring-white/20">
-                        <i class="fa-solid fa-graduation-cap text-emerald-300"></i> Kurikulum Merdeka
-                    </div>
-                    <h2 class="text-3xl font-black text-white sm:text-4xl leading-tight drop-shadow-lg">
-                        Sistem E-Raport &amp;<br>
-                        <span class="text-emerald-300">
-                            Administrasi Digital
-                        </span>
-                    </h2>
-                    <p class="mt-3 text-xs leading-relaxed text-emerald-50/90 sm:text-sm drop-shadow">
-                        Aplikasi pelaporan hasil belajar siswa terpadu untuk pendataan nilai formatif, sumatif, rekapitulasi absensi, dan pencetakan raport digital.
-                    </p>
-
-                    <div class="mt-6 flex flex-wrap gap-2">
-                        <span class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/15">
-                            <i class="fa-solid fa-file-pen text-emerald-300"></i> Nilai Formatif &amp; Sumatif
-                        </span>
-                        <span class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/15">
-                            <i class="fa-solid fa-calendar-check text-emerald-300"></i> Absensi Otomatis
-                        </span>
-                        <span class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md ring-1 ring-white/15">
-                            <i class="fa-solid fa-print text-emerald-300"></i> Cetak Siap Pakai
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Footer Kiri Bawah --}}
-            <div class="relative z-10 text-[11px] sm:text-xs text-emerald-200/80 hidden sm:block">
-                <i class="fa-solid fa-location-dot mr-1.5 text-emerald-400"></i>
-                Jl. Parijatah No. 45 Karangsari, Kec. Sempu, Kab. Banyuwangi, Jawa Timur
+            <div class="border-l border-slate-200 pl-3">
+                <h1 class="text-sm sm:text-base font-black uppercase tracking-wider text-[#0a2558]">
+                    SDN 2 KARANGSARI
+                </h1>
+                <p class="text-[11px] sm:text-xs font-medium text-slate-500">
+                    Kecamatan Sempu, Kabupaten Banyuwangi
+                </p>
             </div>
         </div>
 
-        {{-- ========================================================================= --}}
-        {{-- PANEL KANAN: FORM LOGIN BERSIH, LEBAR NYAMAN & PRESISI (480px-520px)        --}}
-        {{-- ========================================================================= --}}
-        <main class="relative z-10 flex min-h-dvh w-full flex-col justify-between bg-white px-6 py-10 sm:px-10 md:px-14 lg:w-[480px] xl:w-[520px] lg:shrink-0 lg:border-l lg:border-slate-200 shadow-2xl">
-            
-            {{-- Badge Atas: Portal Resmi --}}
-            <div class="flex items-center justify-between">
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200/60">
-                    <i class="fa-solid fa-lock text-[10px]"></i> Portal Masuk Resmi
-                </span>
-                <span class="text-[11px] font-semibold text-slate-400">Tahun Ajaran Aktif</span>
-            </div>
+        {{-- Tahun Ajaran Dikosongkan sesuai permintaan pengguna --}}
+    </header>
 
-            {{-- Form Login Area --}}
-            <div class="mx-auto my-auto w-full max-w-sm sm:max-w-md">
+    {{-- ========================================================================= --}}
+    {{-- KONTEN UTAMA: HERO SAMBUTAN DI KIRI & FLOATING KARTU LOGIN DI KANAN        --}}
+    {{-- ========================================================================= --}}
+    <main class="relative z-10 w-full max-w-7xl mx-auto px-6 py-8 sm:px-12 lg:py-12 flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-14 flex-1 my-auto">
+        
+        {{-- SISI KIRI: Headline Selamat Datang & Informasi Sistem --}}
+        <div class="w-full lg:max-w-xl text-white">
+            <p class="text-lg sm:text-2xl font-medium tracking-tight text-white/90">
+                Selamat Datang di
+            </p>
+            <h2 class="mt-1 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none drop-shadow-lg">
+                E-Rapor <span class="text-amber-400">Digital</span>
+            </h2>
+            <h3 class="mt-2 text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight drop-shadow-md">
+                SDN 2 Karangsari
+            </h3>
+
+            {{-- Garis Aksen Emas (Persis Mockup) --}}
+            <div class="mt-4 mb-5 h-1.5 w-16 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"></div>
+
+            <p class="text-sm sm:text-base text-blue-100/90 leading-relaxed max-w-lg drop-shadow">
+                Aplikasi pelaporan hasil belajar siswa secara digital, cepat, dan akurat.
+            </p>
+
+            {{-- Badges Fitur: Transparan & Akurat, Mudah & Aman --}}
+            <div class="mt-8 flex flex-wrap items-center gap-3">
+                <div class="inline-flex items-center gap-3 rounded-2xl bg-blue-600/35 px-4 py-2.5 backdrop-blur-md ring-1 ring-blue-400/30 shadow-lg">
+                    <div class="flex size-9 items-center justify-center rounded-xl bg-blue-500 text-white shadow-inner">
+                        <i class="fa-solid fa-chart-line text-sm"></i>
+                    </div>
+                    <div class="leading-tight">
+                        <span class="block text-xs font-bold text-white">Transparan</span>
+                        <span class="block text-[11px] font-medium text-blue-200">&amp; Akurat</span>
+                    </div>
+                </div>
+
+                <div class="hidden sm:block h-8 w-px bg-white/20"></div>
+
+                <div class="inline-flex items-center gap-3 rounded-2xl bg-blue-600/35 px-4 py-2.5 backdrop-blur-md ring-1 ring-blue-400/30 shadow-lg">
+                    <div class="flex size-9 items-center justify-center rounded-xl bg-blue-500 text-white shadow-inner">
+                        <i class="fa-solid fa-shield-halved text-sm"></i>
+                    </div>
+                    <div class="leading-tight">
+                        <span class="block text-xs font-bold text-white">Mudah</span>
+                        <span class="block text-[11px] font-medium text-blue-200">&amp; Aman</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- SISI KANAN: FLOATING LOGIN CARD MODERN (PERSIS MOCKUP) --}}
+        <div class="w-full lg:max-w-md">
+            <div class="relative rounded-[2.5rem] bg-white p-7 sm:p-10 shadow-2xl shadow-black/40 border border-white/80 overflow-hidden">
                 
-                {{-- Sambutan --}}
-                <div class="mb-6">
-                    <p class="text-xs font-bold uppercase tracking-wider text-emerald-700">Selamat Datang di</p>
-                    <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-                        E-Raport Digital
+                {{-- Aksen Melengkung Biru-Kuning di Pojok Kiri Atas Kartu (Persis Mockup) --}}
+                <div class="pointer-events-none absolute -top-12 -left-12 size-36">
+                    <svg viewBox="0 0 100 100" class="h-full w-full">
+                        <path d="M 0,0 L 75,0 C 75,45 45,75 0,75 Z" fill="#2563eb" opacity="0.95" />
+                        <path d="M 0,0 L 58,0 C 58,35 35,58 0,58 Z" fill="#f59e0b" />
+                    </svg>
+                </div>
+
+                {{-- Header Kartu: Logo + Garis Aksen Emas --}}
+                <div class="text-center pt-2">
+                    <div class="flex items-center justify-center gap-3">
+                        <span class="h-0.5 w-10 sm:w-12 rounded-full bg-amber-400"></span>
+                        <div class="size-16 sm:size-20 shrink-0 p-1 flex items-center justify-center">
+                            <img src="{{ $logoUrl }}" alt="Logo SDN 2 Karangsari" class="max-h-full max-w-full object-contain">
+                        </div>
+                        <span class="h-0.5 w-10 sm:w-12 rounded-full bg-amber-400"></span>
+                    </div>
+
+                    <h2 class="mt-3 text-xl sm:text-2xl font-black uppercase tracking-tight text-[#0a2558]">
+                        SDN 2 KARANGSARI
                     </h2>
-                    <p class="mt-1.5 text-xs font-medium text-slate-500 sm:text-sm">
-                        Silakan masukkan kredensial akun Anda untuk mengelola nilai dan raport siswa.
+                    <p class="text-xs sm:text-sm font-bold text-slate-700 mt-0.5">
+                        E-Rapor Digital
                     </p>
-                    <div class="mt-3 h-1 w-12 rounded-full bg-emerald-600"></div>
+                    <p class="mt-1 text-xs text-slate-500 font-medium">
+                        Silakan masuk dengan akun Anda untuk mengakses aplikasi.
+                    </p>
                 </div>
 
                 {{-- Alerts Notifikasi --}}
                 @if(session('success'))
-                    <div class="mb-4 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                    <div class="mt-4 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
                         <i class="fa-solid fa-circle-check mt-0.5 text-emerald-600"></i>
                         <div class="flex-1 font-medium">{{ session('success') }}</div>
                         <button onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700"><i class="fa-solid fa-xmark"></i></button>
@@ -140,7 +189,7 @@
                 @endif
 
                 @if(session('info'))
-                    <div class="mb-4 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+                    <div class="mt-4 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
                         <i class="fa-solid fa-circle-info mt-0.5 text-blue-600"></i>
                         <div class="flex-1 font-medium">{{ session('info') }}</div>
                         <button onclick="this.parentElement.remove()" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-xmark"></i></button>
@@ -148,7 +197,7 @@
                 @endif
 
                 @if(session('warning'))
-                    <div class="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                    <div class="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
                         <i class="fa-solid fa-triangle-exclamation mt-0.5 text-amber-600"></i>
                         <div class="flex-1 font-medium">{{ session('warning') }}</div>
                         <button onclick="this.parentElement.remove()" class="text-amber-500 hover:text-amber-700"><i class="fa-solid fa-xmark"></i></button>
@@ -156,7 +205,7 @@
                 @endif
 
                 @if(isset($errors) && $errors->any())
-                    <div class="mb-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900">
+                    <div class="mt-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900">
                         <i class="fa-solid fa-circle-exclamation mt-0.5 text-rose-600"></i>
                         <div class="flex-1 font-medium">{{ $errors->first() }}</div>
                         <button onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-xmark"></i></button>
@@ -164,30 +213,34 @@
                 @endif
 
                 {{-- Form Input --}}
-                <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
+                <form action="{{ route('login.post') }}" method="POST" class="mt-6 space-y-4">
                     @csrf
 
                     <div>
-                        <label for="email" class="mb-1.5 block text-xs font-bold text-slate-700">Email Pengguna / NIP</label>
+                        <label for="email" class="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-[#0a2558]">
+                            <i class="fa-solid fa-user text-[11px] text-[#0a2558]"></i> Email Pengguna / NIP
+                        </label>
                         <div class="relative">
                             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                                 <i class="fa-regular fa-envelope text-sm"></i>
                             </div>
                             <input type="email" name="email" id="email" required value="{{ old('email') }}"
-                                class="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-3 pl-10 pr-3.5 text-sm font-medium text-slate-900 transition placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-600/10"
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-3 pl-10 pr-3.5 text-sm font-medium text-slate-900 transition placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10"
                                 placeholder="nama@sdn2karangsari.sch.id">
                         </div>
                     </div>
 
                     <div>
-                        <label for="password" class="mb-1.5 block text-xs font-bold text-slate-700">Kata Sandi</label>
+                        <label for="password" class="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-[#0a2558]">
+                            <i class="fa-solid fa-lock text-[11px] text-[#0a2558]"></i> Kata Sandi
+                        </label>
                         <div class="relative">
                             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                                 <i class="fa-solid fa-lock text-sm"></i>
                             </div>
                             <input type="password" name="password" id="password" required
-                                class="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-3 pl-10 pr-10 text-sm font-medium text-slate-900 transition placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-600/10"
-                                placeholder="••••••••">
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-3 pl-10 pr-10 text-sm font-medium text-slate-900 transition placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+                                placeholder="Masukkan kata sandi">
                             <button type="button" onclick="togglePassword()"
                                 class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 transition hover:text-slate-600"
                                 title="Tampilkan / Sembunyikan sandi">
@@ -196,90 +249,62 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between pt-0.5">
+                    <div class="flex items-center justify-between pt-0.5 text-xs">
                         <label class="flex cursor-pointer select-none items-center">
-                            <input type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 mr-2">
-                            <span class="text-xs font-semibold text-slate-600">Ingat Saya</span>
+                            <input type="checkbox" name="remember" class="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 mr-2">
+                            <span class="font-medium text-slate-600">Ingat Saya</span>
                         </label>
+                        <span class="font-semibold text-blue-600 hover:text-blue-800 cursor-pointer">Lupa Kata Sandi?</span>
                     </div>
 
                     <button type="submit"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 transition duration-200 hover:-translate-y-0.5 hover:from-emerald-700 hover:to-teal-700 hover:shadow-emerald-600/35 active:translate-y-0">
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition duration-200 hover:-translate-y-0.5 active:translate-y-0">
+                        <i class="fa-solid fa-arrow-right-to-bracket text-sm"></i>
                         <span>Masuk ke Akun</span>
-                        <i class="fa-solid fa-arrow-right text-xs"></i>
                     </button>
                 </form>
 
+                {{-- Akses Cepat Demo (Jika Demo Diaktifkan) --}}
                 @if(config('app.demo_accounts'))
-                {{-- Akses Cepat Akun Demo --}}
-                <div class="relative my-6">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-slate-200"></div>
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Akses Cepat Demo:</span>
+                        <span id="quick-status" class="text-[10px] font-bold text-blue-600"></span>
                     </div>
-                    <div class="relative flex justify-center text-xs">
-                        <span class="bg-white px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                            Akses Cepat Pengguna Demo
-                        </span>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button type="button" onclick="setDemo('admin@sdn2karangsari.sch.id', 'password', 'Admin')"
+                            class="rounded-lg bg-blue-50 hover:bg-blue-100 p-1.5 text-center transition">
+                            <span class="block text-[11px] font-bold text-blue-800">Admin</span>
+                        </button>
+                        <button type="button" onclick="setDemo('wali1@sdn2karangsari.sch.id', 'password', 'Wali 1')"
+                            class="rounded-lg bg-slate-100 hover:bg-blue-50 p-1.5 text-center transition">
+                            <span class="block text-[11px] font-bold text-slate-700">Wali 1</span>
+                        </button>
+                        <button type="button" onclick="setDemo('wali6@sdn2karangsari.sch.id', 'password', 'Wali 6')"
+                            class="rounded-lg bg-slate-100 hover:bg-blue-50 p-1.5 text-center transition">
+                            <span class="block text-[11px] font-bold text-slate-700">Wali 6</span>
+                        </button>
                     </div>
-                </div>
-
-                <div class="flex items-center justify-between mb-2 px-1 min-h-[16px]">
-                    <span class="text-[10px] font-semibold text-slate-400">Klik untuk isi otomatis:</span>
-                    <span id="quick-status" class="text-[10px] font-bold text-emerald-600 transition-all"></span>
-                </div>
-
-                {{-- Akun Administrator --}}
-                <button type="button" onclick="setDemo('admin@sdn2karangsari.sch.id', 'password', 'Administrator')"
-                    class="w-full mb-2 flex items-center justify-between rounded-xl border border-slate-200/90 bg-slate-50/80 p-2 text-left transition hover:bg-emerald-50/70 hover:border-emerald-300 group">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <div class="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white transition">
-                            <i class="fa-solid fa-shield-halved text-[11px]"></i>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center gap-1.5">
-                                <span class="font-bold text-xs text-slate-800 group-hover:text-emerald-800">Administrator</span>
-                                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase">Admin</span>
-                            </div>
-                            <span class="text-[10px] text-slate-400 font-mono block truncate">admin@sdn2karangsari.sch.id</span>
-                        </div>
-                    </div>
-                    <span class="text-[10px] font-semibold text-slate-400 group-hover:text-emerald-700 transition flex items-center gap-1">
-                        Gunakan <i class="fa-solid fa-chevron-right text-[8px]"></i>
-                    </span>
-                </button>
-
-                {{-- Grid Akun Wali Kelas 1-6 --}}
-                <div class="grid grid-cols-2 gap-1.5">
-                    @foreach([
-                        ['wali1@sdn2karangsari.sch.id', 'Kelas 1', 'Dinda Asni F.', '1'],
-                        ['wali2@sdn2karangsari.sch.id', 'Kelas 2', 'Umi Faiqotur R.', '2'],
-                        ['wali3@sdn2karangsari.sch.id', 'Kelas 3', 'Erna Sugiartiningsih', '3'],
-                        ['wali4@sdn2karangsari.sch.id', 'Kelas 4', 'Wahyu Siska N.', '4'],
-                        ['wali5@sdn2karangsari.sch.id', 'Kelas 5', 'Kiki Susanto', '5'],
-                        ['wali6@sdn2karangsari.sch.id', 'Kelas 6', 'Diah Puji L.', '6'],
-                    ] as [$email, $label, $teacher, $num])
-                    <button type="button" onclick="setDemo('{{ $email }}', 'password', '{{ $label }}')"
-                        class="flex items-center gap-2 rounded-xl border border-slate-200/90 bg-slate-50/70 p-1.5 text-left transition hover:bg-emerald-50/70 hover:border-emerald-300 group">
-                        <div class="flex size-6 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-xs font-bold text-slate-700 group-hover:bg-emerald-600 group-hover:text-white transition">
-                            {{ $num }}
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <span class="font-bold text-[11px] text-slate-800 block truncate group-hover:text-emerald-800">{{ $label }}</span>
-                            <span class="text-[9px] text-slate-400 block truncate">{{ $teacher }}</span>
-                        </div>
-                    </button>
-                    @endforeach
                 </div>
                 @endif
+
             </div>
+        </div>
 
-            {{-- Footer Kanan Bawah --}}
-            <footer class="text-center text-xs text-slate-400">
-                <p>&copy; {{ date('Y') }} SD Negeri 2 Karangsari &bull; Kurikulum Merdeka</p>
-            </footer>
-        </main>
+    </main>
 
-    </div>
+    {{-- ========================================================================= --}}
+    {{-- FOOTER BAWAH: ALAMAT & HAK CIPTA (PERSIS MOCKUP)                          --}}
+    {{-- ========================================================================= --}}
+    <footer class="relative z-20 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-6 py-3 sm:px-12 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-600 gap-2 shadow-inner">
+        <div class="flex items-center gap-1.5 text-[11px] sm:text-xs">
+            <i class="fa-solid fa-location-dot text-blue-600"></i>
+            <span>Jl. Panjatan No. 45 Karangsari, Kec. Sempu, Kab. Banyuwangi, Jawa Timur</span>
+        </div>
+        <div class="text-[11px] sm:text-xs text-slate-500">
+            &copy; {{ date('Y') }} SDN 2 Karangsari &bull; Kurikulum Merdeka
+        </div>
+    </footer>
 
     {{-- Script Demo & Toggle Password --}}
     <script>
@@ -290,11 +315,11 @@
             emailInput.value = email;
             passInput.value = pass;
 
-            emailInput.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
-            passInput.classList.add('ring-2', 'ring-emerald-500', 'border-emerald-500');
+            emailInput.classList.add('ring-2', 'ring-blue-500', 'border-blue-500');
+            passInput.classList.add('ring-2', 'ring-blue-500', 'border-blue-500');
             setTimeout(() => {
-                emailInput.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
-                passInput.classList.remove('ring-2', 'ring-emerald-500', 'border-emerald-500');
+                emailInput.classList.remove('ring-2', 'ring-blue-500', 'border-blue-500');
+                passInput.classList.remove('ring-2', 'ring-blue-500', 'border-blue-500');
             }, 600);
 
             const statusEl = document.getElementById('quick-status');
