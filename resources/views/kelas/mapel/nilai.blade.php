@@ -336,16 +336,23 @@
             </div>
 
             <!-- BAR STATUS KELENGKAPAN NILAI & FILTER CEPAT -->
-            <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl {{ $countBelumLengkap > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }} flex items-center justify-center text-base shrink-0 shadow-2xs font-bold" id="iconKelengkapanBox">
                         <i class="fa-solid {{ $countBelumLengkap > 0 ? 'fa-clipboard-question' : 'fa-circle-check' }}" id="iconKelengkapan"></i>
                     </div>
                     <div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
                             <h3 class="font-extrabold text-sm text-slate-900">Kelengkapan Nilai Siswa</h3>
                             <span id="badgeSummaryKelengkapan" class="px-2 py-0.5 rounded-full text-[11px] font-black {{ $countBelumLengkap > 0 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300' }}">
                                 <span id="labelBelumLengkap">{{ $countBelumLengkap > 0 ? $countBelumLengkap . ' Belum Lengkap' : 'Semua Lengkap' }}</span>
+                            </span>
+                            <!-- Progres STS & SAS terpisah -->
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-mono text-[10.5px] font-bold">
+                                STS: <strong id="statStsFilled">{{ $countStsFilled ?? 0 }}</strong>/{{ $totalSiswa }}
+                            </span>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-900 font-mono text-[10.5px] font-bold">
+                                SAS: <strong id="statSasFilled">{{ $countSasFilled ?? 0 }}</strong>/{{ $totalSiswa }}
                             </span>
                         </div>
                         <p class="text-[11px] text-slate-500 mt-0.5">
@@ -354,27 +361,50 @@
                     </div>
                 </div>
 
-                <!-- Tombol Filter Cepat -->
-                <div class="flex flex-wrap items-center gap-1.5 self-start md:self-auto shrink-0 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs font-bold">
-                    <button type="button" onclick="setFilterKelengkapan('semua')" id="btnFilterSemua"
-                            class="filter-pill-btn px-3 py-1.5 rounded-lg transition-all shadow-xs bg-white text-slate-900 border border-slate-200">
-                        <span>Semua</span>
-                        <span class="ml-1 text-[11px] font-mono px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-700" id="badgeFilterSemua">{{ $totalSiswa }}</span>
-                    </button>
+                <!-- Kontrol Sisi Kanan: Mode Fokus Input & Filter Kelengkapan -->
+                <div class="flex flex-wrap items-center gap-2 self-start lg:self-auto shrink-0">
+                    <!-- MODE FOKUS PENGISIAN NILAI (STS vs SAS) -->
+                    <div class="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs font-bold shadow-2xs">
+                        <span class="text-[10px] uppercase text-slate-400 px-1.5 font-black">Fokus:</span>
+                        <button type="button" onclick="setModeFokus('semua')" id="btnFokusSemua"
+                                class="px-2.5 py-1 rounded-lg transition-all shadow-xs bg-white text-slate-900 border border-slate-200 font-bold"
+                                title="Tampilkan semua kolom Formatif, STS, SAS, dan Nilai Rapor">
+                            Semua
+                        </button>
+                        <button type="button" onclick="setModeFokus('sts')" id="btnFokusSts"
+                                class="px-2.5 py-1 rounded-lg transition-all text-amber-900 hover:bg-amber-100/70 font-bold"
+                                title="Fokus mengisi nilai STS (Tengah Semester). Kolom SAS disembunyikan agar layar lebih leluasa.">
+                            <i class="fa-solid fa-bullseye text-amber-500 mr-1"></i> STS
+                        </button>
+                        <button type="button" onclick="setModeFokus('sas')" id="btnFokusSas"
+                                class="px-2.5 py-1 rounded-lg transition-all text-blue-900 hover:bg-blue-100/70 font-bold"
+                                title="Fokus mengisi nilai SAS (Akhir Semester). Kolom STS disembunyikan.">
+                            <i class="fa-solid fa-bullseye text-blue-500 mr-1"></i> SAS
+                        </button>
+                    </div>
 
-                    <button type="button" onclick="setFilterKelengkapan('belum')" id="btnFilterBelum"
-                            class="filter-pill-btn px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-amber-800 hover:bg-white/60">
-                        <i class="fa-solid fa-circle-exclamation text-amber-500 mr-1"></i>
-                        <span>Belum Lengkap</span>
-                        <span class="ml-1 text-[11px] font-mono px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-900" id="badgeFilterBelum">{{ $countBelumLengkap }}</span>
-                    </button>
+                    <!-- Tombol Filter Cepat -->
+                    <div class="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs font-bold">
+                        <button type="button" onclick="setFilterKelengkapan('semua')" id="btnFilterSemua"
+                                class="filter-pill-btn px-2.5 py-1 rounded-lg transition-all shadow-xs bg-white text-slate-900 border border-slate-200">
+                            <span>Semua</span>
+                            <span class="ml-1 text-[10px] font-mono px-1 py-0.2 rounded-md bg-slate-100 text-slate-700" id="badgeFilterSemua">{{ $totalSiswa }}</span>
+                        </button>
 
-                    <button type="button" onclick="setFilterKelengkapan('lengkap')" id="btnFilterLengkap"
-                            class="filter-pill-btn px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-emerald-800 hover:bg-white/60">
-                        <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>
-                        <span>Lengkap</span>
-                        <span class="ml-1 text-[11px] font-mono px-1.5 py-0.2 rounded-md bg-emerald-100 text-emerald-900" id="badgeFilterLengkap">{{ $countLengkap }}</span>
-                    </button>
+                        <button type="button" onclick="setFilterKelengkapan('belum')" id="btnFilterBelum"
+                                class="filter-pill-btn px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-amber-800 hover:bg-white/60">
+                            <i class="fa-solid fa-circle-exclamation text-amber-500 mr-1"></i>
+                            <span>Belum</span>
+                            <span class="ml-1 text-[10px] font-mono px-1 py-0.2 rounded-md bg-amber-100 text-amber-900" id="badgeFilterBelum">{{ $countBelumLengkap }}</span>
+                        </button>
+
+                        <button type="button" onclick="setFilterKelengkapan('lengkap')" id="btnFilterLengkap"
+                                class="filter-pill-btn px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-emerald-800 hover:bg-white/60">
+                            <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>
+                            <span>Lengkap</span>
+                            <span class="ml-1 text-[10px] font-mono px-1 py-0.2 rounded-md bg-emerald-100 text-emerald-900" id="badgeFilterLengkap">{{ $countLengkap }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -396,11 +426,11 @@
                                         <div>Formatif ({{ $bobotFormatif }}%)</div>
                                         <div class="text-[9px] text-slate-400 font-medium lowercase">otomatis bulanan</div>
                                     </th>
-                                    <th class="py-3 px-3 w-36 text-center border-r border-slate-200 bg-amber-50/70 text-amber-950 font-black">
+                                    <th class="py-3 px-3 w-36 text-center border-r border-slate-200 bg-amber-50/70 text-amber-950 font-black col-sts">
                                         <div>STS ({{ $bobotUts }}%)</div>
                                         <div class="text-[9px] text-amber-700/80 font-medium lowercase">diisi guru (0-100)</div>
                                     </th>
-                                    <th class="py-3 px-3 w-36 text-center border-r border-slate-200 bg-blue-50/70 text-blue-950 font-black">
+                                    <th class="py-3 px-3 w-36 text-center border-r border-slate-200 bg-blue-50/70 text-blue-950 font-black col-sas">
                                         <div>SAS ({{ $bobotUas }}%)</div>
                                         <div class="text-[9px] text-blue-700/80 font-medium lowercase">diisi guru (0-100)</div>
                                     </th>
@@ -485,7 +515,7 @@
                                         </td>
 
                                         <!-- STS (30%) - INPUT GURU -->
-                                        <td class="py-3 px-3 text-center border-r border-slate-200 bg-amber-50/20">
+                                        <td class="py-3 px-3 text-center border-r border-slate-200 bg-amber-50/20 col-sts">
                                             <input type="number"
                                                    step="0.1"
                                                    min="0"
@@ -502,7 +532,7 @@
                                         </td>
 
                                         <!-- SAS (30%) - INPUT GURU -->
-                                        <td class="py-3 px-3 text-center border-r border-slate-200 bg-blue-50/20">
+                                        <td class="py-3 px-3 text-center border-r border-slate-200 bg-blue-50/20 col-sas">
                                             <input type="number"
                                                    step="0.1"
                                                    min="0"
@@ -1401,8 +1431,16 @@
         const rows = document.querySelectorAll('.student-grade-row');
         let lengkap = 0;
         let belum = 0;
+        let stsCount = 0;
+        let sasCount = 0;
 
         rows.forEach(row => {
+            const ksId = row.dataset.ksId;
+            const stsInput = document.getElementById('input_sts_' + ksId);
+            const sasInput = document.getElementById('input_sas_' + ksId);
+            if (stsInput && stsInput.value.trim() !== '') stsCount++;
+            if (sasInput && sasInput.value.trim() !== '') sasCount++;
+
             if (row.dataset.complete === 'true') {
                 lengkap++;
             } else {
@@ -1418,6 +1456,11 @@
         const badgeSummary = document.getElementById('badgeSummaryKelengkapan');
         const iconKelengkapanBox = document.getElementById('iconKelengkapanBox');
         const iconKelengkapan = document.getElementById('iconKelengkapan');
+        const statStsEl = document.getElementById('statStsFilled');
+        const statSasEl = document.getElementById('statSasFilled');
+
+        if (statStsEl) statStsEl.textContent = stsCount;
+        if (statSasEl) statSasEl.textContent = sasCount;
 
         if (badgeFilterBelum) badgeFilterBelum.textContent = belum;
         if (badgeFilterLengkap) badgeFilterLengkap.textContent = lengkap;
@@ -1443,6 +1486,48 @@
                 iconKelengkapanBox.className = 'w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base shrink-0 shadow-2xs font-bold';
                 iconKelengkapan.className = 'fa-solid fa-circle-check';
             }
+        }
+    }
+
+    // Manajemen Mode Fokus Pengisian (Semua / Fokus STS / Fokus SAS)
+    let currentModeFokus = 'semua';
+
+    function setModeFokus(mode) {
+        currentModeFokus = mode;
+        const btnSemua = document.getElementById('btnFokusSemua');
+        const btnSts = document.getElementById('btnFokusSts');
+        const btnSas = document.getElementById('btnFokusSas');
+
+        [btnSemua, btnSts, btnSas].forEach(b => {
+            if (!b) return;
+            b.className = 'px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-white/60 font-bold';
+        });
+
+        const stsCols = document.querySelectorAll('.col-sts');
+        const sasCols = document.querySelectorAll('.col-sas');
+
+        if (mode === 'sts') {
+            if (btnSts) btnSts.className = 'px-2.5 py-1 rounded-lg transition-all shadow-xs bg-amber-500 text-slate-950 font-black border border-amber-400';
+            stsCols.forEach(el => el.style.display = '');
+            sasCols.forEach(el => el.style.display = 'none');
+            const firstInput = document.querySelector('.input-nilai-sts');
+            if (firstInput) {
+                firstInput.focus();
+                firstInput.select();
+            }
+        } else if (mode === 'sas') {
+            if (btnSas) btnSas.className = 'px-2.5 py-1 rounded-lg transition-all shadow-xs bg-blue-600 text-white font-black border border-blue-500';
+            stsCols.forEach(el => el.style.display = 'none');
+            sasCols.forEach(el => el.style.display = '');
+            const firstInput = document.querySelector('.input-nilai-sas');
+            if (firstInput) {
+                firstInput.focus();
+                firstInput.select();
+            }
+        } else {
+            if (btnSemua) btnSemua.className = 'px-2.5 py-1 rounded-lg transition-all shadow-xs bg-white text-slate-900 border border-slate-200 font-bold';
+            stsCols.forEach(el => el.style.display = '');
+            sasCols.forEach(el => el.style.display = '');
         }
     }
 

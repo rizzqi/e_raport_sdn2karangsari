@@ -147,6 +147,20 @@ class HitungNilaiService
             $totalFormatif += $kkm;
             $countFormatif++;
 
+            $valFormatif = $recRapor?->rata_formatif ?? ($n?->formatif ?? null);
+            $valUts = $recRapor?->nilai_uts ?? null;
+            $valUas = $recRapor?->nilai_uas ?? null;
+
+            if ($valUts === null && $n && $periode === 'sts' && $n->sumatif !== null) {
+                $valUts = (float) $n->sumatif;
+            }
+            if ($valUas === null && $n && $periode === 'sas' && $n->sumatif !== null) {
+                $valUas = (float) $n->sumatif;
+            }
+
+            // Nilai Akhir STS untuk laporan tengah semester
+            $nilaiStsAkhir = $valUts !== null ? (float) $valUts : ($valFormatif !== null ? (float) $valFormatif : $nilaiMapelAkhir);
+
             $keterangan = $nilaiMapelAkhir !== null ? ($nilaiMapelAkhir >= $kkm ? 'Tuntas' : 'Belum Tuntas') : '-';
 
             $baris[] = [
@@ -154,7 +168,15 @@ class HitungNilaiService
                 'mapel_id' => $mapel->id,
                 'mapel_nama' => $mapel->nama,
                 'kkm' => $kkm,
-                'formatif' => $kkm,
+                'formatif' => $valFormatif ?? $kkm,
+                'formatif_murni' => $valFormatif,
+                'formatif_murni_format' => $valFormatif !== null ? self::formatAngka($valFormatif) : '-',
+                'nilai_uts' => $valUts,
+                'nilai_uts_format' => $valUts !== null ? self::formatAngka($valUts) : '-',
+                'nilai_uas' => $valUas,
+                'nilai_uas_format' => $valUas !== null ? self::formatAngka($valUas) : '-',
+                'nilai_sts_akhir' => $nilaiStsAkhir,
+                'nilai_sts_akhir_format' => $nilaiStsAkhir !== null ? self::formatAngka($nilaiStsAkhir) : '-',
                 'sumatif' => $nilaiMapelAkhir,
                 'nilai' => $nilaiMapelAkhir,
                 'nilai_rapor' => $nilaiMapelAkhir,
@@ -165,7 +187,7 @@ class HitungNilaiService
                 'catatan' => $catatan,
                 'keterangan' => $keterangan,
                 'is_kosong' => $isKosong,
-                'formatif_format' => (string) $kkm,
+                'formatif_format' => $valFormatif !== null ? self::formatAngka($valFormatif) : (string) $kkm,
                 'sumatif_format' => $nilaiMapelAkhir !== null ? self::formatAngka($nilaiMapelAkhir) : '-',
                 'akhir_format' => $nilaiMapelAkhir !== null ? self::formatAngka($nilaiMapelAkhir) : '-',
             ];

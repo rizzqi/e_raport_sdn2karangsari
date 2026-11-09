@@ -13,6 +13,7 @@ use App\Models\NilaiRaporMapel;
 use App\Models\Pembiasaan;
 use App\Models\PenilaianFormatifHarian;
 use App\Models\Sekolah;
+use App\Models\TahunAjaran;
 use App\Services\HitungNilaiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -44,7 +45,7 @@ class NilaiMapelController extends Controller
 
         // 3. Jika admin atau belum memiliki relasi kelas khusus, ambil kelas aktif pertama
         if (! $kelas) {
-            $tahunAktif = \App\Models\TahunAjaran::aktif()->first();
+            $tahunAktif = TahunAjaran::aktif()->first();
             $query = Kelas::query();
             if ($tahunAktif) {
                 $query->where('tahun_ajaran_id', $tahunAktif->id);
@@ -454,7 +455,15 @@ class NilaiMapelController extends Controller
         // Hitung kelengkapan nilai siswa pada mapel aktif
         $countLengkap = 0;
         $countBelumLengkap = 0;
+        $countStsFilled = 0;
+        $countSasFilled = 0;
         foreach ($siswaData as $sd) {
+            if ($sd['nilaiUts'] !== null) {
+                $countStsFilled++;
+            }
+            if ($sd['nilaiUas'] !== null) {
+                $countSasFilled++;
+            }
             $isComplete = ($sd['nilaiUts'] !== null && $sd['nilaiUas'] !== null);
             if ($isComplete) {
                 $countLengkap++;
@@ -481,6 +490,8 @@ class NilaiMapelController extends Controller
             'bobotUas',
             'countUtsKosong',
             'countUasKosong',
+            'countStsFilled',
+            'countSasFilled',
             'isAnyLocked',
             'guruPengampu',
             'activeKelasSiswa',

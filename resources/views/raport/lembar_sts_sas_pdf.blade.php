@@ -141,8 +141,13 @@
 
     <!-- JUDUL LAPORAN HASIL BELAJAR -->
     <div class="judul">
-        <h1>LAPORAN HASIL BELAJAR PESERTA DIDIK</h1>
-        <p>{{ $periode === 'sas' ? 'SUMATIF AKHIR SEMESTER (SAS)' : 'SUMATIF TENGAH SEMESTER (STS)' }}</p>
+        @if($periode === 'sts')
+            <h1>LAPORAN KEMAJUAN BELAJAR PESERTA DIDIK</h1>
+            <p style="color: #78350f;">SUMATIF TENGAH SEMESTER (STS)</p>
+        @else
+            <h1>LEMBAR HASIL PENILAIAN SUMATIF (AKHIR SEMESTER)</h1>
+            <p style="color: #1e1b4b;">SUMATIF AKHIR SEMESTER (SAS) &bull; RUMUS 40/30/30</p>
+        @endif
     </div>
 
     <!-- IDENTITAS PESERTA DIDIK -->
@@ -161,54 +166,103 @@
         </tr>
     </table>
 
-    <!-- TABEL NILAI MATA PELAJARAN -->
-    <table class="data">
-        <thead>
-            <tr>
-                <th style="width: 5%;">No</th>
-                <th style="width: 48%; text-align: left;">Mata Pelajaran</th>
-                <th style="width: 14%;">KKM</th>
-                <th style="width: 15%;">Nilai</th>
-                <th style="width: 18%;">Keterangan</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($hasilNilai['baris'] as $b)
-                @php
-                    $valNilai = $b['sumatif'] !== null ? $b['sumatif'] : $b['nilai'];
-                    $kkmVal = $b['kkm'];
-                    if ($valNilai !== null) {
-                        $ket = $valNilai >= $kkmVal ? 'Tuntas' : 'Belum Tuntas';
-                        $displayNilai = \App\Services\HitungNilaiService::formatAngka($valNilai);
-                    } else {
-                        $ket = '-';
-                        $displayNilai = '-';
-                    }
-                @endphp
+    @if($periode === 'sts')
+        <!-- TABEL NILAI KHUSUS TENGAH SEMESTER (STS) -->
+        <table class="data">
+            <thead>
                 <tr>
-                    <td class="text-center">{{ $b['no'] }}</td>
-                    <td class="text-left">{{ $b['mapel_nama'] }}</td>
-                    <td class="text-center font-bold">{{ $kkmVal }}</td>
-                    <td class="text-center font-bold">{{ $displayNilai }}</td>
-                    <td class="text-center">{{ $ket }}</td>
+                    <th style="width: 5%;">No</th>
+                    <th style="width: 41%; text-align: left;">Mata Pelajaran</th>
+                    <th style="width: 10%;">KKM</th>
+                    <th style="width: 14%;">Formatif<br><span style="font-size: 6.5pt; font-weight: normal;">(rata-rata harian)</span></th>
+                    <th style="width: 14%;">Tes STS<br><span style="font-size: 6.5pt; font-weight: normal;">(asesmen tengah)</span></th>
+                    <th style="width: 16%;">Nilai STS<br><span style="font-size: 6.5pt; font-weight: normal;">(nilai tengah)</span></th>
                 </tr>
-            @endforeach
-        </tbody>
-        <tfoot>
-            <tr class="font-bold">
-                <td colspan="2" class="text-right uppercase" style="padding-right: 12px;">JUMLAH NILAI</td>
-                <td class="text-center">-</td>
-                <td class="text-center font-bold">{{ \App\Services\HitungNilaiService::formatAngka($totalNilai) }}</td>
-                <td class="text-center">-</td>
-            </tr>
-            <tr class="font-bold">
-                <td colspan="2" class="text-right uppercase" style="padding-right: 12px;">RATA-RATA NILAI</td>
-                <td class="text-center">-</td>
-                <td class="text-center font-bold">{{ \App\Services\HitungNilaiService::formatAngka($rataNilai) }}</td>
-                <td class="text-center">-</td>
-            </tr>
-        </tfoot>
-    </table>
+            </thead>
+            <tbody>
+                @foreach($hasilNilai['baris'] as $b)
+                    @php
+                        $valFormatif = $b['formatif_murni_format'] ?? '-';
+                        $valUts = $b['nilai_uts_format'] ?? '-';
+                        $valAkhir = $b['nilai_sts_akhir_format'] ?? ($b['sumatif_format'] ?? '-');
+                        $kkmVal = $b['kkm'];
+                    @endphp
+                    <tr>
+                        <td class="text-center">{{ $b['no'] }}</td>
+                        <td class="text-left font-medium">{{ $b['mapel_nama'] }}</td>
+                        <td class="text-center font-bold">{{ $kkmVal }}</td>
+                        <td class="text-center">{{ $valFormatif }}</td>
+                        <td class="text-center font-bold">{{ $valUts }}</td>
+                        <td class="text-center font-bold">{{ $valAkhir }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr class="font-bold">
+                    <td colspan="3" class="text-right uppercase" style="padding-right: 8px;">JUMLAH NILAI TENGAH SEMESTER</td>
+                    <td colspan="2" class="text-center">-</td>
+                    <td class="text-center font-bold">{{ \App\Services\HitungNilaiService::formatAngka($totalNilai) }}</td>
+                </tr>
+                <tr class="font-bold">
+                    <td colspan="3" class="text-right uppercase" style="padding-right: 8px;">RATA-RATA NILAI TENGAH SEMESTER</td>
+                    <td colspan="2" class="text-center">-</td>
+                    <td class="text-center font-bold">{{ \App\Services\HitungNilaiService::formatAngka($rataNilai) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    @else
+        <!-- TABEL NILAI KHUSUS AKHIR SEMESTER (SAS: RINCIAN BOBOT 40/30/30) -->
+        <table class="data">
+            <thead>
+                <tr>
+                    <th style="width: 4%;">No</th>
+                    <th style="width: 36%; text-align: left;">Mata Pelajaran</th>
+                    <th style="width: 8%;">KKM</th>
+                    <th style="width: 12%;">Formatif<br><span style="font-size: 6.5pt; font-weight: normal;">(40%)</span></th>
+                    <th style="width: 10%;">STS<br><span style="font-size: 6.5pt; font-weight: normal;">(30%)</span></th>
+                    <th style="width: 10%;">SAS<br><span style="font-size: 6.5pt; font-weight: normal;">(30%)</span></th>
+                    <th style="width: 10%;">Nilai Rapor</th>
+                    <th style="width: 10%;">Predikat</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($hasilNilai['baris'] as $b)
+                    @php
+                        $valFormatif = $b['formatif_murni_format'] ?? '-';
+                        $valUts = $b['nilai_uts_format'] ?? '-';
+                        $valUas = $b['nilai_uas_format'] ?? '-';
+                        $valRapor = $b['nilai_rapor_format'] ?? '-';
+                        $pred = $b['predikat'] ?? '-';
+                        $kkmVal = $b['kkm'];
+                    @endphp
+                    <tr>
+                        <td class="text-center">{{ $b['no'] }}</td>
+                        <td class="text-left font-medium">{{ $b['mapel_nama'] }}</td>
+                        <td class="text-center font-bold">{{ $kkmVal }}</td>
+                        <td class="text-center">{{ $valFormatif }}</td>
+                        <td class="text-center">{{ $valUts }}</td>
+                        <td class="text-center font-bold">{{ $valUas }}</td>
+                        <td class="text-center font-bold">{{ $valRapor }}</td>
+                        <td class="text-center font-bold">{{ $pred }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr class="font-bold">
+                    <td colspan="3" class="text-right uppercase" style="padding-right: 8px;">JUMLAH NILAI RAPOR</td>
+                    <td colspan="3" class="text-center">-</td>
+                    <td class="text-center font-bold">{{ \App\Services\HitungNilaiService::formatAngka($totalNilai) }}</td>
+                    <td class="text-center">-</td>
+                </tr>
+                <tr class="font-bold">
+                    <td colspan="3" class="text-right uppercase" style="padding-right: 8px;">RATA-RATA NILAI RAPOR</td>
+                    <td colspan="3" class="text-center">-</td>
+                    <td class="text-center font-bold">{{ \App\Services\HitungNilaiService::formatAngka($rataNilai) }}</td>
+                    <td class="text-center font-bold">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    @endif
 
     <!-- TABEL PERKEMBANGAN KARAKTER & KETIDAKHADIRAN -->
     <div class="section-title">
