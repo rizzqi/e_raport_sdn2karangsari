@@ -221,12 +221,6 @@
                         <div class="px-4 py-1 text-[10px] font-black uppercase text-slate-400 bg-slate-50 tracking-wider">
                             Data &amp; Administrasi
                         </div>
-                        @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
-                            <a href="{{ route('nilai.input.kelas', $kelas->id) }}"
-                               class="flex items-center px-4 py-2 text-emerald-700 hover:bg-emerald-50 font-medium">
-                                <i class="fa-solid fa-pen-to-square w-5 text-emerald-600 mr-2 text-center"></i> Matriks Nilai Cepat
-                            </a>
-                        @endif
                         <a href="{{ route('kelas.absensi.index', $kelas->id) }}"
                            class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
                             <i class="fa-regular fa-calendar-check w-5 text-slate-500 mr-2 text-center"></i> Absensi Bulanan

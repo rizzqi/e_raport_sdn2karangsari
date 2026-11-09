@@ -29,10 +29,18 @@
                                 Periode: {{ strtoupper($periodeSia) }}
                             </span>
                         </h1>
-                        <p class="text-xs text-slate-500 mt-1">
-                            Wali Kelas: <strong class="text-slate-800">{{ $kelas->nama_wali }}</strong>
-                            &bull; Total: <strong class="text-slate-800">{{ $totalSiswa }} Siswa</strong>
-                            &bull; Catatan kehadiran dan karakter terhubung ke rapor siswa
+                        <p class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5">
+                            <span>Wali Kelas: <strong class="text-slate-800">{{ $kelas->nama_wali }}</strong></span>
+                            @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                                <button type="button" onclick="document.getElementById('modalEditWaliKelas').classList.remove('hidden')"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition shadow-2xs"
+                                        title="Ubah Nama atau NIP Wali Kelas">
+                                    <i class="fa-solid fa-user-pen text-amber-600 text-[10px]"></i>
+                                    <span>Edit Wali Kelas</span>
+                                </button>
+                            @endif
+                            <span>&bull; Total: <strong class="text-slate-800">{{ $totalSiswa }} Siswa</strong></span>
+                            <span>&bull; Catatan kehadiran dan karakter terhubung ke rapor siswa</span>
                         </p>
                     @else
                         <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1 flex flex-wrap items-center gap-2.5">
@@ -41,10 +49,18 @@
                                 KKM: {{ $kkm }}
                             </span>
                         </h1>
-                        <p class="text-xs text-slate-500 mt-1">
-                            Guru Pengampu: <strong class="text-slate-800">{{ $guruPengampu ? $guruPengampu->nama : ($kelas->nama_wali ?? 'Belum ditentukan') }}</strong>
-                            &bull; Wali Kelas: <strong class="text-slate-800">{{ $kelas->nama_wali }}</strong>
-                            &bull; Rumus: <strong class="text-indigo-600 font-mono">Formatif ({{ $bobotFormatif }}%) + STS ({{ $bobotUts }}%) + SAS ({{ $bobotUas }}%)</strong>
+                        <p class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5">
+                            <span>Guru Pengampu: <strong class="text-slate-800">{{ $guruPengampu ? $guruPengampu->nama : ($kelas->nama_wali ?? 'Belum ditentukan') }}</strong></span>
+                            <span>&bull; Wali Kelas: <strong class="text-slate-800">{{ $kelas->nama_wali }}</strong></span>
+                            @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                                <button type="button" onclick="document.getElementById('modalEditWaliKelas').classList.remove('hidden')"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition shadow-2xs"
+                                        title="Ubah Nama atau NIP Wali Kelas">
+                                    <i class="fa-solid fa-user-pen text-amber-600 text-[10px]"></i>
+                                    <span>Edit Wali Kelas</span>
+                                </button>
+                            @endif
+                            <span>&bull; Rumus: <strong class="text-indigo-600 font-mono">Formatif ({{ $bobotFormatif }}%) + STS ({{ $bobotUts }}%) + SAS ({{ $bobotUas }}%)</strong></span>
                         </p>
                     @endif
                 </div>
@@ -117,34 +133,88 @@
                     </div>
                 </div>
 
-                <!-- DROPDOWN "⋯ LAINNYA" (SECONDARY ACTIONS) -->
+                <!-- DROPDOWN "⋯ LAINNYA" (PUSAT ALAT BANTU PENILAIAN LENGKAP) -->
                 <div class="relative inline-block text-left" x-data="{ open: false }">
                     <button type="button" @click="open = !open" @click.outside="open = false"
-                            class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1 cursor-pointer">
+                            class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
                         <i class="fa-solid fa-ellipsis"></i>
-                        <span>Lainnya</span>
+                        <span>Menu &amp; Alat Bantu</span>
+                        <i class="fa-solid fa-chevron-down text-[9px] opacity-70 ml-0.5" :class="{ 'rotate-180': open }"></i>
                     </button>
                     <div x-show="open" x-transition
-                         class="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 divide-y divide-slate-100">
+                         class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 divide-y divide-slate-100" style="display: none;">
+                        
+                        <!-- Grup 1: Impor & Template Excel/PDF -->
                         <div class="py-1">
+                            <div class="px-3.5 py-1 text-[10px] font-black uppercase text-slate-400 bg-slate-50 tracking-wider">
+                                Impor &amp; Template Excel
+                            </div>
+                            <button type="button" @click="open = false; document.getElementById('modalImportNilai').classList.remove('hidden')"
+                                    class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 transition cursor-pointer">
+                                <i class="fa-solid fa-file-arrow-up text-emerald-600 w-4 text-center"></i>
+                                <span>Impor Nilai (Excel / PDF)</span>
+                            </button>
+                            <a href="{{ route('nilai.template.excel', ['kelas' => $kelas->id, 'mode' => 'mapel', 'mapel_id' => $mapel ? $mapel->id : null, 'periode' => ($semester === 'genap' ? 'sas' : 'sts')]) }}"
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition">
+                                <i class="fa-solid fa-file-excel text-emerald-600 w-4 text-center"></i>
+                                <span>Unduh Template Mapel Ini (.xlsx)</span>
+                            </a>
+                            <a href="{{ route('nilai.template.excel', ['kelas' => $kelas->id, 'mode' => 'semua', 'periode' => ($semester === 'genap' ? 'sas' : 'sts')]) }}"
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition">
+                                <i class="fa-solid fa-table-list text-slate-500 w-4 text-center"></i>
+                                <span>Unduh Template Semua Mapel</span>
+                            </a>
+                            <a href="{{ route('kelas.sia-pembiasaan.template', ['kelas' => $kelas->id, 'format' => 'xlsx', 'periode' => $periodeSia]) }}"
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-amber-700 transition">
+                                <i class="fa-solid fa-star text-amber-500 w-4 text-center"></i>
+                                <span>Unduh Template Pembiasaan (SIA)</span>
+                            </a>
+                        </div>
+
+                        <!-- Grup 2: Rincian Nilai Formatif -->
+                        <div class="py-1">
+                            <div class="px-3.5 py-1 text-[10px] font-black uppercase text-slate-400 bg-slate-50 tracking-wider">
+                                Formatif Bulanan &amp; TP
+                            </div>
                             @if($mapel)
                                 <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'formatif', 'tahun' => $tahun]) }}"
-                                   class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                    <i class="fa-solid fa-calendar-check text-blue-500 w-4"></i>
-                                    <span>Input Rincian Formatif Bulanan</span>
+                                   class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                                    <i class="fa-solid fa-calendar-days text-blue-500 w-4 text-center"></i>
+                                    <span>Input Nilai Bulanan (JUL-DES)</span>
                                 </a>
                                 <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
-                                   class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                    <i class="fa-solid fa-list-check text-emerald-500 w-4"></i>
+                                   class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                                    <i class="fa-solid fa-list-check text-blue-500 w-4 text-center"></i>
                                     <span>Penilaian Formatif Harian (TP)</span>
                                 </a>
                             @endif
-                            <a href="{{ route('kelas.sia-pembiasaan.template', ['kelas' => $kelas->id, 'format' => 'xlsx', 'periode' => $periodeSia]) }}"
-                               class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                <i class="fa-solid fa-file-excel text-emerald-600 w-4"></i>
-                                <span>Unduh Template Excel Pembiasaan</span>
-                            </a>
                         </div>
+
+                        <!-- Grup 3: Pengaturan KKM & Reset Nilai -->
+                        @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                            <div class="py-1">
+                                <div class="px-3.5 py-1 text-[10px] font-black uppercase text-slate-400 bg-slate-50 tracking-wider">
+                                    Pengaturan &amp; Reset
+                                </div>
+                                <button type="button" @click="open = false; document.getElementById('modalEditWaliKelas').classList.remove('hidden')"
+                                        class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-50 transition cursor-pointer">
+                                    <i class="fa-solid fa-user-pen text-amber-600 w-4 text-center"></i>
+                                    <span>Edit Wali Kelas &amp; NIP</span>
+                                </button>
+                                <button type="button" @click="open = false; document.getElementById('modalEditKkmKelas').classList.remove('hidden')"
+                                        class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-purple-800 hover:bg-purple-50 transition cursor-pointer">
+                                    <i class="fa-solid fa-sliders text-purple-600 w-4 text-center"></i>
+                                    <span>Atur KKM Mandiri Rombel</span>
+                                </button>
+                                <button type="button" @click="open = false; document.getElementById('modalKosongkanNilai').classList.remove('hidden')"
+                                        class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 transition cursor-pointer">
+                                    <i class="fa-solid fa-trash-can text-rose-600 w-4 text-center"></i>
+                                    <span>Kosongkan / Reset Nilai</span>
+                                </button>
+                            </div>
+                        @endif
+
+                        <!-- Grup 4: Kunci Nilai Rapor -->
                         <div class="py-1">
                             @if($isAnyLocked)
                                 @if(auth()->user()->isAdmin())
@@ -152,8 +222,8 @@
                                         @csrf
                                         <input type="hidden" name="tahun" value="{{ $tahun }}">
                                         <input type="hidden" name="semester" value="{{ $semester }}">
-                                        <button type="submit" class="w-full text-left flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition">
-                                            <i class="fa-solid fa-lock-open text-amber-500 w-4"></i>
+                                        <button type="submit" class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition">
+                                            <i class="fa-solid fa-lock-open text-amber-500 w-4 text-center"></i>
                                             <span>Buka Kunci Nilai Rapor</span>
                                         </button>
                                     </form>
@@ -163,8 +233,8 @@
                                     @csrf
                                     <input type="hidden" name="tahun" value="{{ $tahun }}">
                                     <input type="hidden" name="semester" value="{{ $semester }}">
-                                    <button type="submit" class="w-full text-left flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
-                                        <i class="fa-solid fa-lock text-slate-500 w-4"></i>
+                                    <button type="submit" class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                        <i class="fa-solid fa-lock text-slate-500 w-4 text-center"></i>
                                         <span>Kunci Nilai Rapor</span>
                                     </button>
                                 </form>
@@ -242,9 +312,20 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                    <span class="px-2.5 py-1 rounded-lg bg-white border border-blue-200 text-blue-900 font-mono font-bold text-[11px]">
-                        KKM: {{ $kkm }}
-                    </span>
+                    @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                        <button type="button" onclick="document.getElementById('modalEditKkmKelas').classList.remove('hidden')"
+                                class="px-2.5 py-1 rounded-lg bg-white hover:bg-purple-50 border border-blue-200 hover:border-purple-300 text-blue-900 hover:text-purple-700 font-mono font-bold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                title="Klik untuk atur / ubah KKM mata pelajaran khusus rombel ini">
+                            <span>KKM: {{ $kkm }}</span>
+                            <span class="text-[10px] text-purple-600 font-sans font-bold flex items-center gap-0.5">
+                                <i class="fa-solid fa-pen-to-square text-[9px]"></i> Ubah KKM
+                            </span>
+                        </button>
+                    @else
+                        <span class="px-2.5 py-1 rounded-lg bg-white border border-blue-200 text-blue-900 font-mono font-bold text-[11px]">
+                            KKM: {{ $kkm }}
+                        </span>
+                    @endif
                     <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'formatif', 'tahun' => $tahun]) }}"
                        class="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-xs transition flex items-center gap-1.5"
                        title="Buka rincian nilai ulangan bulanan untuk mapel ini">
@@ -1087,6 +1168,18 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Edit Nama dan NIP Wali Kelas -->
+@include('kelas.modal_edit_wali')
+
+<!-- Modal Atur KKM Per Rombel -->
+@include('kelas.modal_kkm', ['itemsMapel' => $allMapel])
+
+<!-- Modal Import Nilai Excel / PDF -->
+@include('nilai.modal_import_excel', ['activeMapel' => $mapel, 'periode' => ($semester === 'genap' ? 'sas' : 'sts')])
+
+<!-- Modal Kosongkan Nilai Kelas -->
+@include('nilai.modal_kosongkan_nilai', ['periode' => ($semester === 'genap' ? 'sas' : 'sts')])
 
 <!-- ========================================================================================= -->
 <!-- 5. JAVASCRIPT: LOGIKA REAL-TIME, KEYBOARD NAVIGATION, & MODAL                             -->

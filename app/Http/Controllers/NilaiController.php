@@ -153,38 +153,18 @@ class NilaiController extends Controller
     }
 
     /**
-     * Tampilan input matriks cepat satu kelas
+     * Tampilan input matriks cepat satu kelas (Dialihkan ke Lembar Penilaian Terpadu Satu Pintu)
      */
     public function inputKelas(Kelas $kelas, Request $request)
     {
         $this->authorizeAksesKelas($kelas);
 
-        $periode = $request->input('periode', 'sts');
         $mapelId = $request->input('mapel_id');
-
         $mapels = $kelas->mataPelajaran();
-        if (! $mapelId && $mapels->isNotEmpty()) {
-            $mapelId = $mapels->first()->id;
-        }
+        $activeMapel = $mapelId ? $mapels->firstWhere('id', (int) $mapelId) : $mapels->first();
 
-        $activeMapel = MataPelajaran::find($mapelId);
-        $kelas->load('mapelKkm');
-        $kelasSiswaList = $kelas->kelasSiswa()->with('siswa')->get();
-
-        $nilaiList = Nilai::whereIn('kelas_siswa_id', $kelasSiswaList->pluck('id'))
-            ->where('mapel_id', $mapelId)
-            ->where('periode', $periode)
-            ->get()
-            ->keyBy('kelas_siswa_id');
-
-        return view('nilai.input_kelas', compact(
-            'kelas',
-            'periode',
-            'mapels',
-            'activeMapel',
-            'kelasSiswaList',
-            'nilaiList'
-        ));
+        // Delegasikan langsung ke Lembar Penilaian Terpadu Satu Pintu (Satu Fitur Mencakup Semua Kebutuhan)
+        return app(NilaiMapelController::class)->index($kelas, $activeMapel, $request);
     }
 
     /**
