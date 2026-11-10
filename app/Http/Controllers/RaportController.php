@@ -507,7 +507,11 @@ class RaportController extends Controller
         $totalNilai = 0;
         $countNilai = 0;
         foreach ($hasilNilai['baris'] as $b) {
-            $val = $b['sumatif'] !== null ? $b['sumatif'] : $b['nilai'];
+            if ($periode === 'sts') {
+                $val = $b['nilai_uts'] !== null ? $b['nilai_uts'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']);
+            } else {
+                $val = $b['nilai_rapor'] !== null ? $b['nilai_rapor'] : ($b['nilai_katrol'] !== null ? $b['nilai_katrol'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']));
+            }
             if ($val !== null) {
                 $totalNilai += (float) $val;
                 $countNilai++;
@@ -583,7 +587,11 @@ class RaportController extends Controller
         $totalNilai = 0;
         $countNilai = 0;
         foreach ($hasilNilai['baris'] as $b) {
-            $val = $b['sumatif'] !== null ? $b['sumatif'] : $b['nilai'];
+            if ($periode === 'sts') {
+                $val = $b['nilai_uts'] !== null ? $b['nilai_uts'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']);
+            } else {
+                $val = $b['nilai_rapor'] !== null ? $b['nilai_rapor'] : ($b['nilai_katrol'] !== null ? $b['nilai_katrol'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']));
+            }
             if ($val !== null) {
                 $totalNilai += (float) $val;
                 $countNilai++;
@@ -652,7 +660,11 @@ class RaportController extends Controller
             $totalNilai = 0;
             $countNilai = 0;
             foreach ($hasilNilai['baris'] as $b) {
-                $val = $b['sumatif'] !== null ? $b['sumatif'] : $b['nilai'];
+                if ($periode === 'sts') {
+                    $val = $b['nilai_uts'] !== null ? $b['nilai_uts'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']);
+                } else {
+                    $val = $b['nilai_rapor'] !== null ? $b['nilai_rapor'] : ($b['nilai_katrol'] !== null ? $b['nilai_katrol'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']));
+                }
                 if ($val !== null) {
                     $totalNilai += (float) $val;
                     $countNilai++;
@@ -726,7 +738,11 @@ class RaportController extends Controller
             $totalNilai = 0;
             $countNilai = 0;
             foreach ($hasilNilai['baris'] as $b) {
-                $val = $b['sumatif'] !== null ? $b['sumatif'] : $b['nilai'];
+                if ($periode === 'sts') {
+                    $val = $b['nilai_uts'] !== null ? $b['nilai_uts'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']);
+                } else {
+                    $val = $b['nilai_rapor'] !== null ? $b['nilai_rapor'] : ($b['nilai_katrol'] !== null ? $b['nilai_katrol'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']));
+                }
                 if ($val !== null) {
                     $totalNilai += (float) $val;
                     $countNilai++;

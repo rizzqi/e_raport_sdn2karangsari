@@ -178,7 +178,7 @@
                     if ($periode === 'sts') {
                         $valNilai = $b['nilai_uts'] !== null ? $b['nilai_uts'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']);
                     } else {
-                        $valNilai = $b['nilai_rapor'] !== null ? $b['nilai_rapor'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']);
+                        $valNilai = $b['nilai_rapor'] !== null ? $b['nilai_rapor'] : ($b['nilai_katrol'] !== null ? $b['nilai_katrol'] : ($b['sumatif'] !== null ? $b['sumatif'] : $b['nilai']));
                     }
                     $kkmVal = $b['kkm'];
                     if ($valNilai !== null) {

@@ -91,32 +91,126 @@ class HitungNilaiService
                 }
             }
 
-            // Jika periode STS (Tengah Semester), prioritaskan nilai UTS / STS
+            $sekolah = $kelas ? ($kelas->sekolah ?? Sekolah::first()) : Sekolah::first();
+            $bobotFormatif = $sekolah ? $sekolah->getBobotFormatif() : 40;
+            $bobotUts = $sekolah ? $sekolah->getBobotUts() : 30;
+            $bobotUas = $sekolah ? $sekolah->getBobotUas() : 30;
+
+            // 1. Ekstrak Nilai Formatif (Rata-rata Harian / Bulanan Proses)
+            $valFormatif = $recRapor?->rata_formatif;
+            if ($valFormatif === null) {
+                $bulanSemester = $semesterAktif === 'genap' ? [1, 2, 3, 4, 5, 6] : [7, 8, 9, 10, 11, 12];
+                $fQuery = NilaiFormatifBulanan::where('kelas_siswa_id', $kelasSiswa->id)
+                    ->where('mapel_id', $mapel->id)
+                    ->whereIn('bulan', $bulanSemester)
+                    ->whereNotNull('nilai');
+                if ($tahunAjaran && $tahunAjaran->tahun) {
+                    $thnInt = (int) substr($tahunAjaran->tahun, 0, 4);
+                    if ($thnInt > 2000) {
+                        $fQuery->where('tahun', $thnInt);
+                    }
+                }
+                $fVals = $fQuery->pluck('nilai')->map(fn ($v) => (float) $v)->all();
+                if (count($fVals) > 0) {
+                    $valFormatif = round(array_sum($fVals) / count($fVals), 1);
+                }
+            }
+            if ($valFormatif === null) {
+                $valFormatif = $n?->formatif !== null ? (float) $n->formatif : null;
+            }
+
+            // 2. Ekstrak Nilai STS (UTS)
+            $valUts = $recRapor?->nilai_uts;
+            if ($valUts === null) {
+                if ($n && $periode === 'sts' && $n->sumatif !== null) {
+                    $valUts = (float) $n->sumatif;
+                } else {
+                    $stsRecord = Nilai::where('kelas_siswa_id', $kelasSiswa->id)
+                        ->where('mapel_id', $mapel->id)
+                        ->where('periode', 'sts')
+                        ->first();
+                    if ($stsRecord && $stsRecord->sumatif !== null) {
+                        $valUts = (float) $stsRecord->sumatif;
+                    }
+                }
+            }
+
+            // 3. Ekstrak Nilai SAS (UAS)
+            $valUas = $recRapor?->nilai_uas;
+            if ($valUas === null) {
+                if ($n && $periode === 'sas' && $n->sumatif !== null) {
+                    $valUas = (float) $n->sumatif;
+                } else {
+                    $sasRecord = Nilai::where('kelas_siswa_id', $kelasSiswa->id)
+                        ->where('mapel_id', $mapel->id)
+                        ->where('periode', 'sas')
+                        ->first();
+                    if ($sasRecord && $sasRecord->sumatif !== null) {
+                        $valUas = (float) $sasRecord->sumatif;
+                    }
+                }
+            }
+
+            // 4. Hitung Nilai Katrol Rapor (Bobot Proporsional: Formatif 40% + STS 30% + SAS 30%)
+            $komponenKatrol = [];
+            if ($valFormatif !== null) {
+                $komponenKatrol[] = ['nilai' => (float) $valFormatif, 'bobot' => $bobotFormatif];
+            }
+            if ($valUts !== null) {
+                $komponenKatrol[] = ['nilai' => (float) $valUts, 'bobot' => $bobotUts];
+            }
+            if ($valUas !== null) {
+                $komponenKatrol[] = ['nilai' => (float) $valUas, 'bobot' => $bobotUas];
+            }
+
+            $nilaiKatrol = null;
+            if (! empty($komponenKatrol)) {
+                $subtotal = 0;
+                $totBobot = 0;
+                foreach ($komponenKatrol as $k) {
+                    $subtotal += ($k['nilai'] * $k['bobot']);
+                    $totBobot += $k['bobot'];
+                }
+                $nilaiKatrol = $totBobot > 0 ? round($subtotal / $totBobot, 1) : null;
+            }
+
+            // Tentukan Nilai Akhir Berdasarkan Periode Laporan
             $nilaiMapelAkhir = null;
             $predikat = null;
             $catatan = '';
 
             if ($periode === 'sts') {
-                if ($n && $n->sumatif !== null) {
+                // Periode STS (Tengah Semester): Prioritaskan Nilai UTS / STS murni
+                if ($valUts !== null) {
+                    $nilaiMapelAkhir = (float) $valUts;
+                } elseif ($n && $n->sumatif !== null) {
                     $nilaiMapelAkhir = (float) $n->sumatif;
-                } elseif ($recRapor && $recRapor->nilai_uts !== null) {
-                    $nilaiMapelAkhir = (float) $recRapor->nilai_uts;
                 } elseif ($recRapor && $recRapor->nilai_rapor !== null) {
                     $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
                 }
                 $predikat = $nilaiMapelAkhir !== null ? NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir) : null;
                 $catatan = '';
             } else {
-                // Periode SAS / Semester Penuh: Prioritaskan nilai rapor akhir yang sudah dihitung
-                if ($recRapor && $recRapor->nilai_rapor !== null) {
+                // Periode SAS / Semester Penuh / Lembar Rapor:
+                // LANGSUNG MENJADI NILAI KATROL DARI FORMATIF, STS, DAN SAS
+                if ($recRapor && $recRapor->is_locked && $recRapor->nilai_rapor !== null) {
                     $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
-                    $predikat = $recRapor->predikat ?? NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir);
-                    $catatan = $recRapor->catatan ?? '';
+                } elseif ($nilaiKatrol !== null) {
+                    $nilaiMapelAkhir = $nilaiKatrol;
+                } elseif ($recRapor && $recRapor->nilai_rapor !== null) {
+                    $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
+                } elseif ($valUas !== null) {
+                    $nilaiMapelAkhir = (float) $valUas;
+                } elseif ($valUts !== null) {
+                    $nilaiMapelAkhir = (float) $valUts;
                 } elseif ($n && ($n->sumatif !== null || $n->formatif !== null)) {
                     $nilaiMapelAkhir = $n->sumatif !== null ? (float) $n->sumatif : (float) $n->formatif;
-                    $predikat = NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir);
-                    $catatan = '';
                 }
+
+                $predikat = $nilaiMapelAkhir !== null
+                    ? ($recRapor?->predikat ?? NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir))
+                    : null;
+                $catatan = $recRapor?->catatan ?? '';
             }
 
             if ($nilaiMapelAkhir !== null) {
@@ -147,17 +241,6 @@ class HitungNilaiService
             $totalFormatif += $kkm;
             $countFormatif++;
 
-            $valFormatif = $recRapor?->rata_formatif ?? ($n?->formatif ?? null);
-            $valUts = $recRapor?->nilai_uts ?? null;
-            $valUas = $recRapor?->nilai_uas ?? null;
-
-            if ($valUts === null && $n && $periode === 'sts' && $n->sumatif !== null) {
-                $valUts = (float) $n->sumatif;
-            }
-            if ($valUas === null && $n && $periode === 'sas' && $n->sumatif !== null) {
-                $valUas = (float) $n->sumatif;
-            }
-
             // Nilai Akhir STS untuk laporan tengah semester
             $nilaiStsAkhir = $valUts !== null ? (float) $valUts : ($valFormatif !== null ? (float) $valFormatif : $nilaiMapelAkhir);
 
@@ -175,6 +258,8 @@ class HitungNilaiService
                 'nilai_uts_format' => $valUts !== null ? self::formatAngka($valUts) : '-',
                 'nilai_uas' => $valUas,
                 'nilai_uas_format' => $valUas !== null ? self::formatAngka($valUas) : '-',
+                'nilai_katrol' => $nilaiKatrol,
+                'nilai_katrol_format' => $nilaiKatrol !== null ? self::formatAngka($nilaiKatrol) : '-',
                 'nilai_sts_akhir' => $nilaiStsAkhir,
                 'nilai_sts_akhir_format' => $nilaiStsAkhir !== null ? self::formatAngka($nilaiStsAkhir) : '-',
                 'sumatif' => $nilaiMapelAkhir,
