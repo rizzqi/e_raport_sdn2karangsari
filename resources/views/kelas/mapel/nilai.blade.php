@@ -77,55 +77,70 @@
                         <i class="fa-solid fa-chevron-down text-[10px] ml-0.5"></i>
                     </button>
                     <div x-show="open" x-transition
-                         class="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 divide-y divide-slate-100">
-                        <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                         class="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-slate-200 py-2 z-50 divide-y divide-slate-100 shadow-xl" style="display: none;">
+                        <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50">
                             Lembar Rapor Siswa (F4)
                         </div>
                         <div class="py-1">
                             <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
-                               class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
                                 <i class="fa-solid fa-print text-amber-500 w-4"></i>
                                 <span>Cetak Rapor STS (Sekelas F4)</span>
                             </a>
                             <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
-                               class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
                                 <i class="fa-solid fa-print text-blue-600 w-4"></i>
                                 <span>Cetak Rapor SAS (Sekelas F4)</span>
                             </a>
                         </div>
-                        <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50">
+                            Penilaian Formatif (Proses)
+                        </div>
+                        <div class="py-1">
+                            <a href="{{ route('kelas.nilai-formatif.cetak-rekap', ['kelas' => $kelas->id, 'tahun' => $tahun, 'bulan' => now()->month]) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition">
+                                <i class="fa-solid fa-calendar-days text-purple-600 w-4"></i>
+                                <span>Cetak Formatif Bulanan (Sekelas)</span>
+                            </a>
+                            <a href="{{ route('kelas.nilai-formatif.rekap-semester-sekelas', ['kelas' => $kelas->id, 'tahun' => $tahun]) }}" target="_blank"
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 transition">
+                                <i class="fa-solid fa-table-list text-indigo-600 w-4"></i>
+                                <span>Cetak Formatif 1 Semester (Sekelas)</span>
+                            </a>
+                            @if($mapel)
+                                <a href="{{ route('kelas.mapel.nilai.cetak-formatif-pdf', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" target="_blank"
+                                   class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                                    <i class="fa-solid fa-file-invoice text-purple-500 w-4"></i>
+                                    <span>Formatif Bulanan (Mapel Ini)</span>
+                                </a>
+                            @endif
+                        </div>
+                        <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50">
                             Rekapitulasi & Leger
                         </div>
                         <div class="py-1">
                             <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
-                               class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
                                 <i class="fa-solid fa-book-open text-emerald-600 w-4"></i>
                                 <span>Buku Leger Semester (SAS)</span>
                             </a>
                             <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
-                               class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
                                 <i class="fa-solid fa-book text-amber-600 w-4"></i>
                                 <span>Buku Leger Tengah Semester (STS)</span>
                             </a>
-                            @if($mapel)
-                                <a href="{{ route('kelas.mapel.nilai.cetak-formatif-pdf', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" target="_blank"
-                                   class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                    <i class="fa-solid fa-calendar-days text-purple-600 w-4"></i>
-                                    <span>Cetak Formatif Bulanan (Mapel Ini)</span>
-                                </a>
-                            @endif
                         </div>
-                        <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                            Unduh PDF Lengkap
+                        <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50">
+                            Unduh Dokumen PDF
                         </div>
                         <div class="py-1">
                             <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
-                               class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
                                 <i class="fa-solid fa-file-pdf text-rose-500 w-4"></i>
                                 <span>Unduh PDF STS Sekelas</span>
                             </a>
                             <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
-                               class="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
                                 <i class="fa-solid fa-file-pdf text-rose-600 w-4"></i>
                                 <span>Unduh PDF SAS Sekelas</span>
                             </a>
