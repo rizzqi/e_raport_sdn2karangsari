@@ -20,7 +20,7 @@
                                 'formatif' => ['bg-blue-100 text-blue-800 border-blue-200', 'Form Input Formatif Bulanan'],
                                 'sts' => ['bg-amber-100 text-amber-800 border-amber-200', 'Form Input Nilai STS'],
                                 'sas' => ['bg-indigo-100 text-indigo-800 border-indigo-200', 'Form Input Nilai SAS'],
-                                'rapor' => ['bg-purple-100 text-purple-800 border-purple-200', 'Form Catatan Capaian Guru'],
+                                'rapor' => ['bg-emerald-100 text-emerald-800 border-emerald-200', 'Catatan Guru (Otomatis)'],
                                 'mapel' => ['bg-emerald-100 text-emerald-800 border-emerald-200', 'Lembar Nilai Rapor (Read-Only)'],
                             ];
                             [$badgeClass, $badgeLabel] = $badgeMap[$tab] ?? $badgeMap['mapel'];
@@ -211,13 +211,16 @@
     <div class="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-2 overflow-x-auto scrollbar-thin">
         <div class="flex items-center gap-1.5 min-w-max">
             <!-- TABS MATA PELAJARAN DENGAN PROGRES (Contoh: 12/30) -->
+            @php
+                $mapelSwitchTab = in_array($tab, ['formatif', 'sts', 'sas', 'rapor', 'mapel'], true) ? $tab : 'mapel';
+            @endphp
             @foreach($allMapel as $m)
                 @php
                     $isCurrentMapel = ($tab !== 'pembiasaan' && $m->id === $mapel->id);
                     $doneCount = $progressMapel[$m->id] ?? 0;
                     $isCompleted = ($totalSiswa > 0 && $doneCount >= $totalSiswa);
                 @endphp
-                <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $m->id, 'tab' => 'mapel', 'tahun' => $tahun]) }}"
+                <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $m->id, 'tab' => $mapelSwitchTab, 'tahun' => $tahun]) }}"
                    class="px-3.5 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shrink-0 {{ $isCurrentMapel ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/70' }}">
                     <span>{{ $m->nama }}</span>
                     <!-- Badge Progres -->
@@ -507,12 +510,17 @@
                                         @endif
                                     </td>
 
-                                    <!-- Catatan Guru (Read-Only Preview) -->
+                                    <!-- Catatan Guru (Read-Only Preview Otomatis) -->
                                     <td class="py-3 px-4 text-left">
                                         @if($hasCatatan)
                                             <p class="text-[11px] text-slate-700 line-clamp-2 leading-snug" title="{{ $catatan }}">
                                                 {{ \Illuminate\Support\Str::limit($catatan, 85) }}
                                             </p>
+                                            <div class="mt-1">
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                                                    <i class="fa-solid fa-wand-magic-sparkles text-[8px]"></i> Otomatis{{ $pred ? ' (' . $pred . ')' : '' }}
+                                                </span>
+                                            </div>
                                         @else
                                             <span class="text-slate-400 text-xs font-bold">–</span>
                                         @endif
@@ -596,7 +604,11 @@
             </div>
 
             <!-- FORM PEMBIASAAN & SIA -->
-            <form id="formSiaPembiasaan" action="{{ route('kelas.sia-pembiasaan.simpan', $kelas->id) }}" method="POST">
+            <form id="formSiaPembiasaan"
+                  action="{{ route('kelas.sia-pembiasaan.simpan', $kelas->id) }}"
+                  method="POST"
+                  data-autosave-pembiasaan-url="{{ route('kelas.mapel.nilai.autosave-pembiasaan', $kelas->id) }}"
+                  data-periode="{{ $periodeSia }}">
                 @csrf
                 <input type="hidden" name="periode" value="{{ $periodeSia }}">
 
@@ -654,20 +666,23 @@
                                         <!-- Sakit -->
                                         <td class="py-2.5 px-2 text-center border-r border-slate-200 bg-amber-50/20">
                                             <input type="number" min="0" name="sakit[{{ $ks->id }}]" value="{{ old('sakit.' . $ks->id, $sakit) }}"
-                                                   oninput="setDirty(true)"
-                                                   class="w-14 text-center font-mono font-bold text-sm px-1.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:outline-none transition">
+                                                   data-ks-id="{{ $ks->id }}"
+                                                   data-field="sakit"
+                                                   class="input-sia-kehadiran w-14 text-center font-mono font-bold text-sm px-1.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:outline-none transition">
                                         </td>
                                         <!-- Izin -->
                                         <td class="py-2.5 px-2 text-center border-r border-slate-200 bg-blue-50/20">
                                             <input type="number" min="0" name="izin[{{ $ks->id }}]" value="{{ old('izin.' . $ks->id, $izin) }}"
-                                                   oninput="setDirty(true)"
-                                                   class="w-14 text-center font-mono font-bold text-sm px-1.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none transition">
+                                                   data-ks-id="{{ $ks->id }}"
+                                                   data-field="izin"
+                                                   class="input-sia-kehadiran w-14 text-center font-mono font-bold text-sm px-1.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none transition">
                                         </td>
                                         <!-- Alpa -->
                                         <td class="py-2.5 px-2 text-center border-r border-slate-200 bg-rose-50/20">
                                             <input type="number" min="0" name="alpa[{{ $ks->id }}]" value="{{ old('alpa.' . $ks->id, $alpa) }}"
-                                                   oninput="setDirty(true)"
-                                                   class="w-14 text-center font-mono font-bold text-sm px-1.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-400 focus:outline-none transition">
+                                                   data-ks-id="{{ $ks->id }}"
+                                                   data-field="alpa"
+                                                   class="input-sia-kehadiran w-14 text-center font-mono font-bold text-sm px-1.5 py-1 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-400 focus:outline-none transition">
                                         </td>
                                         <!-- Pilihan Predikat Butir Pembiasaan -->
                                         @foreach($pembiasaans as $p)
@@ -677,8 +692,9 @@
                                             @endphp
                                             <td class="py-2 px-2 text-center border-r border-slate-200">
                                                 <select name="predikat[{{ $ks->id }}][{{ $p->id }}]"
-                                                        onchange="setDirty(true)"
-                                                        class="select-pembiasaan-{{ $p->id }} font-bold text-xs py-1 px-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none transition">
+                                                        data-ks-id="{{ $ks->id }}"
+                                                        data-pembiasaan-id="{{ $p->id }}"
+                                                        class="select-pembiasaan-{{ $p->id }} select-pembiasaan-autosave font-bold text-xs py-1 px-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none transition">
                                                     <option value="Sangat Baik" {{ $curPred === 'Sangat Baik' ? 'selected' : '' }}>SB (Sangat Baik)</option>
                                                     <option value="Baik" {{ ($curPred === 'Baik' || empty($curPred)) ? 'selected' : '' }}>B (Baik)</option>
                                                     <option value="Cukup" {{ $curPred === 'Cukup' ? 'selected' : '' }}>C (Cukup)</option>
@@ -801,7 +817,12 @@
             @endif
 
             <!-- Formulir Nilai Formatif Bulanan -->
-            <form id="formFormatifBulanan" action="{{ route('kelas.mapel.nilai.formatif', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="POST">
+            <form id="formFormatifBulanan"
+                  action="{{ route('kelas.mapel.nilai.formatif', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}"
+                  method="POST"
+                  data-autosave-url="{{ route('kelas.mapel.nilai.autosave-komponen', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}"
+                  data-tahun="{{ $tahun }}"
+                  data-semester="{{ $semester }}">
                 @csrf
                 <input type="hidden" name="tahun" value="{{ $tahun }}">
                 <input type="hidden" name="semester" value="{{ $semester }}">
@@ -942,10 +963,11 @@
                                                            name="formatif[{{ $ks->id }}][{{ $bNum }}]"
                                                            value="{{ old('formatif.' . $ks->id . '.' . $bNum, $valFmt) }}"
                                                            placeholder="-"
-                                                           oninput="setDirty(true)"
                                                            {{ ($isFocusedFmt && $loop->first) ? 'autofocus' : '' }}
                                                            title="Formatif Teori {{ $bNama }} - {{ $ks->siswa->nama }}"
                                                            data-siswa-id="{{ $ks->id }}"
+                                                           data-bulan="{{ $bNum }}"
+                                                           data-jenis="teori"
                                                            {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
                                                            class="input-formatif-bulan w-12 text-center font-mono font-bold text-xs py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
                                                 </td>
@@ -954,9 +976,10 @@
                                                            name="praktik[{{ $ks->id }}][{{ $bNum }}]"
                                                            value="{{ old('praktik.' . $ks->id . '.' . $bNum, $valPrak) }}"
                                                            placeholder="-"
-                                                           oninput="setDirty(true)"
                                                            title="Praktik Jasmani {{ $bNama }} - {{ $ks->siswa->nama }}"
                                                            data-siswa-id="{{ $ks->id }}"
+                                                           data-bulan="{{ $bNum }}"
+                                                           data-jenis="praktik"
                                                            {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
                                                            class="input-formatif-bulan w-12 text-center font-mono font-bold text-xs py-1.5 border border-emerald-300 bg-emerald-50/40 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
                                                 </td>
@@ -975,10 +998,11 @@
                                                            name="formatif[{{ $ks->id }}][{{ $bNum }}]"
                                                            value="{{ old('formatif.' . $ks->id . '.' . $bNum, $val) }}"
                                                            placeholder="-"
-                                                           oninput="setDirty(true)"
                                                            {{ ($isFocusedFmt && $loop->first) ? 'autofocus' : '' }}
                                                            title="Formatif {{ $bNama }} - {{ $ks->siswa->nama }}"
                                                            data-siswa-id="{{ $ks->id }}"
+                                                           data-bulan="{{ $bNum }}"
+                                                           data-jenis="teori"
                                                            {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
                                                            class="input-formatif-bulan w-14 text-center font-mono font-bold text-xs py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                                                 </td>
@@ -988,9 +1012,9 @@
                                                                name="praktik_1[{{ $ks->id }}]"
                                                                value="{{ old('praktik_1.' . $ks->id, $d['praktik_1'] ?? '') }}"
                                                                placeholder="-"
-                                                               oninput="setDirty(true)"
                                                                title="Praktik 1 (Pra-UTS) - {{ $ks->siswa->nama }}"
                                                                data-siswa-id="{{ $ks->id }}"
+                                                               data-jenis="praktik_1"
                                                                {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
                                                                class="input-formatif-bulan w-14 text-center font-mono font-bold text-xs py-1.5 border border-emerald-400 bg-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition">
                                                     </td>
@@ -1001,9 +1025,9 @@
                                                                name="praktik_2[{{ $ks->id }}]"
                                                                value="{{ old('praktik_2.' . $ks->id, $d['praktik_2'] ?? '') }}"
                                                                placeholder="-"
-                                                               oninput="setDirty(true)"
                                                                title="Praktik 2 (Pra-UAS) - {{ $ks->siswa->nama }}"
                                                                data-siswa-id="{{ $ks->id }}"
+                                                               data-jenis="praktik_2"
                                                                {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
                                                                class="input-formatif-bulan w-14 text-center font-mono font-bold text-xs py-1.5 border border-teal-400 bg-white rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none transition">
                                                     </td>
@@ -1021,10 +1045,11 @@
                                                            name="formatif[{{ $ks->id }}][{{ $bNum }}]"
                                                            value="{{ old('formatif.' . $ks->id . '.' . $bNum, $val) }}"
                                                            placeholder="-"
-                                                           oninput="setDirty(true)"
                                                            {{ ($isFocusedFmt && $loop->first) ? 'autofocus' : '' }}
                                                            title="Formatif {{ $bNama }} - {{ $ks->siswa->nama }}"
                                                            data-siswa-id="{{ $ks->id }}"
+                                                           data-bulan="{{ $bNum }}"
+                                                           data-jenis="teori"
                                                            {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
                                                            class="input-formatif-bulan w-14 text-center font-mono font-bold text-xs py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                                                 </td>
@@ -1103,6 +1128,14 @@
     </div>
 </div>
 
+<!-- Indikator Status Autosave Real-Time -->
+<div id="autosaveStatusPill"
+     class="fixed bottom-5 right-5 z-30 hidden transition-all duration-300 pointer-events-none">
+    <div id="autosaveStatusInner"
+         class="px-4 py-2 rounded-xl shadow-lg border text-xs font-bold flex items-center gap-2 backdrop-blur-md bg-white/95 text-slate-700 border-slate-200">
+    </div>
+</div>
+
 <!-- Modal Edit Nama dan NIP Wali Kelas -->
 @include('kelas.modal_edit_wali')
 
@@ -1130,14 +1163,152 @@
 <!-- ========================================================================================= -->
 <script>
     let isDirty = false;
+    let hasBulkManualChanges = false;
+    let pendingAutosaveCount = 0;
+    let activeDebounceCount = 0;
     window.isSubmitting = false;
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const elementTimers = new WeakMap();
+    const lastSavedValues = new WeakMap();
+
+    function escapeHtmlText(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
     function setDirty(dirty = true) {
         isDirty = dirty;
         const saveBar = document.getElementById('stickySaveBar');
-        if (saveBar && dirty) {
+        if (!saveBar) return;
+
+        if (dirty) {
             saveBar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
             saveBar.classList.add('translate-y-0', 'opacity-100');
+        } else {
+            saveBar.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+            saveBar.classList.remove('translate-y-0', 'opacity-100');
+        }
+    }
+
+    function setAutosaveIndicator(state, message) {
+        const pill = document.getElementById('autosaveStatusPill');
+        const inner = document.getElementById('autosaveStatusInner');
+        if (!pill || !inner) return;
+
+        pill.classList.remove('hidden');
+
+        if (state === 'saving') {
+            inner.className = 'px-4 py-2 rounded-xl shadow-lg border text-xs font-bold flex items-center gap-2 backdrop-blur-md bg-blue-50/95 text-blue-800 border-blue-200';
+            inner.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-blue-600"></i><span>${escapeHtmlText(message || 'Menyimpan otomatis...')}</span>`;
+        } else if (state === 'saved') {
+            inner.className = 'px-4 py-2 rounded-xl shadow-lg border text-xs font-bold flex items-center gap-2 backdrop-blur-md bg-emerald-50/95 text-emerald-800 border-emerald-200';
+            inner.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i><span>${escapeHtmlText(message || 'Tersimpan otomatis')}</span>`;
+        } else {
+            inner.className = 'px-4 py-2 rounded-xl shadow-lg border text-xs font-bold flex items-center gap-2 backdrop-blur-md bg-rose-50/95 text-rose-800 border-rose-300';
+            inner.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-600"></i><span>${escapeHtmlText(message || 'Gagal menyimpan otomatis')}</span>`;
+        }
+    }
+
+    function parseNilaiRange(inputEl) {
+        if (inputEl.validity && inputEl.validity.badInput) {
+            return { valid: false, normalized: null, num: null };
+        }
+        const raw = inputEl.value.trim().replace(',', '.');
+        if (raw === '') {
+            return { valid: true, normalized: '', num: null };
+        }
+        if (!/^-?\d+(\.\d+)?$/.test(raw)) {
+            return { valid: false, normalized: raw, num: null };
+        }
+        const num = Number(raw);
+        if (!Number.isFinite(num) || num < 0 || num > 100) {
+            return { valid: false, normalized: raw, num };
+        }
+        return { valid: true, normalized: String(Math.round(num * 10) / 10), num };
+    }
+
+    function flashElementSaved(el) {
+        el.classList.remove('ring-2', 'ring-rose-400');
+        el.classList.add('ring-2', 'ring-emerald-400');
+        setTimeout(() => {
+            el.classList.remove('ring-2', 'ring-emerald-400');
+        }, 900);
+    }
+
+    function markElementError(el, hasError) {
+        if (hasError) {
+            el.classList.add('ring-2', 'ring-rose-400', 'border-rose-500');
+        } else {
+            el.classList.remove('ring-2', 'ring-rose-400', 'border-rose-500');
+        }
+    }
+
+    function cancelElementTimer(el) {
+        const existing = elementTimers.get(el);
+        if (existing) {
+            clearTimeout(existing);
+            elementTimers.delete(el);
+            activeDebounceCount = Math.max(0, activeDebounceCount - 1);
+        }
+    }
+
+    function scheduleElementAutosave(el, flushFn, delayMs = 650) {
+        cancelElementTimer(el);
+        activeDebounceCount++;
+        const timerId = setTimeout(() => {
+            elementTimers.delete(el);
+            activeDebounceCount = Math.max(0, activeDebounceCount - 1);
+            flushFn(el);
+        }, delayMs);
+        elementTimers.set(el, timerId);
+    }
+
+    async function postAutosaveJson(url, payload) {
+        pendingAutosaveCount++;
+        setAutosaveIndicator('saving', 'Menyimpan otomatis...');
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (_) {
+                data = {};
+            }
+
+            if (!response.ok || !data.success) {
+                const firstFieldError = data.errors ? Object.values(data.errors)[0]?.[0] : null;
+                const errMsg = firstFieldError || data.message || 'Gagal menyimpan otomatis';
+                setAutosaveIndicator('error', errMsg);
+                return { ok: false, status: response.status, data };
+            }
+
+            const timeSuffix = data.saved_at ? ' ' + data.saved_at : '';
+            setAutosaveIndicator('saved', 'Tersimpan otomatis' + timeSuffix);
+            return { ok: true, status: response.status, data };
+        } catch (err) {
+            setAutosaveIndicator('error', 'Koneksi terganggu, nilai belum tersimpan');
+            return { ok: false, status: 0, data: {} };
+        } finally {
+            pendingAutosaveCount = Math.max(0, pendingAutosaveCount - 1);
+            if (!hasBulkManualChanges && pendingAutosaveCount === 0 && activeDebounceCount === 0) {
+                setDirty(false);
+            }
         }
     }
 
@@ -1145,7 +1316,6 @@
         const activeForm =
             document.getElementById('formSingleComponent') ||
             document.getElementById('formFormatifBulanan') ||
-            document.getElementById('formCatatanRapor') ||
             document.getElementById('formSiaPembiasaan');
 
         if (activeForm) {
@@ -1154,7 +1324,7 @@
         }
     }
 
-    ['formSingleComponent', 'formFormatifBulanan', 'formCatatanRapor', 'formSiaPembiasaan'].forEach(id => {
+    ['formSingleComponent', 'formFormatifBulanan', 'formSiaPembiasaan'].forEach(id => {
         const formEl = document.getElementById(id);
         if (formEl) {
             formEl.addEventListener('submit', () => {
@@ -1164,19 +1334,66 @@
     });
 
     window.addEventListener('beforeunload', function(e) {
-        if (isDirty && !window.isSubmitting) {
+        if ((isDirty || pendingAutosaveCount > 0 || activeDebounceCount > 0) && !window.isSubmitting) {
             e.preventDefault();
             e.returnValue = 'Ada perubahan nilai yang belum disimpan!';
         }
     });
 
+    async function flushStsSasCell(inputEl) {
+        cancelElementTimer(inputEl);
+        const form = document.getElementById('formSingleComponent');
+        const url = form?.dataset.autosaveUrl;
+        if (!form || !url || inputEl.disabled) return;
+
+        const parsed = parseNilaiRange(inputEl);
+        if (!parsed.valid) {
+            markElementError(inputEl, true);
+            setAutosaveIndicator('error', 'Nilai harus 0–100 (tidak disimpan)');
+            return;
+        }
+        markElementError(inputEl, false);
+
+        if (lastSavedValues.has(inputEl) && lastSavedValues.get(inputEl) === parsed.normalized) {
+            return;
+        }
+
+        const ksId = Number(inputEl.dataset.ksId);
+        const result = await postAutosaveJson(url, {
+            mode: form.dataset.autosaveMode,
+            kelas_siswa_id: ksId,
+            tahun: Number(form.dataset.tahun),
+            semester: form.dataset.semester,
+            nilai: parsed.num === null ? null : parsed.normalized,
+        });
+
+        if (result.ok) {
+            lastSavedValues.set(inputEl, parsed.normalized);
+            flashElementSaved(inputEl);
+        } else {
+            markElementError(inputEl, true);
+        }
+    }
+
     function updateSingleComponentStatus(inputEl) {
-        setDirty(true);
         const kkm = parseFloat(inputEl.dataset.kkm || '70');
         const targetId = inputEl.dataset.statusTarget;
         const targetEl = targetId ? document.getElementById(targetId) : null;
-        const raw = inputEl.value.trim().replace(',', '.');
-        const val = (raw !== '' && !isNaN(raw)) ? parseFloat(raw) : null;
+        const parsed = parseNilaiRange(inputEl);
+
+        if (!parsed.valid) {
+            cancelElementTimer(inputEl);
+            markElementError(inputEl, true);
+            inputEl.classList.add('bg-rose-50', 'text-rose-700');
+            if (targetEl) {
+                targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300"><i class="fa-solid fa-circle-xmark text-[10px]"></i> Harus 0–100</span>';
+            }
+            setAutosaveIndicator('error', 'Nilai harus 0–100 (tidak disimpan)');
+            return;
+        }
+
+        markElementError(inputEl, false);
+        const val = parsed.num;
 
         if (val !== null && val < kkm) {
             inputEl.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-400');
@@ -1186,14 +1403,21 @@
             inputEl.classList.add('border-slate-300', 'bg-white');
         }
 
-        if (!targetEl) return;
+        if (targetEl) {
+            if (val === null) {
+                targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-500 border border-slate-200">Belum Diisi</span>';
+            } else if (val >= kkm) {
+                targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check text-[10px]"></i> Tuntas</span>';
+            } else {
+                targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Belum Tuntas</span>';
+            }
+        }
 
-        if (val === null) {
-            targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-500 border border-slate-200">Belum Diisi</span>';
-        } else if (val >= kkm) {
-            targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check text-[10px]"></i> Tuntas</span>';
+        const form = document.getElementById('formSingleComponent');
+        if (form && form.dataset.autosaveUrl) {
+            scheduleElementAutosave(inputEl, flushStsSasCell, 650);
         } else {
-            targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Belum Tuntas</span>';
+            setDirty(true);
         }
     }
 
@@ -1279,7 +1503,6 @@
             const hasActiveForm =
                 document.getElementById('formSingleComponent') ||
                 document.getElementById('formFormatifBulanan') ||
-                document.getElementById('formCatatanRapor') ||
                 document.getElementById('formSiaPembiasaan');
             if (hasActiveForm) {
                 e.preventDefault();
@@ -1288,10 +1511,92 @@
         }
     });
 
+    async function flushFormatifCell(inputEl) {
+        cancelElementTimer(inputEl);
+        const form = document.getElementById('formFormatifBulanan');
+        const url = form?.dataset.autosaveUrl;
+        if (!form || !url || inputEl.disabled) return;
+
+        const parsed = parseNilaiRange(inputEl);
+        if (!parsed.valid) {
+            markElementError(inputEl, true);
+            setAutosaveIndicator('error', 'Nilai harus 0–100 (tidak disimpan)');
+            return;
+        }
+        markElementError(inputEl, false);
+
+        if (lastSavedValues.has(inputEl) && lastSavedValues.get(inputEl) === parsed.normalized) {
+            return;
+        }
+
+        const ksId = Number(inputEl.dataset.siswaId);
+        const bulanRaw = inputEl.dataset.bulan;
+        const result = await postAutosaveJson(url, {
+            mode: 'formatif',
+            kelas_siswa_id: ksId,
+            tahun: Number(form.dataset.tahun),
+            semester: form.dataset.semester,
+            bulan: bulanRaw ? Number(bulanRaw) : null,
+            jenis: inputEl.dataset.jenis || 'teori',
+            nilai: parsed.num === null ? null : parsed.normalized,
+        });
+
+        if (result.ok) {
+            lastSavedValues.set(inputEl, parsed.normalized);
+            flashElementSaved(inputEl);
+            const rataEl = document.getElementById('rata_formatif_' + ksId);
+            if (rataEl && result.data.rata_formatif !== undefined) {
+                rataEl.textContent = result.data.rata_formatif ?? '-';
+            }
+        } else {
+            markElementError(inputEl, true);
+        }
+    }
+
+    async function flushSiaCell(inputEl, isBlur = false) {
+        cancelElementTimer(inputEl);
+        const form = document.getElementById('formSiaPembiasaan');
+        const url = form?.dataset.autosavePembiasaanUrl;
+        if (!form || !url) return;
+
+        let raw = inputEl.value.trim();
+        if (raw === '') {
+            if (!isBlur) return;
+            raw = '0';
+            inputEl.value = '0';
+        }
+
+        if (!/^\d+$/.test(raw)) {
+            markElementError(inputEl, true);
+            setAutosaveIndicator('error', 'Jumlah hari harus berupa angka >= 0');
+            return;
+        }
+        markElementError(inputEl, false);
+
+        if (lastSavedValues.has(inputEl) && lastSavedValues.get(inputEl) === raw) {
+            return;
+        }
+
+        const result = await postAutosaveJson(url, {
+            kelas_siswa_id: Number(inputEl.dataset.ksId),
+            periode: form.dataset.periode,
+            field: inputEl.dataset.field,
+            value: Number(raw),
+        });
+
+        if (result.ok) {
+            lastSavedValues.set(inputEl, raw);
+            flashElementSaved(inputEl);
+        } else {
+            markElementError(inputEl, true);
+        }
+    }
+
     function isiSemuaBaik(pembiasaanId) {
         document.querySelectorAll('.select-pembiasaan-' + pembiasaanId).forEach(sel => {
             sel.value = 'Baik';
         });
+        hasBulkManualChanges = true;
         setDirty(true);
     }
 
@@ -1299,10 +1604,79 @@
         document.querySelectorAll('select[class*="select-pembiasaan-"]').forEach(sel => {
             sel.value = 'Baik';
         });
+        hasBulkManualChanges = true;
         setDirty(true);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        // 1. Bind STS & SAS onblur flush + seed initial normalized values
+        document.querySelectorAll('.input-nilai-sts, .input-nilai-sas').forEach(el => {
+            const parsed = parseNilaiRange(el);
+            lastSavedValues.set(el, parsed.valid ? parsed.normalized : el.value.trim());
+            el.addEventListener('blur', () => flushStsSasCell(el));
+        });
+
+        // 2. Bind Formatif Bulanan & Praktikum autosave
+        document.querySelectorAll('.input-formatif-bulan').forEach(el => {
+            const parsed = parseNilaiRange(el);
+            lastSavedValues.set(el, parsed.valid ? parsed.normalized : el.value.trim());
+            el.addEventListener('input', () => {
+                const check = parseNilaiRange(el);
+                if (!check.valid) {
+                    cancelElementTimer(el);
+                    markElementError(el, true);
+                    setAutosaveIndicator('error', 'Nilai harus 0–100 (tidak disimpan)');
+                    return;
+                }
+                markElementError(el, false);
+                scheduleElementAutosave(el, flushFormatifCell, 650);
+            });
+            el.addEventListener('blur', () => flushFormatifCell(el));
+        });
+
+        // 3. Bind Tab Pembiasaan & Kehadiran (SIA)
+        document.querySelectorAll('.input-sia-kehadiran').forEach(el => {
+            lastSavedValues.set(el, el.value.trim() || '0');
+            el.addEventListener('input', () => {
+                const raw = el.value.trim();
+                if (raw !== '' && !/^\d+$/.test(raw)) {
+                    cancelElementTimer(el);
+                    markElementError(el, true);
+                    setAutosaveIndicator('error', 'Jumlah hari harus berupa angka >= 0');
+                    return;
+                }
+                markElementError(el, false);
+                scheduleElementAutosave(el, () => flushSiaCell(el, false), 650);
+            });
+            el.addEventListener('blur', () => flushSiaCell(el, true));
+        });
+
+        document.querySelectorAll('.select-pembiasaan-autosave').forEach(sel => {
+            lastSavedValues.set(sel, sel.value);
+            sel.addEventListener('change', async () => {
+                const form = document.getElementById('formSiaPembiasaan');
+                const url = form?.dataset.autosavePembiasaanUrl;
+                if (!form || !url) return;
+
+                if (lastSavedValues.get(sel) === sel.value) return;
+
+                const result = await postAutosaveJson(url, {
+                    kelas_siswa_id: Number(sel.dataset.ksId),
+                    periode: form.dataset.periode,
+                    field: 'pembiasaan',
+                    pembiasaan_id: Number(sel.dataset.pembiasaanId),
+                    value: sel.value,
+                });
+
+                if (result.ok) {
+                    lastSavedValues.set(sel, sel.value);
+                    flashElementSaved(sel);
+                } else {
+                    markElementError(sel, true);
+                }
+            });
+        });
+
         const focusedInput = document.querySelector('[autofocus]');
         if (focusedInput) {
             focusedInput.scrollIntoView({ behavior: 'smooth', block: 'center' });

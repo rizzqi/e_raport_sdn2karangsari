@@ -26,9 +26,14 @@ class NilaiRaporMapel extends Model
         'nilai_rapor',
         'predikat',
         'catatan',
+        'catatan_manual',
         'is_locked',
         'locked_at',
         'locked_by',
+    ];
+
+    protected $attributes = [
+        'catatan_manual' => false,
     ];
 
     protected function casts(): array
@@ -41,6 +46,7 @@ class NilaiRaporMapel extends Model
             'nilai_uts' => 'float',
             'nilai_uas' => 'float',
             'nilai_rapor' => 'float',
+            'catatan_manual' => 'boolean',
             'is_locked' => 'boolean',
             'locked_at' => 'datetime',
         ];

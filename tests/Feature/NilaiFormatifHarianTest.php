@@ -253,4 +253,160 @@ class NilaiFormatifHarianTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
     }
+
+    public function test_autosave_formatif_harian_sinkron_bulanan_rapor_catatan_dan_validasi(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $mapel = $kelas->mataPelajaran()->first();
+        $ks = $kelas->kelasSiswa()->first();
+        $tahun = 2030;
+        $bulan = 8;
+        $semester = strtolower($kelas->tahunAjaran->semester ?? 'ganjil');
+
+        $penilaian = PenilaianFormatifHarian::create([
+            'kelas_id' => $kelas->id,
+            'mapel_id' => $mapel->id,
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'nama' => 'PH Autosave 1',
+            'tanggal' => '2030-08-10',
+            'lingkup_materi' => 'Bilangan',
+            'jenis' => 'teori',
+            'bobot' => 1.0,
+        ]);
+
+        // Set STS & SAS terlebih dahulu
+        NilaiRaporMapel::updateOrCreate([
+            'kelas_siswa_id' => $ks->id,
+            'mapel_id' => $mapel->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+        ], [
+            'nilai_uts' => 92,
+            'nilai_uas' => 94,
+        ]);
+
+        // 1. Autosave sel valid => sinkron bulanan, nilai rapor, predikat A, & catatan otomatis
+        $response = $this->actingAs($admin)->postJson(route('kelas.mapel.formatif-harian.autosave', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'penilaian_id' => $penilaian->id,
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'nilai' => 91,
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'predikat' => 'A',
+            ])
+            ->assertJsonStructure([
+                'avg_teori',
+                'avg_praktik',
+                'rata_formatif',
+                'nilai_rapor',
+                'predikat',
+                'saved_at',
+            ]);
+
+        $this->assertDatabaseHas('nilai_formatif_bulanan', [
+            'kelas_siswa_id' => $ks->id,
+            'mapel_id' => $mapel->id,
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'nilai' => 91,
+        ]);
+
+        $rapor = NilaiRaporMapel::where([
+            'kelas_siswa_id' => $ks->id,
+            'mapel_id' => $mapel->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+        ])->first();
+
+        $this->assertNotNull($rapor);
+        $this->assertEquals('A', $rapor->predikat);
+        $this->assertNotEmpty($rapor->catatan);
+        $this->assertFalse($rapor->catatan_manual);
+
+        // 2. Tolak rentang > 100 / < 0 tanpa merusak nilai tersimpan
+        $this->actingAs($admin)->postJson(route('kelas.mapel.formatif-harian.autosave', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'penilaian_id' => $penilaian->id,
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'nilai' => 125,
+        ])->assertStatus(422);
+
+        $this->assertDatabaseHas('nilai_formatif_bulanan', [
+            'kelas_siswa_id' => $ks->id,
+            'mapel_id' => $mapel->id,
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'nilai' => 91,
+        ]);
+
+        // 3. Tolak 403 ketika baris rapor dikunci
+        $rapor->update(['is_locked' => true]);
+        $this->actingAs($admin)->postJson(route('kelas.mapel.formatif-harian.autosave', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'penilaian_id' => $penilaian->id,
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'nilai' => 60,
+        ])->assertStatus(403);
+
+        // 4. Tolak 404 untuk penilaian mapel/kelas lain atau siswa kelas lain
+        $otherKelas = Kelas::where('id', '!=', $kelas->id)->first();
+        if ($otherKelas && $otherKelas->kelasSiswa()->exists()) {
+            $otherKs = $otherKelas->kelasSiswa()->first();
+            $this->actingAs($admin)->postJson(route('kelas.mapel.formatif-harian.autosave', [
+                'kelas' => $kelas->id,
+                'mapel' => $mapel->id,
+            ]), [
+                'penilaian_id' => $penilaian->id,
+                'kelas_siswa_id' => $otherKs->id,
+                'tahun' => $tahun,
+                'bulan' => $bulan,
+                'nilai' => 80,
+            ])->assertStatus(404);
+        }
+
+        $otherMapel = $kelas->mataPelajaran()->first(fn ($m) => $m->id !== $mapel->id);
+        $this->assertNotNull($otherMapel);
+        if ($otherMapel) {
+            $otherPenilaian = PenilaianFormatifHarian::create([
+                'kelas_id' => $kelas->id,
+                'mapel_id' => $otherMapel->id,
+                'tahun' => $tahun,
+                'bulan' => $bulan,
+                'nama' => 'PH Mapel Lain',
+                'tanggal' => '2030-08-10',
+                'lingkup_materi' => 'Lainnya',
+                'jenis' => 'teori',
+                'bobot' => 1.0,
+            ]);
+
+            $this->actingAs($admin)->postJson(route('kelas.mapel.formatif-harian.autosave', [
+                'kelas' => $kelas->id,
+                'mapel' => $mapel->id,
+            ]), [
+                'penilaian_id' => $otherPenilaian->id,
+                'kelas_siswa_id' => $ks->id,
+                'tahun' => $tahun,
+                'bulan' => $bulan,
+                'nilai' => 80,
+            ])->assertStatus(404);
+        }
+    }
 }
