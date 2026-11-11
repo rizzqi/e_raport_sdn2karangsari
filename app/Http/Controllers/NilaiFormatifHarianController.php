@@ -6,10 +6,12 @@ use App\Models\Kelas;
 use App\Models\MataPelajaran;
 use App\Models\NilaiFormatifBulanan;
 use App\Models\NilaiFormatifHarian;
+use App\Models\NilaiRaporMapel;
 use App\Models\PenilaianFormatifHarian;
 use App\Models\Sekolah;
 use App\Services\HitungNilaiService;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -328,6 +330,141 @@ class NilaiFormatifHarianController extends Controller
             'tahun' => $tahun,
             'bulan' => $bulan,
         ])->with('success', "Nilai Penilaian Harian berhasil disimpan! Rata-rata Formatif Bulan {$namaBulan} otomatis diperbarui.");
+    }
+
+    /**
+     * AJAX Autosave Endpoint: Simpan satu sel nilai harian siswa lalu sinkronkan bulanan & rapor otomatis.
+     */
+    public function autosave(Kelas $kelas, MataPelajaran $mapel, Request $request): JsonResponse
+    {
+        $this->authorizeAkses($kelas);
+
+        if ($request->has('nilai')) {
+            $raw = $request->input('nilai');
+            $trimmed = $raw !== null ? trim((string) $raw) : '';
+            $request->merge([
+                'nilai' => $trimmed === '' ? null : str_replace(',', '.', $trimmed),
+            ]);
+        }
+
+        $validated = $request->validate([
+            'penilaian_id' => ['required', 'integer'],
+            'kelas_siswa_id' => ['required', 'integer'],
+            'tahun' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'bulan' => ['required', 'integer', 'min:1', 'max:12'],
+            'nilai' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        ], [
+            'nilai.numeric' => 'Nilai harus berupa angka.',
+            'nilai.min' => 'Nilai minimal adalah 0.',
+            'nilai.max' => 'Nilai maksimal adalah 100.',
+        ]);
+
+        $ksId = (int) $validated['kelas_siswa_id'];
+        $penilaianId = (int) $validated['penilaian_id'];
+        $tahun = (int) ($validated['tahun'] ?? now()->year);
+        $bulan = (int) $validated['bulan'];
+        $semester = strtolower($kelas->tahunAjaran->semester ?? 'ganjil');
+
+        abort_unless($kelas->kelasSiswa()->where('id', $ksId)->exists(), 404);
+        $penilaian = PenilaianFormatifHarian::where('id', $penilaianId)
+            ->where('kelas_id', $kelas->id)
+            ->where('mapel_id', $mapel->id)
+            ->firstOrFail();
+
+        $raporCek = NilaiRaporMapel::where('kelas_siswa_id', $ksId)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->where('semester', $semester)
+            ->first();
+
+        if ($raporCek && $raporCek->is_locked) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nilai rapor terkunci dan tidak dapat diubah.',
+            ], 403);
+        }
+
+        $val = isset($validated['nilai']) && $validated['nilai'] !== null ? round((float) $validated['nilai'], 1) : null;
+        $avgTeori = null;
+        $avgPraktik = null;
+        $rapor = null;
+
+        DB::transaction(function () use (
+            $penilaian,
+            $penilaianId,
+            $ksId,
+            $kelas,
+            $mapel,
+            $tahun,
+            $semester,
+            $val,
+            &$avgTeori,
+            &$avgPraktik,
+            &$rapor
+        ) {
+            if ($val !== null) {
+                NilaiFormatifHarian::updateOrCreate([
+                    'penilaian_formatif_harian_id' => $penilaianId,
+                    'kelas_siswa_id' => $ksId,
+                ], [
+                    'nilai' => $val,
+                ]);
+            } else {
+                NilaiFormatifHarian::where('penilaian_formatif_harian_id', $penilaianId)
+                    ->where('kelas_siswa_id', $ksId)
+                    ->delete();
+            }
+
+            $penilaianBulan = PenilaianFormatifHarian::where('kelas_id', $kelas->id)
+                ->where('mapel_id', $mapel->id)
+                ->where('tahun', $penilaian->tahun)
+                ->where('bulan', $penilaian->bulan)
+                ->get();
+
+            $nilaiSiswa = NilaiFormatifHarian::whereIn('penilaian_formatif_harian_id', $penilaianBulan->pluck('id'))
+                ->where('kelas_siswa_id', $ksId)
+                ->get()
+                ->keyBy('penilaian_formatif_harian_id');
+
+            $scoresTeori = [];
+            $scoresPraktik = [];
+            foreach ($penilaianBulan as $p) {
+                $nh = $nilaiSiswa->get($p->id);
+                if ($nh && $nh->nilai !== null) {
+                    if ($p->jenis === 'praktik') {
+                        $scoresPraktik[] = (float) $nh->nilai;
+                    } else {
+                        $scoresTeori[] = (float) $nh->nilai;
+                    }
+                }
+            }
+
+            $avgTeori = count($scoresTeori) > 0 ? round(array_sum($scoresTeori) / count($scoresTeori), 1) : null;
+            $avgPraktik = count($scoresPraktik) > 0 ? round(array_sum($scoresPraktik) / count($scoresPraktik), 1) : null;
+
+            NilaiFormatifBulanan::updateOrCreate([
+                'kelas_siswa_id' => $ksId,
+                'mapel_id' => $mapel->id,
+                'tahun' => $penilaian->tahun,
+                'bulan' => $penilaian->bulan,
+            ], [
+                'nilai' => $avgTeori,
+                'nilai_praktik' => $avgPraktik,
+            ]);
+
+            $rapor = HitungNilaiService::syncFormatifToRaporMapel($ksId, $mapel, $tahun, $semester);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tersimpan otomatis',
+            'avg_teori' => $avgTeori !== null ? HitungNilaiService::formatAngka($avgTeori) : '-',
+            'avg_praktik' => $avgPraktik !== null ? HitungNilaiService::formatAngka($avgPraktik) : '-',
+            'rata_formatif' => $rapor && $rapor->rata_formatif !== null ? HitungNilaiService::formatAngka((float) $rapor->rata_formatif) : '-',
+            'nilai_rapor' => $rapor && $rapor->nilai_rapor !== null ? HitungNilaiService::formatAngka((float) $rapor->nilai_rapor) : null,
+            'predikat' => $rapor?->predikat,
+            'saved_at' => now()->format('H:i:s'),
+        ]);
     }
 
     /**

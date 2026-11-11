@@ -136,10 +136,198 @@
     </div>
 
     <!-- Formulir Matriks Nilai Harian -->
-    <form action="{{ route('kelas.mapel.formatif-harian.simpan', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="POST">
+    <form id="formFormatifHarian"
+          action="{{ route('kelas.mapel.formatif-harian.simpan', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}"
+          method="POST"
+          data-autosave-url="{{ route('kelas.mapel.formatif-harian.autosave', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}"
+          data-tahun="{{ $tahun }}"
+          data-bulan="{{ $bulan }}">
         @csrf
         <input type="hidden" name="tahun" value="{{ $tahun }}">
         <input type="hidden" name="bulan" value="{{ $bulan }}">
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const form = document.getElementById('formFormatifHarian');
+                const autosaveUrl = form?.dataset.autosaveUrl;
+                if (!form || !autosaveUrl) return;
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const timers = new WeakMap();
+                const lastSaved = new WeakMap();
+                let pendingCount = 0;
+                let activeDebounceCount = 0;
+                let isSubmittingManual = false;
+
+                form.addEventListener('submit', () => {
+                    isSubmittingManual = true;
+                });
+
+                window.addEventListener('beforeunload', (e) => {
+                    if ((pendingCount > 0 || activeDebounceCount > 0) && !isSubmittingManual) {
+                        e.preventDefault();
+                        e.returnValue = 'Ada nilai harian yang sedang disimpan!';
+                    }
+                });
+
+                function escapeHarianHtml(str) {
+                    return String(str)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                }
+
+                function setHarianStatus(state, text) {
+                    const el = document.getElementById('harianAutosaveStatus');
+                    if (!el) return;
+                    el.classList.remove('hidden');
+
+                    if (state === 'saving') {
+                        el.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200';
+                        el.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[10px]"></i><span>${escapeHarianHtml(text || 'Menyimpan...')}</span>`;
+                    } else if (state === 'saved') {
+                        el.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+                        el.innerHTML = `<i class="fa-solid fa-circle-check text-[10px]"></i><span>${escapeHarianHtml(text || 'Tersimpan otomatis')}</span>`;
+                    } else {
+                        el.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-300';
+                        el.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-[10px]"></i><span>${escapeHarianHtml(text || 'Gagal menyimpan')}</span>`;
+                    }
+                }
+
+                function parseHarianNilai(inputEl) {
+                    if (inputEl.validity && inputEl.validity.badInput) {
+                        return { valid: false, normalized: null, num: null };
+                    }
+                    const raw = inputEl.value.trim().replace(',', '.');
+                    if (raw === '') {
+                        return { valid: true, normalized: '', num: null };
+                    }
+                    if (!/^-?\d+(\.\d+)?$/.test(raw)) {
+                        return { valid: false, normalized: raw, num: null };
+                    }
+                    const num = Number(raw);
+                    if (!Number.isFinite(num) || num < 0 || num > 100) {
+                        return { valid: false, normalized: raw, num };
+                    }
+                    return { valid: true, normalized: String(Math.round(num * 10) / 10), num };
+                }
+
+                function cancelTimer(el) {
+                    const existing = timers.get(el);
+                    if (existing) {
+                        clearTimeout(existing);
+                        timers.delete(el);
+                        activeDebounceCount = Math.max(0, activeDebounceCount - 1);
+                    }
+                }
+
+                async function flushHarianCell(inputEl) {
+                    cancelTimer(inputEl);
+                    if (inputEl.disabled) return;
+
+                    const parsed = parseHarianNilai(inputEl);
+                    if (!parsed.valid) {
+                        inputEl.classList.add('ring-2', 'ring-rose-400', 'border-rose-500');
+                        setHarianStatus('error', 'Nilai harus 0–100 (tidak disimpan)');
+                        return;
+                    }
+                    inputEl.classList.remove('ring-2', 'ring-rose-400', 'border-rose-500');
+
+                    if (lastSaved.has(inputEl) && lastSaved.get(inputEl) === parsed.normalized) {
+                        return;
+                    }
+
+                    const ksId = Number(inputEl.dataset.siswaId);
+                    const penilaianId = Number(inputEl.dataset.penilaianId);
+                    if (!ksId || !penilaianId) return;
+
+                    pendingCount++;
+                    setHarianStatus('saving', 'Menyimpan otomatis...');
+
+                    try {
+                        const res = await fetch(autosaveUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify({
+                                penilaian_id: penilaianId,
+                                kelas_siswa_id: ksId,
+                                tahun: Number(form.dataset.tahun),
+                                bulan: Number(form.dataset.bulan),
+                                nilai: parsed.num === null ? null : parsed.normalized,
+                            }),
+                        });
+
+                        let data = {};
+                        try {
+                            data = await res.json();
+                        } catch (_) {
+                            data = {};
+                        }
+
+                        if (!res.ok || !data.success) {
+                            const errMsg = data.errors?.nilai?.[0] || data.message || 'Gagal menyimpan otomatis';
+                            inputEl.classList.add('ring-2', 'ring-rose-400', 'border-rose-500');
+                            setHarianStatus('error', errMsg);
+                            return;
+                        }
+
+                        lastSaved.set(inputEl, parsed.normalized);
+                        inputEl.classList.add('ring-2', 'ring-emerald-400');
+                        setTimeout(() => inputEl.classList.remove('ring-2', 'ring-emerald-400'), 900);
+
+                        if (inputEl.dataset.jenis !== 'praktik' && data.avg_teori !== undefined) {
+                            const savedCell = document.getElementById('saved-bulanan-' + ksId);
+                            if (savedCell) {
+                                if (data.avg_teori !== null && data.avg_teori !== '-') {
+                                    savedCell.innerHTML = `<span class="px-2 py-0.5 rounded-md font-bold bg-emerald-50 border border-emerald-200 text-emerald-800">${escapeHarianHtml(data.avg_teori)}</span>`;
+                                } else {
+                                    savedCell.innerHTML = '<span class="text-slate-400">-</span>';
+                                }
+                            }
+                        }
+
+                        setHarianStatus('saved', 'Tersimpan otomatis ' + (data.saved_at || ''));
+                    } catch (_) {
+                        setHarianStatus('error', 'Koneksi terganggu, gagal menyimpan');
+                    } finally {
+                        pendingCount = Math.max(0, pendingCount - 1);
+                    }
+                }
+
+                form.querySelectorAll('.input-harian-cell').forEach(el => {
+                    const initParsed = parseHarianNilai(el);
+                    lastSaved.set(el, initParsed.valid ? initParsed.normalized : el.value.trim());
+
+                    el.addEventListener('input', () => {
+                        const check = parseHarianNilai(el);
+                        if (!check.valid) {
+                            cancelTimer(el);
+                            el.classList.add('ring-2', 'ring-rose-400', 'border-rose-500');
+                            setHarianStatus('error', 'Nilai harus 0–100 (tidak disimpan)');
+                            return;
+                        }
+                        el.classList.remove('ring-2', 'ring-rose-400', 'border-rose-500');
+                        cancelTimer(el);
+                        activeDebounceCount++;
+                        const tid = setTimeout(() => {
+                            timers.delete(el);
+                            activeDebounceCount = Math.max(0, activeDebounceCount - 1);
+                            flushHarianCell(el);
+                        }, 650);
+                        timers.set(el, tid);
+                    });
+
+                    el.addEventListener('blur', () => flushHarianCell(el));
+                });
+            });
+        </script>
 
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             @if($penilaianList->isEmpty())
@@ -246,6 +434,7 @@
                                                    name="nilai[{{ $p->id }}][{{ $ks->id }}]"
                                                    value="{{ old('nilai.' . $p->id . '.' . $ks->id, $val) }}"
                                                    placeholder="-"
+                                                   data-penilaian-id="{{ $p->id }}"
                                                    data-siswa-id="{{ $ks->id }}"
                                                    data-jenis="{{ $p->jenis }}"
                                                    oninput="hitungLiveRataRata({{ $ks->id }})"
@@ -261,7 +450,7 @@
                                     </td>
 
                                     <!-- Nilai yang saat ini tersimpan di tabel bulanan -->
-                                    <td class="py-2.5 px-3 text-center bg-slate-50 font-mono text-xs text-slate-600">
+                                    <td id="saved-bulanan-{{ $ks->id }}" class="py-2.5 px-3 text-center bg-slate-50 font-mono text-xs text-slate-600">
                                         @if($savedBulanan !== null)
                                             <span class="px-2 py-0.5 rounded-md font-bold bg-white border border-slate-200 text-slate-800">
                                                 {{ \App\Services\HitungNilaiService::formatAngka($savedBulanan) }}
@@ -278,9 +467,12 @@
 
                 <!-- Footer Bar Simpan -->
                 <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div class="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
-                        <i class="fa-solid fa-cloud-arrow-up text-emerald-600"></i>
-                        <span>Perubahan nilai akan otomatis mengupdate nilai formatif bulanan & nilai rapor semester.</span>
+                    <div class="flex flex-wrap items-center gap-2.5 text-xs text-slate-500 font-medium">
+                        <div class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-cloud-arrow-up text-emerald-600"></i>
+                            <span>Perubahan nilai akan otomatis mengupdate nilai formatif bulanan & nilai rapor semester.</span>
+                        </div>
+                        <span id="harianAutosaveStatus" class="hidden"></span>
                     </div>
 
                     <div class="flex items-center gap-2">

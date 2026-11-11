@@ -68,8 +68,8 @@
                 </a>
                 <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'rapor', 'tahun' => $tahun]) }}"
                    class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold transition {{ $activeMode === 'rapor' ? 'bg-indigo-50 text-indigo-800 font-bold' : 'text-slate-700 hover:bg-slate-50' }}">
-                    <i class="fa-solid fa-comment-dots text-indigo-600 w-4 text-center"></i>
-                    <span>Input Catatan Guru</span>
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-600 w-4 text-center"></i>
+                    <span>Catatan Guru (Otomatis)</span>
                 </a>
             @endif
             <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel?->id, 'tab' => 'pembiasaan', 'tahun' => $tahun]) }}"

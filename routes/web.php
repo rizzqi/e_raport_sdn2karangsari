@@ -132,6 +132,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/mapel/{mapel}/nilai', [NilaiMapelController::class, 'index'])->name('kelas.mapel.nilai');
         Route::post('/mapel/{mapel}/nilai/simpan-terpadu', [NilaiMapelController::class, 'simpanTerpadu'])->name('kelas.mapel.nilai.simpan-terpadu');
         Route::post('/mapel/{mapel}/nilai/simpan-catatan-ajax', [NilaiMapelController::class, 'simpanCatatanAjax'])->name('kelas.mapel.nilai.simpan-catatan-ajax');
+        Route::post('/mapel/{mapel}/nilai/autosave-komponen', [NilaiMapelController::class, 'autosaveKomponen'])->name('kelas.mapel.nilai.autosave-komponen');
+        Route::post('/nilai/autosave-pembiasaan', [NilaiMapelController::class, 'autosavePembiasaan'])->name('kelas.mapel.nilai.autosave-pembiasaan');
         Route::post('/mapel/{mapel}/nilai/formatif', [NilaiMapelController::class, 'simpanFormatif'])->name('kelas.mapel.nilai.formatif');
         Route::post('/mapel/{mapel}/nilai/uts', [NilaiMapelController::class, 'simpanUts'])->name('kelas.mapel.nilai.uts');
         Route::post('/mapel/{mapel}/nilai/uas', [NilaiMapelController::class, 'simpanUas'])->name('kelas.mapel.nilai.uas');
@@ -150,6 +152,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/mapel/{mapel}/formatif-harian/penilaian/{penilaian}', [NilaiFormatifHarianController::class, 'updatePenilaian'])->name('kelas.mapel.formatif-harian.update-penilaian');
         Route::delete('/mapel/{mapel}/formatif-harian/penilaian/{penilaian}', [NilaiFormatifHarianController::class, 'hapusPenilaian'])->name('kelas.mapel.formatif-harian.hapus-penilaian');
         Route::post('/mapel/{mapel}/formatif-harian/simpan', [NilaiFormatifHarianController::class, 'simpan'])->name('kelas.mapel.formatif-harian.simpan');
+        Route::post('/mapel/{mapel}/formatif-harian/autosave', [NilaiFormatifHarianController::class, 'autosave'])->name('kelas.mapel.formatif-harian.autosave');
         Route::get('/mapel/{mapel}/formatif-harian/cetak', [NilaiFormatifHarianController::class, 'cetak'])->name('kelas.mapel.formatif-harian.cetak');
 
         // Pusat Cetak Terpadu (Cek Kelengkapan & Cetak Kolektif Semua Mapel / Filter Mapel / Cakupan Kelas & Sekolah)

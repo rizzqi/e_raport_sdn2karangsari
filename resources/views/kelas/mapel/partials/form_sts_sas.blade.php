@@ -29,7 +29,7 @@
                     </span>
                 </div>
                 <p class="mt-1 opacity-90">
-                    Fokus hanya mengisi nilai <strong>{{ $isSts ? 'STS' : 'SAS' }} (0–100)</strong>. Data yang disimpan akan otomatis mengalir satu arah ke <strong>Lembar Nilai Rapor (Read-Only)</strong>.
+                    Fokus hanya mengisi nilai <strong>{{ $isSts ? 'STS' : 'SAS' }} (0–100)</strong>. Data akan <strong>tersimpan otomatis</strong> dan mengalir satu arah ke <strong>Lembar Nilai Rapor (Read-Only)</strong>.
                     Tekan <kbd class="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px]">Enter</kbd> / <kbd class="px-1.5 py-0.5 rounded bg-white border border-slate-300 font-mono text-[10px]">↓</kbd> untuk pindah baris cepat.
                 </p>
             </div>
@@ -48,7 +48,13 @@
         </div>
     </div>
 
-    <form id="formSingleComponent" action="{{ $routeAction }}" method="POST">
+    <form id="formSingleComponent"
+          action="{{ $routeAction }}"
+          method="POST"
+          data-autosave-url="{{ route('kelas.mapel.nilai.autosave-komponen', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}"
+          data-autosave-mode="{{ $mode }}"
+          data-tahun="{{ $tahun }}"
+          data-semester="{{ $semester }}">
         @csrf
         <input type="hidden" name="tahun" value="{{ $tahun }}">
         <input type="hidden" name="semester" value="{{ $semester }}">
@@ -104,6 +110,7 @@
                                            max="100"
                                            name="{{ $fieldName }}[{{ $ks->id }}]"
                                            id="input_single_{{ $ks->id }}"
+                                           data-ks-id="{{ $ks->id }}"
                                            data-row="{{ $idx }}"
                                            data-kkm="{{ $kkm }}"
                                            data-status-target="status_single_{{ $ks->id }}"

@@ -7,9 +7,12 @@ use App\Models\MataPelajaran;
 use App\Models\Nilai;
 use App\Models\NilaiFormatifBulanan;
 use App\Models\NilaiRaporMapel;
+use App\Models\Pembiasaan;
 use App\Models\Sekolah;
 use App\Models\User;
+use App\Services\HitungNilaiService;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class NilaiTerpaduMapelTest extends TestCase
@@ -203,7 +206,7 @@ class NilaiTerpaduMapelTest extends TestCase
         $response->assertSee('Formatif Bulanan');
         $response->assertSee('STS (Sumatif Tengah Semester)');
         $response->assertSee('SAS (Sumatif Akhir Semester)');
-        $response->assertSee('Input Catatan Guru');
+        $response->assertSee('Catatan Guru (Otomatis)');
         $response->assertDontSee('name="sts[', false);
         $response->assertDontSee('name="sas[', false);
         $response->assertDontSee('btnFokusSemua', false);
@@ -483,5 +486,430 @@ class NilaiTerpaduMapelTest extends TestCase
         ]))
             ->assertStatus(200)
             ->assertHeader('content-type', 'application/pdf');
+    }
+
+    #[TestWith(['formatif'])]
+    #[TestWith(['sts'])]
+    #[TestWith(['sas'])]
+    #[TestWith(['rapor'])]
+    public function test_ganti_mapel_di_form_input_mempertahankan_mode_tab_aktif(string $activeTab): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $mapels = $kelas->mataPelajaran()->values();
+        $this->assertGreaterThanOrEqual(2, $mapels->count());
+
+        $currentMapel = $mapels[0];
+        $otherMapel = $mapels[1];
+        $tahun = now()->year;
+
+        $expectedHref = route('kelas.mapel.nilai', [
+            'kelas' => $kelas->id,
+            'mapel' => $otherMapel->id,
+            'tab' => $activeTab,
+            'tahun' => $tahun,
+        ]);
+        $unexpectedReadOnlyHref = route('kelas.mapel.nilai', [
+            'kelas' => $kelas->id,
+            'mapel' => $otherMapel->id,
+            'tab' => 'mapel',
+            'tahun' => $tahun,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('kelas.mapel.nilai', [
+            'kelas' => $kelas->id,
+            'mapel' => $currentMapel->id,
+            'tab' => $activeTab,
+            'tahun' => $tahun,
+        ]));
+
+        $response->assertOk()
+            ->assertSee('href="'.e($expectedHref).'"', false)
+            ->assertDontSee('href="'.e($unexpectedReadOnlyHref).'"', false);
+    }
+
+    public function test_ganti_mapel_dari_tab_pembiasaan_mengarah_ke_lembar_nilai_rapor(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $mapels = $kelas->mataPelajaran()->values();
+        $this->assertGreaterThanOrEqual(2, $mapels->count());
+
+        $currentMapel = $mapels[0];
+        $otherMapel = $mapels[1];
+        $tahun = now()->year;
+
+        $expectedHref = route('kelas.mapel.nilai', [
+            'kelas' => $kelas->id,
+            'mapel' => $otherMapel->id,
+            'tab' => 'mapel',
+            'tahun' => $tahun,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('kelas.mapel.nilai', [
+            'kelas' => $kelas->id,
+            'mapel' => $currentMapel->id,
+            'tab' => 'pembiasaan',
+            'tahun' => $tahun,
+        ]));
+
+        $response->assertOk()
+            ->assertSee('href="'.e($expectedHref).'"', false);
+    }
+
+    public function test_catatan_guru_selalu_terisi_dan_tersimpan_otomatis_sesuai_predikat(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $mapel = $kelas->mataPelajaran()->first();
+        $ks = $kelas->kelasSiswa()->first();
+        $tahun = 2030;
+        $semester = 'ganjil';
+        $fase = $kelas->fase ?? 'A';
+
+        Nilai::where('kelas_siswa_id', $ks->id)
+            ->where('mapel_id', $mapel->id)
+            ->delete();
+        NilaiRaporMapel::where([
+            'kelas_siswa_id' => $ks->id,
+            'mapel_id' => $mapel->id,
+        ])->delete();
+
+        // 1. Komponen belum lengkap (hanya Formatif + STS, SAS kosong) => nilai_rapor & catatan otomatis masih kosong
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'formatif',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'bulan' => 7,
+            'jenis' => 'teori',
+            'nilai' => 85,
+        ])->assertOk();
+
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'sts',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai' => 85,
+        ])->assertOk();
+
+        $rapor = NilaiRaporMapel::where([
+            'kelas_siswa_id' => $ks->id,
+            'mapel_id' => $mapel->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+        ])->first();
+
+        $this->assertNotNull($rapor);
+        $this->assertNull($rapor->nilai_rapor);
+        $this->assertNull($rapor->catatan);
+        $this->assertFalse($rapor->catatan_manual);
+
+        // 2. Lengkapi SAS => Predikat B (85.9), catatan otomatis terisi selaras Predikat B (bukan A)
+        $resSas = $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'sas',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai' => 88,
+        ])->assertOk();
+
+        $rapor->refresh();
+        $expectedCatatanB = HitungNilaiService::generateDeskripsiCpKurikulumMerdeka(
+            $mapel,
+            (float) $rapor->nilai_rapor,
+            $fase,
+            'B'
+        );
+        $expectedCatatanA = HitungNilaiService::generateDeskripsiCpKurikulumMerdeka(
+            $mapel,
+            95.0,
+            $fase,
+            'A'
+        );
+
+        $this->assertEquals('B', $rapor->predikat);
+        $this->assertFalse($rapor->catatan_manual);
+        $this->assertEquals($expectedCatatanB, $rapor->catatan);
+        $this->assertNotEquals($expectedCatatanA, $expectedCatatanB);
+        $this->assertSame('B', $resSas->json('predikat'));
+
+        // 3. Naikkan komponen ke Predikat A => catatan otomatis ikut diperbarui ke redaksi A
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'formatif',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'bulan' => 7,
+            'jenis' => 'teori',
+            'nilai' => 95,
+        ])->assertOk();
+
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'sts',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai' => 92,
+        ])->assertOk();
+
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'sas',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai' => 95,
+        ])->assertOk();
+
+        $rapor->refresh();
+        $this->assertEquals('A', $rapor->predikat);
+        $this->assertFalse($rapor->catatan_manual);
+        $this->assertSame($expectedCatatanA, $rapor->catatan);
+
+        // 4. Data lama bertanda manual sekalipun ikut tersinkron otomatis ke predikat D saat nilai turun
+        $rapor->update([
+            'catatan' => 'Catatan lama yang usang',
+            'catatan_manual' => true,
+        ]);
+
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'sas',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai' => 40,
+        ])->assertOk();
+
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'sts',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai' => 45,
+        ])->assertOk();
+
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'formatif',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'bulan' => 7,
+            'jenis' => 'teori',
+            'nilai' => 50,
+        ])->assertOk();
+
+        $rapor->refresh();
+        $expectedCatatanD = HitungNilaiService::generateDeskripsiCpKurikulumMerdeka(
+            $mapel,
+            (float) $rapor->nilai_rapor,
+            $fase,
+            'D'
+        );
+
+        $this->assertEquals('D', $rapor->predikat);
+        $this->assertFalse($rapor->catatan_manual);
+        $this->assertSame($expectedCatatanD, $rapor->catatan);
+
+        // 5. Tab Catatan Guru (tab=rapor) bersifat 100% read-only otomatis tanpa tombol simpan manual atau textarea
+        $tabRapor = $this->actingAs($admin)->get(route('kelas.mapel.nilai', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+            'tab' => 'rapor',
+            'tahun' => $tahun,
+        ]));
+
+        $tabRapor->assertOk()
+            ->assertSee('Catatan Guru Otomatis')
+            ->assertSee($expectedCatatanD)
+            ->assertDontSee('Simpan Catatan Guru')
+            ->assertDontSee('Diedit Manual')
+            ->assertDontSee('Reset ke Otomatis')
+            ->assertDontSee('formCatatanRapor', false)
+            ->assertDontSee('name="catatan[', false)
+            ->assertDontSee('input-catatan-rapor', false);
+    }
+
+    public function test_autosave_komponen_validasi_rentang_kunci_dan_lintas_kelas(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $mapel = $kelas->mataPelajaran()->first();
+        $ks = $kelas->kelasSiswa()->first();
+        $tahun = 2030;
+        $semester = 'ganjil';
+
+        // Validasi rentang 0-100 menolak nilai tidak valid
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'sts',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai' => 105,
+        ])->assertStatus(422);
+
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'formatif',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'bulan' => 7,
+            'jenis' => 'teori',
+            'nilai' => -5,
+        ])->assertStatus(422);
+
+        // Simpan nilai valid lalu kunci baris rapor
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'sts',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai' => 82,
+        ])->assertOk();
+
+        NilaiRaporMapel::where([
+            'kelas_siswa_id' => $ks->id,
+            'mapel_id' => $mapel->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+        ])->update(['is_locked' => true]);
+
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'mode' => 'sts',
+            'kelas_siswa_id' => $ks->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai' => 99,
+        ])->assertStatus(403);
+
+        $this->assertDatabaseHas('nilai_rapor_mapel', [
+            'kelas_siswa_id' => $ks->id,
+            'mapel_id' => $mapel->id,
+            'tahun' => $tahun,
+            'semester' => $semester,
+            'nilai_uts' => 82,
+        ]);
+
+        // Siswa lintas kelas harus ditolak 404
+        $otherKelas = Kelas::where('id', '!=', $kelas->id)->first();
+        if ($otherKelas && $otherKelas->kelasSiswa()->exists()) {
+            $otherKs = $otherKelas->kelasSiswa()->first();
+            $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-komponen', [
+                'kelas' => $kelas->id,
+                'mapel' => $mapel->id,
+            ]), [
+                'mode' => 'sts',
+                'kelas_siswa_id' => $otherKs->id,
+                'tahun' => $tahun,
+                'semester' => $semester,
+                'nilai' => 88,
+            ])->assertStatus(404);
+        }
+    }
+
+    public function test_autosave_pembiasaan_dan_kehadiran_sia_berhasil_dan_terisolasi_kelas(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $ks = $kelas->kelasSiswa()->first();
+        $pembiasaan = Pembiasaan::first();
+
+        $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-pembiasaan', [
+            'kelas' => $kelas->id,
+        ]), [
+            'kelas_siswa_id' => $ks->id,
+            'periode' => 'sts',
+            'field' => 'sakit',
+            'value' => 3,
+        ])->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('kehadiran', [
+            'kelas_siswa_id' => $ks->id,
+            'periode' => 'sts',
+            'sakit' => 3,
+        ]);
+
+        if ($pembiasaan) {
+            $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-pembiasaan', [
+                'kelas' => $kelas->id,
+            ]), [
+                'kelas_siswa_id' => $ks->id,
+                'periode' => 'sts',
+                'field' => 'pembiasaan',
+                'pembiasaan_id' => $pembiasaan->id,
+                'value' => 'Sangat Baik',
+            ])->assertOk()
+                ->assertJson(['success' => true]);
+
+            $this->assertDatabaseHas('nilai_pembiasaan', [
+                'kelas_siswa_id' => $ks->id,
+                'pembiasaan_id' => $pembiasaan->id,
+                'periode' => 'sts',
+                'predikat' => 'Sangat Baik',
+            ]);
+
+            $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-pembiasaan', [
+                'kelas' => $kelas->id,
+            ]), [
+                'kelas_siswa_id' => $ks->id,
+                'periode' => 'sts',
+                'field' => 'pembiasaan',
+                'pembiasaan_id' => $pembiasaan->id,
+                'value' => 'Tidak Valid',
+            ])->assertStatus(422);
+        }
+
+        $otherKelas = Kelas::where('id', '!=', $kelas->id)->first();
+        if ($otherKelas && $otherKelas->kelasSiswa()->exists()) {
+            $otherKs = $otherKelas->kelasSiswa()->first();
+            $this->actingAs($admin)->postJson(route('kelas.mapel.nilai.autosave-pembiasaan', [
+                'kelas' => $kelas->id,
+            ]), [
+                'kelas_siswa_id' => $otherKs->id,
+                'periode' => 'sts',
+                'field' => 'izin',
+                'value' => 1,
+            ])->assertStatus(404);
+        }
     }
 }

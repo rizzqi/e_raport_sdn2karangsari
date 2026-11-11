@@ -240,13 +240,25 @@ class NilaiMapelController extends Controller
             $nilaiRapor = $this->hitungNilaiRapor($rataFormatif, $valUts, $valUas, $bobotFormatif, $bobotUts, $bobotUas);
             $predikat = NilaiRaporMapel::hitungPredikat($nilaiRapor);
 
-            $catatan = $recRapor ? $recRapor->catatan : '';
             $isLocked = $recRapor ? (bool) $recRapor->is_locked : false;
             if ($isLocked) {
                 $isAnyLocked = true;
             }
 
+            if ($recRapor && $mapel && ! $isLocked) {
+                $recRapor->nilai_rapor = $nilaiRapor;
+                $recRapor->predikat = $predikat;
+                HitungNilaiService::sinkronkanCatatanOtomatis($recRapor, $mapel, $kelas->fase ?? 'A');
+                if ($recRapor->isDirty(['nilai_rapor', 'predikat', 'catatan', 'catatan_manual'])) {
+                    $recRapor->save();
+                }
+            }
+
             $saranDefault = $mapel ? $this->generateSaranCatatan($mapel->nama, $predikat, $kelas->fase ?? 'A', $nilaiRapor) : '';
+            $catatan = $recRapor
+                ? ($recRapor->catatan ?? '')
+                : ($nilaiRapor !== null ? $saranDefault : '');
+            $catatanManual = false;
 
             $isLengkap = ($bobotFormatif <= 0 || $rataFormatif !== null)
                 && ($bobotUts <= 0 || $valUts !== null)
@@ -268,6 +280,7 @@ class NilaiMapelController extends Controller
                 'predikat' => $predikat,
                 'keteranganPredikat' => NilaiRaporMapel::getKeteranganPredikat($predikat),
                 'catatan' => $catatan,
+                'catatanManual' => $catatanManual,
                 'saranDefault' => $saranDefault,
                 'isLocked' => $isLocked,
                 'isLengkap' => $isLengkap,
@@ -348,15 +361,17 @@ class NilaiMapelController extends Controller
 
                 $nRap = $this->hitungNilaiRapor($rataF, $valU, $valA, $bobotFormatif, $bobotUts, $bobotUas);
                 $pred = NilaiRaporMapel::hitungPredikat($nRap);
-                $cat = $recRap ? $recRap->catatan : '';
+                $saran = $this->generateSaranCatatan($m->nama, $pred, $kelas->fase ?? 'A', $nRap);
+                $cat = $recRap && ! empty(trim((string) $recRap->catatan))
+                    ? $recRap->catatan
+                    : ($nRap !== null ? $saran : '');
+                $catManual = false;
                 $isLok = $recRap ? (bool) $recRap->is_locked : false;
 
                 if ($nRap !== null) {
                     $totalNilaiRapor += $nRap;
                     $countMapelValid++;
                 }
-
-                $saran = $this->generateSaranCatatan($m->nama, $pred, $kelas->fase ?? 'A', $nRap);
 
                 $raporSemuaMapelData[$m->id] = [
                     'mapel' => $m,
@@ -368,6 +383,7 @@ class NilaiMapelController extends Controller
                     'predikat' => $pred,
                     'keteranganPredikat' => NilaiRaporMapel::getKeteranganPredikat($pred),
                     'catatan' => $cat,
+                    'catatanManual' => $catManual,
                     'saranDefault' => $saran,
                     'isLocked' => $isLok,
                 ];
@@ -562,6 +578,7 @@ class NilaiMapelController extends Controller
             ->groupBy('kelas_siswa_id');
 
         $isAgama = $mapel->getJenisFormatif() === 'agama';
+        $fase = $kelas->fase ?? 'A';
 
         DB::transaction(function () use (
             $allKsIds,
@@ -575,7 +592,8 @@ class NilaiMapelController extends Controller
             $bobotFormatif,
             $bobotUts,
             $bobotUas,
-            $isAgama
+            $isAgama,
+            $fase
         ) {
             foreach ($allKsIds as $ksId) {
                 $fList = $allFormatif->get($ksId, collect());
@@ -657,8 +675,10 @@ class NilaiMapelController extends Controller
                 $rapor->nilai_uas = $valSas;
                 $rapor->nilai_rapor = $nilaiRapor;
                 $rapor->predikat = $predikat;
-                if (isset($catatanData[$ksId])) {
-                    $rapor->catatan = trim((string) $catatanData[$ksId]);
+                if (isset($catatanData[$ksId]) && trim((string) $catatanData[$ksId]) !== '') {
+                    $this->terapkanCatatanKeRapor($rapor, $mapel, $fase, (string) $catatanData[$ksId]);
+                } else {
+                    HitungNilaiService::sinkronkanCatatanOtomatis($rapor, $mapel, $fase);
                 }
                 $rapor->save();
             }
@@ -673,16 +693,26 @@ class NilaiMapelController extends Controller
     }
 
     /**
-     * AJAX Endpoint: Simpan Catatan Guru per Siswa.
+     * AJAX Endpoint: Simpan atau Reset Catatan Guru per Siswa.
      */
     public function simpanCatatanAjax(Kelas $kelas, MataPelajaran $mapel, Request $request): JsonResponse
     {
         $this->authorizeAkses($kelas);
 
-        $ksId = (int) $request->input('kelas_siswa_id');
-        $catatan = trim((string) $request->input('catatan'));
-        $tahun = (int) $request->input('tahun', now()->year);
-        $semester = strtolower($request->input('semester', 'ganjil'));
+        $validated = $request->validate([
+            'kelas_siswa_id' => ['required', 'integer'],
+            'catatan' => ['nullable', 'string', 'max:2000'],
+            'tahun' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'semester' => ['nullable', 'in:ganjil,genap'],
+            'reset_otomatis' => ['nullable', 'boolean'],
+        ]);
+
+        $ksId = (int) $validated['kelas_siswa_id'];
+        abort_unless($kelas->kelasSiswa()->where('id', $ksId)->exists(), 404);
+
+        $tahun = (int) ($validated['tahun'] ?? now()->year);
+        $semester = strtolower((string) ($validated['semester'] ?? ($kelas->tahunAjaran->semester ?? 'ganjil')));
+        $resetOtomatis = $request->boolean('reset_otomatis');
 
         $rapor = NilaiRaporMapel::firstOrNew([
             'kelas_siswa_id' => $ksId,
@@ -698,13 +728,200 @@ class NilaiMapelController extends Controller
             ], 403);
         }
 
-        $rapor->catatan = $catatan;
+        $this->terapkanCatatanKeRapor(
+            $rapor,
+            $mapel,
+            $kelas->fase ?? 'A',
+            (string) ($validated['catatan'] ?? ''),
+            $resetOtomatis
+        );
         $rapor->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Catatan capaian kompetensi berhasil disimpan!',
-            'catatan' => $catatan,
+            'message' => $resetOtomatis
+                ? 'Catatan dikembalikan ke otomatis sesuai predikat.'
+                : 'Catatan capaian kompetensi berhasil disimpan!',
+            'catatan' => $rapor->catatan ?? '',
+            'catatan_manual' => (bool) $rapor->catatan_manual,
+            'nilai_rapor' => $rapor->nilai_rapor !== null ? HitungNilaiService::formatAngka((float) $rapor->nilai_rapor) : null,
+            'predikat' => $rapor->predikat,
+            'saved_at' => now()->format('H:i:s'),
+        ]);
+    }
+
+    /**
+     * AJAX Autosave Endpoint: Simpan per sel untuk STS, SAS, atau Formatif Bulanan/Praktikum
+     * lalu hitung ulang Nilai Rapor, Predikat, dan Catatan Guru Otomatis satu arah.
+     */
+    public function autosaveKomponen(Kelas $kelas, MataPelajaran $mapel, Request $request): JsonResponse
+    {
+        $this->authorizeAkses($kelas);
+
+        if ($request->has('nilai')) {
+            $raw = $request->input('nilai');
+            $trimmed = $raw !== null ? trim((string) $raw) : '';
+            $request->merge([
+                'nilai' => $trimmed === '' ? null : str_replace(',', '.', $trimmed),
+            ]);
+        }
+
+        $validated = $request->validate([
+            'mode' => ['required', 'in:sts,sas,formatif'],
+            'kelas_siswa_id' => ['required', 'integer'],
+            'tahun' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'semester' => ['nullable', 'in:ganjil,genap'],
+            'bulan' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'jenis' => ['nullable', 'in:teori,praktik,praktik_1,praktik_2'],
+            'nilai' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        ], [
+            'nilai.numeric' => 'Nilai harus berupa angka.',
+            'nilai.min' => 'Nilai minimal adalah 0.',
+            'nilai.max' => 'Nilai maksimal adalah 100.',
+        ]);
+
+        $ksId = (int) $validated['kelas_siswa_id'];
+        abort_unless($kelas->kelasSiswa()->where('id', $ksId)->exists(), 404);
+
+        $mode = $validated['mode'];
+        $tahun = (int) ($validated['tahun'] ?? now()->year);
+        $semester = strtolower((string) ($validated['semester'] ?? ($kelas->tahunAjaran->semester ?? 'ganjil')));
+        $val = isset($validated['nilai']) && $validated['nilai'] !== null ? round((float) $validated['nilai'], 1) : null;
+
+        $raporCek = NilaiRaporMapel::where('kelas_siswa_id', $ksId)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->where('semester', $semester)
+            ->first();
+
+        if ($raporCek && $raporCek->is_locked) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nilai rapor terkunci dan tidak dapat diubah.',
+            ], 403);
+        }
+
+        if ($mode === 'sts' || $mode === 'sas') {
+            $this->simpanSumatifKomponen($kelas, $mapel, $tahun, $semester, $mode, [$ksId => $val]);
+        } else {
+            $jenis = $validated['jenis'] ?? 'teori';
+            $bulan = (int) ($validated['bulan'] ?? 0);
+            $bulanSemester = $this->getBulanSemester($semester);
+
+            if (($jenis === 'teori' || $jenis === 'praktik') && ! array_key_exists($bulan, $bulanSemester)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bulan tidak valid untuk semester aktif.',
+                ], 422);
+            }
+
+            DB::transaction(function () use ($mapel, $ksId, $tahun, $semester, $jenis, $val, $bulan) {
+                if ($jenis === 'praktik_1' || $jenis === 'praktik_2') {
+                    $rapor = NilaiRaporMapel::firstOrNew([
+                        'kelas_siswa_id' => $ksId,
+                        'mapel_id' => $mapel->id,
+                        'tahun' => $tahun,
+                        'semester' => $semester,
+                    ]);
+                    if ($jenis === 'praktik_1') {
+                        $rapor->praktik_1 = $val;
+                    } else {
+                        $rapor->praktik_2 = $val;
+                    }
+                    $rapor->save();
+                } else {
+                    $formatif = NilaiFormatifBulanan::firstOrNew([
+                        'kelas_siswa_id' => $ksId,
+                        'mapel_id' => $mapel->id,
+                        'tahun' => $tahun,
+                        'bulan' => $bulan,
+                    ]);
+
+                    if ($jenis === 'praktik') {
+                        $formatif->nilai_praktik = $val;
+                    } else {
+                        $formatif->nilai = $val;
+                    }
+                    $formatif->save();
+                }
+
+                HitungNilaiService::syncFormatifToRaporMapel($ksId, $mapel, $tahun, $semester);
+            });
+        }
+
+        $rapor = NilaiRaporMapel::where('kelas_siswa_id', $ksId)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->where('semester', $semester)
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tersimpan otomatis',
+            'rata_formatif' => $rapor && $rapor->rata_formatif !== null ? HitungNilaiService::formatAngka((float) $rapor->rata_formatif) : '-',
+            'nilai_uts' => $rapor?->nilai_uts,
+            'nilai_uas' => $rapor?->nilai_uas,
+            'nilai_rapor' => $rapor && $rapor->nilai_rapor !== null ? HitungNilaiService::formatAngka((float) $rapor->nilai_rapor) : null,
+            'predikat' => $rapor?->predikat,
+            'catatan' => $rapor?->catatan,
+            'saved_at' => now()->format('H:i:s'),
+        ]);
+    }
+
+    /**
+     * AJAX Autosave Endpoint: Simpan per sel untuk Tab Pembiasaan & Kehadiran (SIA).
+     */
+    public function autosavePembiasaan(Kelas $kelas, Request $request): JsonResponse
+    {
+        $this->authorizeAkses($kelas);
+
+        $validated = $request->validate([
+            'kelas_siswa_id' => ['required', 'integer'],
+            'periode' => ['required', 'in:sts,sas'],
+            'field' => ['required', 'in:sakit,izin,alpa,pembiasaan'],
+            'pembiasaan_id' => ['nullable', 'integer'],
+            'value' => ['required'],
+        ]);
+
+        $ksId = (int) $validated['kelas_siswa_id'];
+        abort_unless($kelas->kelasSiswa()->where('id', $ksId)->exists(), 404);
+
+        $periode = $validated['periode'];
+        $field = $validated['field'];
+
+        if ($field === 'pembiasaan') {
+            $pembiasaanId = (int) ($validated['pembiasaan_id'] ?? 0);
+            abort_unless(Pembiasaan::where('id', $pembiasaanId)->exists(), 404);
+
+            $predikat = (string) $validated['value'];
+            if (! in_array($predikat, ['Sangat Baik', 'Baik', 'Cukup', 'Perlu Bimbingan'], true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Predikat pembiasaan tidak valid.',
+                ], 422);
+            }
+
+            NilaiPembiasaan::updateOrCreate([
+                'kelas_siswa_id' => $ksId,
+                'pembiasaan_id' => $pembiasaanId,
+                'periode' => $periode,
+            ], [
+                'predikat' => $predikat,
+            ]);
+        } else {
+            $jumlah = max(0, (int) $validated['value']);
+            $kehadiran = Kehadiran::firstOrNew([
+                'kelas_siswa_id' => $ksId,
+                'periode' => $periode,
+            ]);
+            $kehadiran->{$field} = $jumlah;
+            $kehadiran->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tersimpan otomatis',
+            'saved_at' => now()->format('H:i:s'),
         ]);
     }
 
@@ -733,6 +950,7 @@ class NilaiMapelController extends Controller
 
         $bulanSemester = $this->getBulanSemester($semester);
         $allKsIds = $kelas->kelasSiswa()->pluck('id');
+        $fase = $kelas->fase ?? 'A';
 
         DB::transaction(function () use (
             $allKsIds,
@@ -748,7 +966,8 @@ class NilaiMapelController extends Controller
             $semester,
             $bobotFormatif,
             $bobotUts,
-            $bobotUas
+            $bobotUas,
+            $fase
         ) {
             foreach ($allKsIds as $ksId) {
                 $bulans = $formatifData[$ksId] ?? [];
@@ -836,6 +1055,7 @@ class NilaiMapelController extends Controller
                         $bobotUas
                     );
                     $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
+                    HitungNilaiService::sinkronkanCatatanOtomatis($rapor, $mapel, $fase);
                     $rapor->save();
                 }
             }
@@ -915,6 +1135,7 @@ class NilaiMapelController extends Controller
         $bobotFormatif = $sekolah ? $sekolah->getBobotFormatif() : 40;
         $bobotUts = $sekolah ? $sekolah->getBobotUts() : 30;
         $bobotUas = $sekolah ? $sekolah->getBobotUas() : 30;
+        $fase = $kelas->fase ?? 'A';
 
         DB::transaction(function () use (
             $nilaiData,
@@ -924,7 +1145,8 @@ class NilaiMapelController extends Controller
             $periode,
             $bobotFormatif,
             $bobotUts,
-            $bobotUas
+            $bobotUas,
+            $fase
         ) {
             foreach ($nilaiData as $ksId => $rawVal) {
                 $val = null;
@@ -979,6 +1201,7 @@ class NilaiMapelController extends Controller
                     $bobotUas
                 );
                 $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
+                HitungNilaiService::sinkronkanCatatanOtomatis($rapor, $mapel, $fase);
                 $rapor->save();
             }
         });
@@ -1009,7 +1232,6 @@ class NilaiMapelController extends Controller
             ]);
 
             if (! $rapor->is_locked) {
-                $rapor->catatan = trim((string) $catatanText);
                 // Pastikan nilai rapor dan predikat selalu sinkron
                 $rapor->nilai_rapor = $this->hitungNilaiRapor(
                     $rapor->rata_formatif,
@@ -1020,6 +1242,7 @@ class NilaiMapelController extends Controller
                     $bobotUas
                 );
                 $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
+                $this->terapkanCatatanKeRapor($rapor, $mapel, $kelas->fase ?? 'A', (string) $catatanText);
                 $rapor->save();
             }
         }
@@ -1096,8 +1319,10 @@ class NilaiMapelController extends Controller
                 $rapor->nilai_uas = $valUas;
                 $rapor->nilai_rapor = $nilaiRapor;
                 $rapor->predikat = $predikat;
-                if ($catatanText !== null) {
-                    $rapor->catatan = trim((string) $catatanText);
+                if ($catatanText !== null && trim((string) $catatanText) !== '') {
+                    $this->terapkanCatatanKeRapor($rapor, $m, $kelas->fase ?? 'A', (string) $catatanText);
+                } else {
+                    HitungNilaiService::sinkronkanCatatanOtomatis($rapor, $m, $kelas->fase ?? 'A');
                 }
                 $rapor->save();
             }
@@ -1166,7 +1391,39 @@ class NilaiMapelController extends Controller
             }
         }
 
-        return HitungNilaiService::generateDeskripsiCpKurikulumMerdeka($namaMapel, $nilai, $fase);
+        return HitungNilaiService::generateDeskripsiCpKurikulumMerdeka($namaMapel, $nilai, $fase, $predikat);
+    }
+
+    /**
+     * Terapkan perubahan catatan guru sambil menandai apakah catatan diedit manual atau otomatis.
+     */
+    protected function terapkanCatatanKeRapor(
+        NilaiRaporMapel $rapor,
+        MataPelajaran $mapel,
+        string $fase,
+        string $rawCatatan,
+        bool $resetOtomatis = false,
+    ): void {
+        if ($rapor->is_locked) {
+            return;
+        }
+
+        $trimmed = trim($rawCatatan);
+
+        if ($resetOtomatis || $trimmed === '') {
+            $rapor->catatan_manual = false;
+            $rapor->catatan = null;
+            HitungNilaiService::sinkronkanCatatanOtomatis($rapor, $mapel, $fase);
+
+            return;
+        }
+
+        $autoSaatIni = $rapor->nilai_rapor !== null && $rapor->predikat !== null
+            ? HitungNilaiService::generateDeskripsiCpKurikulumMerdeka($mapel, (float) $rapor->nilai_rapor, $fase, $rapor->predikat)
+            : null;
+
+        $rapor->catatan = $trimmed;
+        $rapor->catatan_manual = $autoSaatIni === null || $trimmed !== $autoSaatIni;
     }
 
     /**

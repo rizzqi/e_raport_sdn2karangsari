@@ -201,7 +201,7 @@ class HitungNilaiService
             }
 
             $autoCp = $nilaiMapelAkhir !== null
-                ? self::generateDeskripsiCpKurikulumMerdeka($mapel, $nilaiMapelAkhir, $fase)
+                ? self::generateDeskripsiCpKurikulumMerdeka($mapel, $nilaiMapelAkhir, $fase, $predikat)
                 : 'Belum ada penilaian capaian pembelajaran';
 
             if ($nilaiMapelAkhir !== null) {
@@ -220,7 +220,7 @@ class HitungNilaiService
                     || str_starts_with(trim($catatan), 'Capaian pembelajaran');
 
                 if ($isCatatanKosong) {
-                    $catatan = self::generateDeskripsiCpKurikulumMerdeka($mapel, $nilaiMapelAkhir, $fase);
+                    $catatan = self::generateDeskripsiCpKurikulumMerdeka($mapel, $nilaiMapelAkhir, $fase, $predikat);
                 }
                 $isKosong = false;
             } else {
@@ -228,6 +228,8 @@ class HitungNilaiService
                 $isKosong = true;
                 $catatan = 'Belum ada penilaian capaian pembelajaran';
             }
+
+            $effectiveCatatanGuru = $nilaiMapelAkhir !== null ? $catatan : $rawCatatanGuru;
 
             $totalFormatif += $kkm;
             $countFormatif++;
@@ -261,8 +263,8 @@ class HitungNilaiService
                 'predikat' => $predikat ?? '-',
                 'capaian_kompetensi' => $catatan,
                 'catatan' => $catatan,
-                'catatan_guru' => $rawCatatanGuru,
-                'catatan_guru_kosong' => $rawCatatanGuru === '',
+                'catatan_guru' => $effectiveCatatanGuru,
+                'catatan_guru_kosong' => trim((string) $effectiveCatatanGuru) === '',
                 'auto_cp' => $autoCp,
                 'keterangan' => $keterangan,
                 'is_kosong' => $isKosong,
@@ -1355,10 +1357,94 @@ class HitungNilaiService
 
     /**
      * Generator Deskripsi Capaian Pembelajaran (CP) Resmi Kurikulum Merdeka Jenjang SD
-     * Berdasarkan Muatan Pelajaran, Fase (A, B, C), dan Nilai Akhir Peserta Didik.
+     * Berdasarkan Muatan Pelajaran, Fase (A, B, C), Nilai Akhir, dan Predikat (A/B/C/D).
      * Sesuai Panduan Pembelajaran dan Asesmen (PPA) Kurikulum Merdeka Kemendikbudristek.
      */
-    public static function generateDeskripsiCpKurikulumMerdeka(MataPelajaran|string $mapel, ?float $nilai, string $fase = 'A'): string
+    public static function generateDeskripsiCpKurikulumMerdeka(
+        MataPelajaran|string $mapel,
+        ?float $nilai,
+        string $fase = 'A',
+        ?string $predikat = null,
+    ): string {
+        ['namaMapel' => $namaMapel, 'tinggi' => $tpTinggi, 'bimbingan' => $tpBimbingan] = self::resolveCpMateri($mapel, $fase);
+
+        $predikatBersih = $predikat !== null ? strtoupper(trim($predikat)) : null;
+        if ($nilai === null && ($predikatBersih === null || $predikatBersih === '' || $predikatBersih === '-')) {
+            return "Belum ada penilaian capaian pembelajaran untuk mata pelajaran {$namaMapel}.";
+        }
+
+        $predikatEfektif = ($predikatBersih !== null && $predikatBersih !== '' && $predikatBersih !== '-')
+            ? $predikatBersih
+            : (NilaiRaporMapel::hitungPredikat($nilai) ?? 'D');
+
+        return match ($predikatEfektif) {
+            'A' => "Menunjukkan penguasaan yang sangat baik dalam {$tpTinggi}.",
+            'B' => "Menunjukkan penguasaan yang baik dalam {$tpTinggi}. Perlu peningkatan dalam {$tpBimbingan}.",
+            'C' => "Cukup menguasai materi dalam {$tpTinggi}. Perlu bimbingan dan latihan mandiri dalam {$tpBimbingan}.",
+            default => "Perlu bimbingan dan pendampingan intensif dari guru serta orang tua dalam {$tpBimbingan}.",
+        };
+    }
+
+    /**
+     * Periksa apakah teks catatan sesuai dengan salah satu template otomatis CP mapel & fase.
+     */
+    public static function isCatatanOtomatisUntukMapel(?string $catatan, MataPelajaran|string $mapel, string $fase = 'A'): bool
+    {
+        $trimmed = trim((string) $catatan);
+        if ($trimmed === '') {
+            return false;
+        }
+
+        foreach (['A', 'B', 'C', 'D'] as $pred) {
+            if ($trimmed === self::generateDeskripsiCpKurikulumMerdeka($mapel, null, $fase, $pred)) {
+                return true;
+            }
+        }
+
+        return str_starts_with($trimmed, 'Belum ada penilaian capaian pembelajaran')
+            || str_starts_with($trimmed, 'Catatan tes otomatis');
+    }
+
+    /**
+     * Sinkronkan catatan guru otomatis 100% pada record NilaiRaporMapel berdasarkan predikat/nilai akhir
+     * selama nilai belum dikunci.
+     */
+    public static function sinkronkanCatatanOtomatis(
+        NilaiRaporMapel $rapor,
+        MataPelajaran|string|null $mapel = null,
+        ?string $fase = null,
+    ): void {
+        if ($rapor->is_locked) {
+            return;
+        }
+
+        $mapelObj = $mapel ?? $rapor->mataPelajaran ?? MataPelajaran::find($rapor->mapel_id);
+        if (! $mapelObj) {
+            return;
+        }
+
+        $faseStr = $fase ?? ($rapor->kelasSiswa?->kelas?->fase ?? 'A');
+
+        if ($rapor->nilai_rapor !== null && $rapor->predikat !== null) {
+            $rapor->catatan = self::generateDeskripsiCpKurikulumMerdeka(
+                $mapelObj,
+                (float) $rapor->nilai_rapor,
+                $faseStr,
+                $rapor->predikat
+            );
+            $rapor->catatan_manual = false;
+        } else {
+            $rapor->catatan = null;
+            $rapor->catatan_manual = false;
+        }
+    }
+
+    /**
+     * Ambil pasangan tujuan pembelajaran tinggi & perlu bimbingan sesuai mapel dan fase.
+     *
+     * @return array{namaMapel: string, tinggi: string, bimbingan: string}
+     */
+    protected static function resolveCpMateri(MataPelajaran|string $mapel, string $fase = 'A'): array
     {
         $namaMapel = trim($mapel instanceof MataPelajaran ? $mapel->nama : (string) $mapel);
 
@@ -1564,20 +1650,11 @@ class HitungNilaiService
             $tpBimbingan = "meningkatkan ketelitian latihan mandiri serta pemahaman materi lanjutan {$namaMapel}";
         }
 
-        if ($nilai === null) {
-            return "Belum ada penilaian capaian pembelajaran untuk mata pelajaran {$namaMapel}.";
-        }
-
-        // Susun format deskripsi resmi Kurikulum Merdeka (Tercapai Optimal & Perlu Peningkatan)
-        if ($nilai >= 85) {
-            return "Menunjukkan penguasaan yang sangat baik dalam {$tpTinggi}.";
-        } elseif ($nilai >= 75) {
-            return "Menunjukkan penguasaan yang baik dalam {$tpTinggi}. Perlu peningkatan dalam {$tpBimbingan}.";
-        } elseif ($nilai >= 60) {
-            return "Cukup menguasai materi dalam {$tpTinggi}. Perlu bimbingan dan latihan mandiri dalam {$tpBimbingan}.";
-        } else {
-            return "Perlu bimbingan dan pendampingan intensif dari guru serta orang tua dalam {$tpBimbingan}.";
-        }
+        return [
+            'namaMapel' => $namaMapel,
+            'tinggi' => $tpTinggi,
+            'bimbingan' => $tpBimbingan,
+        ];
     }
 
     /**
@@ -1717,7 +1794,7 @@ class HitungNilaiService
         $rataFormatif = count($terisi) > 0 ? round(array_sum($terisi) / count($terisi), 1) : null;
 
         if (! $rapor->is_locked) {
-            $ks = $kelasSiswa instanceof KelasSiswa ? $kelasSiswa : KelasSiswa::find($ksId);
+            $ks = $kelasSiswa instanceof KelasSiswa ? $kelasSiswa->loadMissing('kelas.sekolah') : KelasSiswa::with('kelas.sekolah')->find($ksId);
             $sekolah = $ks?->kelas?->sekolah ?? Sekolah::first();
             $bobotFormatif = $sekolah ? $sekolah->getBobotFormatif() : 40;
             $bobotUts = $sekolah ? $sekolah->getBobotUts() : 30;
@@ -1734,6 +1811,7 @@ class HitungNilaiService
                 true
             );
             $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
+            self::sinkronkanCatatanOtomatis($rapor, $mapelObj, $ks?->kelas?->fase ?? 'A');
             $rapor->save();
         }
 
@@ -1810,6 +1888,7 @@ class HitungNilaiService
         $updated = 0;
 
         NilaiRaporMapel::where('is_locked', false)
+            ->with(['mataPelajaran', 'kelasSiswa.kelas'])
             ->orderBy('id')
             ->chunkById(200, function ($records) use ($bobotFormatif, $bobotUts, $bobotUas, &$updated) {
                 foreach ($records as $rapor) {
@@ -1823,10 +1902,13 @@ class HitungNilaiService
                         true
                     );
                     $predikatBaru = NilaiRaporMapel::hitungPredikat($nilaiBaru);
+                    $catatanSebelum = $rapor->catatan;
 
-                    if ($rapor->nilai_rapor !== $nilaiBaru || $rapor->predikat !== $predikatBaru) {
-                        $rapor->nilai_rapor = $nilaiBaru;
-                        $rapor->predikat = $predikatBaru;
+                    $rapor->nilai_rapor = $nilaiBaru;
+                    $rapor->predikat = $predikatBaru;
+                    self::sinkronkanCatatanOtomatis($rapor, $rapor->mataPelajaran, $rapor->kelasSiswa?->kelas?->fase ?? 'A');
+
+                    if ($rapor->isDirty(['nilai_rapor', 'predikat']) || $rapor->catatan !== $catatanSebelum) {
                         $rapor->save();
                         $updated++;
                     }
