@@ -406,6 +406,9 @@
                         100%
                     </span>
                 </div>
+                @error('bobot_total')
+                    <p class="text-xs font-bold text-rose-600 px-2">{{ $message }}</p>
+                @enderror
             </div>
 
             <!-- 4. Pengaturan Standar Hari Efektif & Ambang Batas Kehadiran (SIA) -->
@@ -482,10 +485,76 @@
                 </div>
             </div>
 
+            <!-- 5. Pengaturan Default Ukuran Kertas, Orientasi & Margin Cetak -->
+            <div class="space-y-4 pt-4 border-t border-slate-100">
+                <div class="flex items-center space-x-2">
+                    <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-print"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Default Kertas, Orientasi &amp; Margin Cetak</h3>
+                        <p class="text-[11px] text-slate-400">Standar awal saat membuka dialog cetak (dapat disesuaikan kembali per pencetakan)</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <label for="default_paper_size" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Ukuran Kertas Default *
+                        </label>
+                        <select name="default_paper_size" id="default_paper_size"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold bg-white focus:ring-2 focus:ring-blue-500">
+                            <option value="a4" {{ old('default_paper_size', $sekolah->getDefaultPaperSize()) === 'a4' ? 'selected' : '' }}>
+                                A4 (210 × 297 mm)
+                            </option>
+                            <option value="f4" {{ old('default_paper_size', $sekolah->getDefaultPaperSize()) === 'f4' ? 'selected' : '' }}>
+                                F4 / Folio (215 × 330 mm)
+                            </option>
+                        </select>
+                        <span class="text-[10px] text-slate-500 mt-1 block">A4 lebih ringkas, F4 cocok untuk formulir dinas panjang</span>
+                    </div>
+
+                    <div>
+                        <label for="default_paper_orientation" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Orientasi Default *
+                        </label>
+                        <select name="default_paper_orientation" id="default_paper_orientation"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold bg-white focus:ring-2 focus:ring-blue-500">
+                            <option value="portrait" {{ old('default_paper_orientation', $sekolah->getDefaultPaperOrientation()) === 'portrait' ? 'selected' : '' }}>
+                                Portrait (Tegak)
+                            </option>
+                            <option value="landscape" {{ old('default_paper_orientation', $sekolah->getDefaultPaperOrientation()) === 'landscape' ? 'selected' : '' }}>
+                                Landscape (Mendatar)
+                            </option>
+                        </select>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Leger lebar otomatis mendukung Landscape di dialog cetak</span>
+                    </div>
+
+                    <div>
+                        <label for="default_margin_preset" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                            Margin Default *
+                        </label>
+                        <select name="default_margin_preset" id="default_margin_preset"
+                                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold bg-white focus:ring-2 focus:ring-blue-500">
+                            <option value="sempit" {{ old('default_margin_preset', $sekolah->getDefaultMarginPreset()) === 'sempit' ? 'selected' : '' }}>
+                                Sempit (6 × 8 mm)
+                            </option>
+                            <option value="normal" {{ old('default_margin_preset', $sekolah->getDefaultMarginPreset()) === 'normal' ? 'selected' : '' }}>
+                                Normal (10 × 12 mm)
+                            </option>
+                            <option value="lebar" {{ old('default_margin_preset', $sekolah->getDefaultMarginPreset()) === 'lebar' ? 'selected' : '' }}>
+                                Lebar (15 × 18 mm)
+                            </option>
+                        </select>
+                        <span class="text-[10px] text-slate-500 mt-1 block">Jarak tepi halaman PDF &amp; print browser</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <div class="text-xs text-slate-500 flex items-center">
                     <i class="fa-solid fa-circle-info text-blue-500 mr-1.5"></i>
-                    Perubahan langsung berlaku pada lembar Cetak & Unduh Raport F4.
+                    Perubahan langsung berlaku pada lembar Cetak &amp; Unduh Raport (A4 &amp; F4 / Folio).
                 </div>
                 <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md text-sm transition flex items-center">
                     <i class="fa-solid fa-floppy-disk mr-2"></i> Simpan Perubahan Identitas & Kop

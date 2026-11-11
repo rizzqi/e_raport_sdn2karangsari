@@ -23,9 +23,9 @@
     <!-- 1. Header & Navigasi Terpadu -->
     <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div class="flex items-start space-x-3">
-            <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'formatif', 'tahun' => $tahun]) }}"
+            <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'mapel', 'tahun' => $tahun]) }}"
                class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition shrink-0"
-               title="Kembali ke Lembar 1 Formatif Bulanan">
+               title="Kembali ke Lembar Nilai Rapor">
                 <i class="fa-solid fa-arrow-left"></i>
             </a>
             <div>
@@ -50,21 +50,24 @@
             </div>
         </div>
 
-        <!-- Filter Pemilih Bulan & Tahun -->
-        <div class="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200 self-start md:self-auto text-xs">
-            <form action="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="GET" class="flex items-center gap-2">
-                <input type="hidden" name="tahun" value="{{ $tahun }}">
-                <span class="text-slate-500 font-bold ml-1 flex items-center gap-1">
-                    <i class="fa-regular fa-calendar text-slate-400"></i> Bulan:
-                </span>
-                <select name="bulan" onchange="this.form.submit()" class="bg-white border border-slate-300 font-bold text-slate-800 rounded-xl px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    @foreach($daftarBulanSemester as $bNum => $bNama)
-                        <option value="{{ $bNum }}" {{ $bulan == $bNum ? 'selected' : '' }}>
-                            {{ $bNama }} (Bulan {{ $bNum }})
-                        </option>
-                    @endforeach
-                </select>
-            </form>
+        <!-- Filter Pemilih Bulan & Menu Input Nilai -->
+        <div class="flex flex-wrap items-center gap-2 self-start md:self-auto text-xs">
+            <div class="flex flex-wrap items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200">
+                <form action="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="GET" class="flex items-center gap-2">
+                    <input type="hidden" name="tahun" value="{{ $tahun }}">
+                    <span class="text-slate-500 font-bold ml-1 flex items-center gap-1">
+                        <i class="fa-regular fa-calendar text-slate-400"></i> Bulan:
+                    </span>
+                    <select name="bulan" onchange="this.form.submit()" class="bg-white border border-slate-300 font-bold text-slate-800 rounded-xl px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        @foreach($daftarBulanSemester as $bNum => $bNama)
+                            <option value="{{ $bNum }}" {{ $bulan == $bNum ? 'selected' : '' }}>
+                                {{ $bNama }} (Bulan {{ $bNum }})
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+            @include('kelas.mapel.partials.input_nilai_dropdown', ['activeMode' => 'harian'])
         </div>
     </div>
 

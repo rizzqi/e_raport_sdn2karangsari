@@ -3,14 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Raport - {{ $siswa->nama }}</title>
+    @php
+        $cfg = $printConfig ?? ($sekolah ? $sekolah->resolvePrintConfig() : [
+            'paper' => 'a4',
+            'orientation' => 'portrait',
+            'css_page_size' => '210mm 297mm',
+            'css_margin' => '10mm 12mm',
+            'layout' => [
+                'body_font' => '8pt',
+                'table_font' => '7.5pt',
+                'small_font' => '7pt',
+                'cell_padding' => '3px 4px',
+                'section_gap' => '6px',
+                'ttd_height' => '42px',
+            ],
+        ]);
+        $lay = $cfg['layout'];
+    @endphp
     <style>
         @page {
-            size: 215mm 330mm portrait;
-            margin: 1cm 1.2cm;
+            size: {{ $cfg['css_page_size'] }} {{ $cfg['orientation'] }};
+            margin: {{ $cfg['css_margin'] }};
         }
         body {
             font-family: Arial, sans-serif;
-            font-size: 10pt;
+            font-size: {{ $lay['body_font'] }};
             line-height: 1.2;
             color: #000;
         }
@@ -22,57 +39,57 @@
             width: 100%;
             border-collapse: collapse;
             border-bottom: 3px double #000;
-            padding-bottom: 6px;
-            margin-bottom: 14px;
+            padding-bottom: 4px;
+            margin-bottom: {{ $lay['section_gap'] }};
         }
         .kop-table td {
             vertical-align: middle;
         }
-        .kop-table h3 { margin: 1px 0; font-size: 10.5pt; font-weight: bold; text-transform: uppercase; }
-        .kop-table h2 { margin: 2px 0; font-size: 13pt; font-weight: bold; text-transform: uppercase; }
-        .kop-table p { margin: 1px 0; font-size: 8.5pt; }
+        .kop-table h3 { margin: 1px 0; font-size: 9.5pt; font-weight: bold; text-transform: uppercase; }
+        .kop-table h2 { margin: 2px 0; font-size: 12pt; font-weight: bold; text-transform: uppercase; }
+        .kop-table p { margin: 1px 0; font-size: 8pt; }
         .kop-table .alamat { font-style: italic; }
-        .kop-table .kontak { font-size: 8pt; color: #333; }
+        .kop-table .kontak { font-size: 7.5pt; color: #333; }
         .judul {
             text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: {{ $lay['section_gap'] }};
         }
         .judul h1 {
             margin: 0;
-            font-size: 12pt;
+            font-size: 11pt;
             text-decoration: underline;
         }
         .judul p {
-            margin: 3px 0;
-            font-size: 9.5pt;
+            margin: 2px 0;
+            font-size: 9pt;
             font-weight: bold;
         }
         .identitas {
             width: 100%;
-            margin-bottom: 12px;
-            font-size: 9pt;
+            margin-bottom: {{ $lay['section_gap'] }};
+            font-size: {{ $lay['body_font'] }};
         }
         .identitas td {
-            padding: 2px 0;
+            padding: 1.5px 0;
             vertical-align: top;
         }
         table.data {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 12px;
-            font-size: 9pt;
+            margin-bottom: {{ $lay['section_gap'] }};
+            font-size: {{ $lay['table_font'] }};
         }
         table.data th, table.data td {
             border: 1px solid #000;
-            padding: 4px 6px;
+            padding: {{ $lay['cell_padding'] }};
         }
         table.data th {
             background-color: #f2f2f2;
         }
         .ttd {
             width: 100%;
-            margin-top: 15px;
-            font-size: 9pt;
+            margin-top: {{ $lay['section_gap'] }};
+            font-size: {{ $lay['body_font'] }};
             text-align: center;
         }
         .ttd td {
@@ -80,7 +97,7 @@
             padding: 0 5px;
         }
         .space-ttd {
-            height: 55px;
+            height: {{ $lay['ttd_height'] }};
         }
     </style>
 </head>
@@ -138,9 +155,10 @@
         <thead>
             <tr>
                 <th style="width: 5%;">No</th>
-                <th style="width: 25%; text-align: left;">Muatan Pelajaran</th>
-                <th style="width: 12%;">Nilai Akhir</th>
-                <th style="width: 58%; text-align: left;">Capaian Kompetensi</th>
+                <th style="width: 24%; text-align: left;">Muatan Pelajaran</th>
+                <th style="width: 11%;">Nilai Akhir</th>
+                <th style="width: 9%;">Predikat</th>
+                <th style="width: 51%; text-align: left;">Catatan Guru &amp; Capaian Kompetensi</th>
             </tr>
         </thead>
         <tbody>
@@ -149,7 +167,17 @@
                     <td class="text-center" style="vertical-align: top;">{{ $b['no'] }}</td>
                     <td class="font-bold" style="vertical-align: top;">{{ $b['mapel_nama'] }}</td>
                     <td class="text-center font-bold" style="vertical-align: top;">{{ $b['nilai_rapor_format'] }}</td>
-                    <td style="font-size: 8pt; line-height: 1.2; text-align: justify; vertical-align: top;">{{ $b['capaian_kompetensi'] }}</td>
+                    <td class="text-center font-bold" style="vertical-align: top;">{{ $b['predikat'] }}</td>
+                    <td style="font-size: {{ $lay['small_font'] }}; line-height: 1.25; text-align: justify; vertical-align: top;">
+                        @if(!empty($b['catatan_guru']))
+                            <div><b>Catatan Guru:</b> {{ $b['catatan_guru'] }}</div>
+                            @if(!empty($b['auto_cp']) && $b['auto_cp'] !== 'Belum ada penilaian capaian pembelajaran')
+                                <div style="color: #444; margin-top: 2px;">{{ $b['auto_cp'] }}</div>
+                            @endif
+                        @else
+                            {{ $b['capaian_kompetensi'] }}
+                        @endif
+                    </td>
                 </tr>
             @endforeach
         </tbody>
@@ -157,12 +185,14 @@
             <tr style="background-color: #f9f9f9;" class="font-bold">
                 <td colspan="2" class="text-right uppercase">Jumlah Nilai</td>
                 <td class="text-center">{{ \App\Services\HitungNilaiService::formatAngka($hasilNilai['total_akhir']) }}</td>
-                <td style="font-size: 8pt; color: #444;">Total nilai dari {{ $hasilNilai['total_mapel'] }} muatan pelajaran</td>
+                <td class="text-center">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
+                <td style="font-size: {{ $lay['small_font'] }}; color: #444;">Total nilai dari {{ $hasilNilai['total_mapel'] }} muatan pelajaran</td>
             </tr>
             <tr style="background-color: #f9f9f9;" class="font-bold">
                 <td colspan="2" class="text-right uppercase">Rata-rata Nilai</td>
                 <td class="text-center">{{ $hasilNilai['rata_akhir_format'] }}</td>
-                <td style="font-size: 8pt; color: #444;">Predikat Rata-rata: <b>{{ $hasilNilai['predikat_rata'] ?? '-' }}</b></td>
+                <td class="text-center">{{ $hasilNilai['predikat_rata'] ?? '-' }}</td>
+                <td style="font-size: {{ $lay['small_font'] }}; color: #444;">Predikat Rata-rata: <b>{{ $hasilNilai['predikat_rata'] ?? '-' }}</b></td>
             </tr>
         </tfoot>
     </table>

@@ -85,94 +85,11 @@
                 <span>Absensi Harian</span>
             </a>
 
-            <!-- 3. Pusat Cetak & Dokumen Raport (Terorganisir Rapi) -->
-            <div class="relative" x-data="{ openCetakMenu: false }">
-                <button @click="openCetakMenu = !openCetakMenu" type="button"
-                    class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 transition flex items-center gap-1.5 shadow-2xs">
-                    <i class="fa-solid fa-print text-teal-600"></i>
-                    <span>Cetak &amp; Raport</span>
-                    <i class="fa-solid fa-chevron-down text-[10px] opacity-75 ml-0.5"></i>
-                </button>
-                <div x-show="openCetakMenu" @click.outside="openCetakMenu = false"
-                     class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 text-xs divide-y divide-slate-100 max-h-[85vh] overflow-y-auto" style="display: none;">
-                    
-                    <!-- Buka Dialog Pusat Cetak STS & SAS -->
-                    <div class="px-2 pb-1.5">
-                        <button type="button" onclick="openCetakMenu = false; document.getElementById('modalCetakStsSas').classList.remove('hidden')"
-                           class="w-full text-left flex items-center px-3 py-2 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 transition shadow-2xs">
-                            <i class="fa-solid fa-sliders mr-2"></i>
-                            <span>Buka Pusat Cetak STS &amp; SAS...</span>
-                        </button>
-                    </div>
-
-                    <!-- KELOMPOK STS -->
-                    <div class="py-1">
-                        <div class="px-4 py-1 text-[10px] font-black uppercase text-amber-700 bg-amber-50/70 tracking-wider flex items-center justify-between">
-                            <span>Sumatif Tengah Semester (STS)</span>
-                            <span class="text-[9px] font-bold text-amber-600">F4</span>
-                        </div>
-                        <a href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
-                           class="flex items-center px-4 py-1.5 text-slate-700 hover:bg-amber-50 hover:text-amber-900 font-medium">
-                            <i class="fa-solid fa-print w-5 text-amber-600 mr-2 text-center"></i> Cetak Rapor STS Sekelas
-                        </a>
-                        <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
-                           class="flex items-center px-4 py-1.5 text-slate-700 hover:bg-amber-50 hover:text-amber-900 font-medium">
-                            <i class="fa-solid fa-sheet-plastic w-5 text-purple-600 mr-2 text-center"></i> Cetak Lembar STS Ringkas
-                        </a>
-                        <a href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => 'sts']) }}"
-                           class="flex items-center px-4 py-1.5 text-rose-700 hover:bg-rose-50 font-medium">
-                            <i class="fa-solid fa-file-pdf w-5 text-rose-600 mr-2 text-center"></i> Unduh PDF Rapor STS Sekelas
-                        </a>
-                        <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => 'sts']) }}"
-                           class="flex items-center px-4 py-1.5 text-emerald-700 hover:bg-emerald-50 font-medium">
-                            <i class="fa-solid fa-file-pdf w-5 text-emerald-600 mr-2 text-center"></i> Unduh PDF Lembar STS Sekelas
-                        </a>
-                    </div>
-
-                    <!-- KELOMPOK SAS -->
-                    <div class="py-1">
-                        <div class="px-4 py-1 text-[10px] font-black uppercase text-indigo-700 bg-indigo-50/70 tracking-wider flex items-center justify-between">
-                            <span>Sumatif Akhir Semester (SAS)</span>
-                            <span class="text-[9px] font-bold text-indigo-600">F4</span>
-                        </div>
-                        <a href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
-                           class="flex items-center px-4 py-1.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 font-medium">
-                            <i class="fa-solid fa-print w-5 text-indigo-600 mr-2 text-center"></i> Cetak Rapor SAS Sekelas
-                        </a>
-                        <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
-                           class="flex items-center px-4 py-1.5 text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 font-medium">
-                            <i class="fa-solid fa-sheet-plastic w-5 text-purple-600 mr-2 text-center"></i> Cetak Lembar SAS Ringkas
-                        </a>
-                        <a href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => 'sas']) }}"
-                           class="flex items-center px-4 py-1.5 text-rose-700 hover:bg-rose-50 font-medium">
-                            <i class="fa-solid fa-file-pdf w-5 text-rose-600 mr-2 text-center"></i> Unduh PDF Rapor SAS Sekelas
-                        </a>
-                        <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => 'sas']) }}"
-                           class="flex items-center px-4 py-1.5 text-emerald-700 hover:bg-emerald-50 font-medium">
-                            <i class="fa-solid fa-file-pdf w-5 text-emerald-600 mr-2 text-center"></i> Unduh PDF Lembar SAS Sekelas
-                        </a>
-                    </div>
-
-                    <!-- KELOMPOK REKAP & LAINNYA -->
-                    <div class="py-1">
-                        <div class="px-4 py-1 text-[10px] font-black uppercase text-slate-500 bg-slate-50 tracking-wider">
-                            Rekapitulasi Semester &amp; Bulanan
-                        </div>
-                        <button type="button" onclick="openCetakMenu = false; document.getElementById('modalCetakRekapSemester').classList.remove('hidden')"
-                           class="w-full text-left flex items-center px-4 py-1.5 text-blue-700 hover:bg-blue-50 font-bold cursor-pointer">
-                            <i class="fa-solid fa-print w-5 text-blue-600 mr-2 text-center"></i> Cetak Rekap Semester (F4)
-                        </button>
-                        <button type="button" onclick="openCetakMenu = false; document.getElementById('modalCetakBulanan').classList.remove('hidden')"
-                           class="w-full text-left flex items-center px-4 py-1.5 text-purple-700 hover:bg-purple-50 font-bold cursor-pointer">
-                            <i class="fa-solid fa-calendar-days w-5 text-purple-600 mr-2 text-center"></i> Cetak Bulanan (Pilih Bulan)
-                        </button>
-                        <a href="{{ route('rekap.kelas', $kelas->id) }}"
-                           class="flex items-center px-4 py-1.5 text-blue-700 hover:bg-blue-50 font-medium">
-                            <i class="fa-solid fa-chart-column w-5 text-blue-600 mr-2 text-center"></i> Rekapitulasi Nilai &amp; Grafik
-                        </a>
-                    </div>
-                </div>
-            </div>
+            <!-- 3. Pusat Cetak & Dokumen Raport (4 Grup Terorganisir, Kolektif Semua Mapel) -->
+            @include('partials.dropdown_cetak_menu', [
+                'label' => 'Cetak',
+                'buttonClass' => 'px-3.5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition flex items-center gap-1.5 shadow-2xs cursor-pointer',
+            ])
 
             <!-- 4. Menu Administrasi & Pengaturan Rombel -->
             <div class="relative" x-data="{ openAlatMenu: false }">
@@ -428,43 +345,15 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" onclick="document.getElementById('modalCetakStsSas').classList.remove('hidden')"
-                        class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition shadow-2xs"
-                        title="Buka Pusat Cetak & Pratinjau STS & SAS">
-                        <i class="fa-solid fa-file-invoice mr-1.5 text-teal-200"></i> Cetak STS &amp; SAS
+                    <button type="button" onclick="window.openModalCetakUniversal({ jenis: 'rapor_kelas', cakupan: 'kelas' })"
+                        class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition shadow-2xs cursor-pointer"
+                        title="Buka Dialog Cetak A4/F4, Cek Kelengkapan & Rapor Lengkap">
+                        <i class="fa-solid fa-print mr-1.5 text-teal-100"></i> Dialog Cetak
                     </button>
-                    <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open" type="button"
-                            class="inline-flex items-center px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white transition shadow-2xs">
-                            <i class="fa-solid fa-print mr-1.5 text-amber-400"></i>
-                            <span>Cetak Sekelas</span>
-                            <i class="fa-solid fa-chevron-down ml-1 text-[9px] opacity-75"></i>
-                        </button>
-                        <div x-show="open" @click.outside="open = false" x-cloak
-                             class="absolute right-0 mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-1 text-xs">
-                            <div class="px-3 py-1 text-[10px] font-bold uppercase text-amber-700 bg-amber-50">Tengah Semester (STS)</div>
-                            <a href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" class="flex items-center px-3 py-1.5 text-slate-700 hover:bg-slate-50 font-semibold">
-                                <i class="fa-solid fa-print w-4 text-amber-600 mr-2"></i> Pratinjau Rapor STS (F4)
-                            </a>
-                            <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" class="flex items-center px-3 py-1.5 text-slate-700 hover:bg-slate-50 font-semibold">
-                                <i class="fa-solid fa-sheet-plastic w-4 text-purple-600 mr-2"></i> Lembar STS Ringkas (F4)
-                            </a>
-                            <a href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" class="flex items-center px-3 py-1.5 text-rose-700 hover:bg-rose-50 font-semibold">
-                                <i class="fa-solid fa-file-pdf w-4 text-rose-600 mr-2"></i> Unduh PDF STS Sekelas
-                            </a>
-                            <div class="border-t border-slate-100 my-1"></div>
-                            <div class="px-3 py-1 text-[10px] font-bold uppercase text-indigo-700 bg-indigo-50">Akhir Semester (SAS)</div>
-                            <a href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" class="flex items-center px-3 py-1.5 text-slate-700 hover:bg-slate-50 font-semibold">
-                                <i class="fa-solid fa-print w-4 text-indigo-600 mr-2"></i> Pratinjau Rapor SAS (F4)
-                            </a>
-                            <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" class="flex items-center px-3 py-1.5 text-slate-700 hover:bg-slate-50 font-semibold">
-                                <i class="fa-solid fa-sheet-plastic w-4 text-purple-600 mr-2"></i> Lembar SAS Ringkas (F4)
-                            </a>
-                            <a href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" class="flex items-center px-3 py-1.5 text-rose-700 hover:bg-rose-50 font-semibold">
-                                <i class="fa-solid fa-file-pdf w-4 text-rose-600 mr-2"></i> Unduh PDF SAS Sekelas
-                            </a>
-                        </div>
-                    </div>
+                    @include('partials.dropdown_cetak_menu', [
+                        'label' => 'Menu Cetak',
+                        'buttonClass' => 'inline-flex items-center px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white transition shadow-2xs gap-1.5 cursor-pointer',
+                    ])
                 </div>
             </div>
         </div>
@@ -1458,6 +1347,13 @@
 
     <!-- Modal Atur KKM Per Rombel -->
     @include('kelas.modal_kkm')
+
+    <!-- Modal Dialog Cetak Universal (A4/F4, Cakupan Terpadu, Filter Mapel Opsional, Cek Kelengkapan) -->
+    @include('partials.modal_cetak_universal', [
+        'kelas' => $kelas,
+        'sekolah' => $sekolah ?? $kelas->sekolah,
+        'mapelList' => $mapelList,
+    ])
 
     @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
         @include('nilai.modal_import_excel')

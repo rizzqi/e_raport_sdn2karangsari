@@ -5,8 +5,8 @@
     <title>Daftar Nilai UTS (STS) - {{ $mapel->nama }} Kelas {{ $kelas->nama }}</title>
     <style>
         @page {
-            size: 215mm 330mm; /* Standard F4 / Folio */
-            margin: 12mm 15mm 15mm 15mm;
+            size: {{ $printConfig['css_page_size'] ?? '210mm 297mm' }};
+            margin: {{ $printConfig['css_margin'] ?? '10mm 12mm 10mm 12mm' }};
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -149,7 +149,7 @@
 
     <!-- JUDUL DOKUMEN -->
     <div class="title-block">
-        <h1>DAFTAR NILAI SUMATIF TENGAH SEMESTER (STS / UTS)</h1>
+        <h1>DAFTAR NILAI SUMATIF TENGAH SEMESTER (STS)</h1>
         <p>SEMESTER {{ strtoupper($semester) }} &bull; TAHUN PELAJARAN {{ $kelas->tahunAjaran->tahun ?? $tahun }}</p>
     </div>
 
@@ -189,8 +189,8 @@
                 <th style="width: 15%;">NIS / NISN</th>
                 <th style="width: 48%; text-align: left;">Nama Peserta Didik</th>
                 <th style="width: 7%;">L/P</th>
-                <th style="width: 12%;">Nilai UTS</th>
-                <th style="width: 13%;">Ketuntasan</th>
+                <th style="width: 12%;">Nilai STS</th>
+                <th style="width: 13%;">Ketuntasan STS</th>
             </tr>
         </thead>
         <tbody>
@@ -219,7 +219,7 @@
         </tbody>
         <tfoot>
             <tr class="summary-box">
-                <td colspan="4" class="text-right" style="padding-right: 10px;">Rata-rata Nilai UTS Kelas :</td>
+                <td colspan="4" class="text-right" style="padding-right: 10px;">Rata-rata Nilai STS Kelas :</td>
                 <td class="text-center font-bold" style="font-size: 10pt;">{{ \App\Services\HitungNilaiService::formatAngka($rataRata) }}</td>
                 <td class="text-center font-bold">{{ $persenTuntas }}% Tuntas</td>
             </tr>

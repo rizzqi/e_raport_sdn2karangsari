@@ -14,8 +14,19 @@
                 </a>
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider {{ $tab === 'pembiasaan' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-blue-100 text-blue-800 border border-blue-200' }}">
-                            {{ $tab === 'pembiasaan' ? 'Tab Pembiasaan & Kehadiran (SIA)' : 'Input Nilai Rapor Terpadu' }}
+                        @php
+                            $badgeMap = [
+                                'pembiasaan' => ['bg-amber-100 text-amber-800 border-amber-200', 'Tab Pembiasaan & Kehadiran (SIA)'],
+                                'formatif' => ['bg-blue-100 text-blue-800 border-blue-200', 'Form Input Formatif Bulanan'],
+                                'sts' => ['bg-amber-100 text-amber-800 border-amber-200', 'Form Input Nilai STS'],
+                                'sas' => ['bg-indigo-100 text-indigo-800 border-indigo-200', 'Form Input Nilai SAS'],
+                                'rapor' => ['bg-purple-100 text-purple-800 border-purple-200', 'Form Catatan Capaian Guru'],
+                                'mapel' => ['bg-emerald-100 text-emerald-800 border-emerald-200', 'Lembar Nilai Rapor (Read-Only)'],
+                            ];
+                            [$badgeClass, $badgeLabel] = $badgeMap[$tab] ?? $badgeMap['mapel'];
+                        @endphp
+                        <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider border {{ $badgeClass }}">
+                            {{ $badgeLabel }}
                         </span>
                         <span class="text-xs font-semibold text-slate-500">
                             Kelas {{ $kelas->nama }} &bull; Semester {{ ucfirst($semester) }} &bull; TP {{ $tahunAjaran->nama_lengkap ?? '-' }}
@@ -68,85 +79,11 @@
 
             <!-- Toolbar Kanan: Tombol Cetak & Menu "⋯ Lainnya" -->
             <div class="flex flex-wrap items-center gap-2 shrink-0">
-                <!-- DROPDOWN CETAK UTAMA -->
-                <div class="relative inline-block text-left" x-data="{ open: false }">
-                    <button type="button" @click="open = !open" @click.outside="open = false"
-                            class="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm flex items-center gap-1.5 cursor-pointer">
-                        <i class="fa-solid fa-print"></i>
-                        <span>Cetak</span>
-                        <i class="fa-solid fa-chevron-down text-[10px] ml-0.5"></i>
-                    </button>
-                    <div x-show="open" x-transition
-                         class="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-slate-200 py-2 z-50 divide-y divide-slate-100 shadow-xl" style="display: none;">
-                        <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50">
-                            Lembar Rapor Siswa (F4)
-                        </div>
-                        <div class="py-1">
-                            <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                <i class="fa-solid fa-print text-amber-500 w-4"></i>
-                                <span>Cetak Rapor STS (Sekelas F4)</span>
-                            </a>
-                            <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                <i class="fa-solid fa-print text-blue-600 w-4"></i>
-                                <span>Cetak Rapor SAS (Sekelas F4)</span>
-                            </a>
-                        </div>
-                        <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50">
-                            Penilaian Formatif (Proses)
-                        </div>
-                        <div class="py-1">
-                            <a href="{{ route('kelas.nilai-formatif.cetak-rekap', ['kelas' => $kelas->id, 'tahun' => $tahun, 'bulan' => now()->month]) }}" target="_blank"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 hover:text-purple-800 transition">
-                                <i class="fa-solid fa-calendar-days text-purple-600 w-4"></i>
-                                <span>Cetak Formatif Bulanan (Sekelas)</span>
-                            </a>
-                            <a href="{{ route('kelas.nilai-formatif.rekap-semester-sekelas', ['kelas' => $kelas->id, 'tahun' => $tahun]) }}" target="_blank"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 transition">
-                                <i class="fa-solid fa-table-list text-indigo-600 w-4"></i>
-                                <span>Cetak Formatif 1 Semester (Sekelas)</span>
-                            </a>
-                            @if($mapel)
-                                <a href="{{ route('kelas.mapel.nilai.cetak-formatif-pdf', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" target="_blank"
-                                   class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                    <i class="fa-solid fa-file-invoice text-purple-500 w-4"></i>
-                                    <span>Formatif Bulanan (Mapel Ini)</span>
-                                </a>
-                            @endif
-                        </div>
-                        <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50">
-                            Rekapitulasi & Leger
-                        </div>
-                        <div class="py-1">
-                            <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                <i class="fa-solid fa-book-open text-emerald-600 w-4"></i>
-                                <span>Buku Leger Semester (SAS)</span>
-                            </a>
-                            <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                <i class="fa-solid fa-book text-amber-600 w-4"></i>
-                                <span>Buku Leger Tengah Semester (STS)</span>
-                            </a>
-                        </div>
-                        <div class="px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50">
-                            Unduh Dokumen PDF
-                        </div>
-                        <div class="py-1">
-                            <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => 'sts']) }}" target="_blank"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                <i class="fa-solid fa-file-pdf text-rose-500 w-4"></i>
-                                <span>Unduh PDF STS Sekelas</span>
-                            </a>
-                            <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => 'sas']) }}" target="_blank"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
-                                <i class="fa-solid fa-file-pdf text-rose-600 w-4"></i>
-                                <span>Unduh PDF SAS Sekelas</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <!-- DROPDOWN CETAK UTAMA (4 GRUP BERSIH, KOLEKTIF SEMUA MAPEL, CAKUPAN TERPADU) -->
+                @include('partials.dropdown_cetak_menu', [
+                    'label' => 'Cetak',
+                    'buttonClass' => 'px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm flex items-center gap-1.5 cursor-pointer',
+                ])
 
                 <!-- DROPDOWN "⋯ LAINNYA" (PUSAT ALAT BANTU PENILAIAN LENGKAP) -->
                 <div class="relative inline-block text-left" x-data="{ open: false }">
@@ -258,14 +195,12 @@
                     </div>
                 </div>
 
-                <!-- Status Kunci -->
+                <!-- MENU INPUT NILAI (GANTI TOMBOL MODE INPUT) & STATUS KUNCI -->
+                @include('kelas.mapel.partials.input_nilai_dropdown', ['activeMode' => $tab])
+
                 @if($isAnyLocked)
                     <span class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                         <i class="fa-solid fa-lock mr-1.5 text-emerald-600"></i> Terkunci
-                    </span>
-                @else
-                    <span class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-semibold bg-slate-50 text-slate-600 border border-slate-200">
-                        <i class="fa-solid fa-pen-to-square mr-1.5 text-slate-400"></i> Mode Input
                     </span>
                 @endif
             </div>
@@ -310,26 +245,35 @@
     </div>
 
     <!-- ========================================================================================= -->
-    <!-- TAB 1: SATU HALAMAN INPUT PER MAPEL (TERPADU: FORMATIF + STS + SAS = NILAI RAPOR)          -->
+    <!-- TAB 1: LEMBAR NILAI RAPOR (READ-ONLY — TIDAK ADA KOLOM YANG BISA DIKETIK)                 -->
     <!-- ========================================================================================= -->
     @if($tab === 'mapel')
         <div class="space-y-4">
-            <!-- Alert Petunjuk & Bobot -->
+            <!-- Alert Petunjuk Read-Only & Alur Satu Arah -->
             <div class="bg-blue-50/80 border border-blue-200/80 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-blue-900">
                 <div class="flex items-start space-x-3">
-                    <i class="fa-solid fa-wand-magic-sparkles text-blue-600 text-base mt-0.5 shrink-0"></i>
+                    <i class="fa-solid fa-shield-halved text-blue-600 text-base mt-0.5 shrink-0"></i>
                     <div>
-                        <p class="font-bold text-sm text-blue-950">Lembar Penilaian Terpadu — {{ $mapel->nama }}</p>
+                        <p class="font-bold text-sm text-blue-950">Lembar Nilai Rapor (Read-Only) — {{ $mapel->nama }}</p>
                         <p class="text-blue-800 mt-0.5">
-                            Kolom <strong>Formatif ({{ $bobotFormatif }}%)</strong> terisi otomatis dari rata-rata bulanan. Guru cukup mengisi <strong>STS ({{ $bobotUts }}%)</strong> dan <strong>SAS ({{ $bobotUas }}%)</strong>.
-                            Nilai Rapor dan Predikat terhitung otomatis secara langsung.
+                            Tampilan ini khusus rekapitulasi akhir (hanya baca). Alur satu arah:
+                            <strong>Harian &rarr; Bulanan &rarr; Formatif ({{ $bobotFormatif }}%)</strong> + <strong>STS ({{ $bobotUts }}%)</strong> + <strong>SAS ({{ $bobotUas }}%)</strong>.
+                            Nilai Rapor dan Predikat otomatis muncul setelah komponen lengkap; gunakan tombol <strong>Input Nilai &#9662;</strong> atau klik badge status pada baris siswa untuk mengisi nilai.
                         </p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+                    @if(auth()->user()->isAdmin())
+                        <a href="{{ route('sekolah.edit') }}#bobot_formatif"
+                           class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-indigo-50 border border-blue-200 hover:border-indigo-300 text-indigo-700 font-bold text-[11px] transition flex items-center gap-1 shadow-2xs"
+                           title="Atur proporsi bobot Formatif, STS, dan SAS di Pengaturan Sekolah">
+                            <i class="fa-solid fa-sliders text-[10px]"></i>
+                            <span>Atur Bobot ({{ $bobotFormatif }}/{{ $bobotUts }}/{{ $bobotUas }})</span>
+                        </a>
+                    @endif
                     @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
                         <button type="button" onclick="document.getElementById('modalEditKkmKelas').classList.remove('hidden')"
-                                class="px-2.5 py-1 rounded-lg bg-white hover:bg-purple-50 border border-blue-200 hover:border-purple-300 text-blue-900 hover:text-purple-700 font-mono font-bold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-purple-50 border border-blue-200 hover:border-purple-300 text-blue-900 hover:text-purple-700 font-mono font-bold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
                                 title="Klik untuk atur / ubah KKM mata pelajaran khusus rombel ini">
                             <span>KKM: {{ $kkm }}</span>
                             <span class="text-[10px] text-purple-600 font-sans font-bold flex items-center gap-0.5">
@@ -337,16 +281,10 @@
                             </span>
                         </button>
                     @else
-                        <span class="px-2.5 py-1 rounded-lg bg-white border border-blue-200 text-blue-900 font-mono font-bold text-[11px]">
+                        <span class="px-2.5 py-1.5 rounded-lg bg-white border border-blue-200 text-blue-900 font-mono font-bold text-[11px]">
                             KKM: {{ $kkm }}
                         </span>
                     @endif
-                    <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'formatif', 'tahun' => $tahun]) }}"
-                       class="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-xs transition flex items-center gap-1.5"
-                       title="Buka rincian nilai ulangan bulanan untuk mapel ini">
-                        <i class="fa-solid fa-calendar-days text-blue-600"></i>
-                        <span>Detail Bulanan</span>
-                    </a>
                 </div>
             </div>
 
@@ -362,13 +300,18 @@
                             <span id="badgeSummaryKelengkapan" class="px-2 py-0.5 rounded-full text-[11px] font-black {{ $countBelumLengkap > 0 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300' }}">
                                 <span id="labelBelumLengkap">{{ $countBelumLengkap > 0 ? $countBelumLengkap . ' Belum Lengkap' : 'Semua Lengkap' }}</span>
                             </span>
-                            <!-- Progres STS & SAS terpisah -->
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-mono text-[10.5px] font-bold">
+                            <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'formatif', 'tahun' => $tahun]) }}"
+                               class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-mono text-[10.5px] font-bold transition">
+                                Formatif: <strong>{{ $countFormatifFilled ?? 0 }}</strong>/{{ $totalSiswa }}
+                            </a>
+                            <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'sts', 'tahun' => $tahun]) }}"
+                               class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-mono text-[10.5px] font-bold transition">
                                 STS: <strong id="statStsFilled">{{ $countStsFilled ?? 0 }}</strong>/{{ $totalSiswa }}
-                            </span>
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-900 font-mono text-[10.5px] font-bold">
+                            </a>
+                            <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'sas', 'tahun' => $tahun]) }}"
+                               class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 font-mono text-[10.5px] font-bold transition">
                                 SAS: <strong id="statSasFilled">{{ $countSasFilled ?? 0 }}</strong>/{{ $totalSiswa }}
-                            </span>
+                            </a>
                         </div>
                         <p class="text-[11px] text-slate-500 mt-0.5">
                             Total <strong>{{ $totalSiswa }} siswa</strong>: <span id="textStatLengkap" class="font-semibold text-emerald-700">{{ $countLengkap }} lengkap</span>, <span id="textStatBelumLengkap" class="font-semibold text-amber-700">{{ $countBelumLengkap }} belum lengkap</span> pada mata pelajaran {{ $mapel->nama }}.
@@ -376,29 +319,8 @@
                     </div>
                 </div>
 
-                <!-- Kontrol Sisi Kanan: Mode Fokus Input & Filter Kelengkapan -->
+                <!-- Tombol Filter Cepat Kelengkapan -->
                 <div class="flex flex-wrap items-center gap-2 self-start lg:self-auto shrink-0">
-                    <!-- MODE FOKUS PENGISIAN NILAI (STS vs SAS) -->
-                    <div class="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs font-bold shadow-2xs">
-                        <span class="text-[10px] uppercase text-slate-400 px-1.5 font-black">Fokus:</span>
-                        <button type="button" onclick="setModeFokus('semua')" id="btnFokusSemua"
-                                class="px-2.5 py-1 rounded-lg transition-all shadow-xs bg-white text-slate-900 border border-slate-200 font-bold"
-                                title="Tampilkan semua kolom Formatif, STS, SAS, dan Nilai Rapor">
-                            Semua
-                        </button>
-                        <button type="button" onclick="setModeFokus('sts')" id="btnFokusSts"
-                                class="px-2.5 py-1 rounded-lg transition-all text-amber-900 hover:bg-amber-100/70 font-bold"
-                                title="Fokus mengisi nilai STS (Tengah Semester). Kolom SAS disembunyikan agar layar lebih leluasa.">
-                            <i class="fa-solid fa-bullseye text-amber-500 mr-1"></i> STS
-                        </button>
-                        <button type="button" onclick="setModeFokus('sas')" id="btnFokusSas"
-                                class="px-2.5 py-1 rounded-lg transition-all text-blue-900 hover:bg-blue-100/70 font-bold"
-                                title="Fokus mengisi nilai SAS (Akhir Semester). Kolom STS disembunyikan.">
-                            <i class="fa-solid fa-bullseye text-blue-500 mr-1"></i> SAS
-                        </button>
-                    </div>
-
-                    <!-- Tombol Filter Cepat -->
                     <div class="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs font-bold">
                         <button type="button" onclick="setFilterKelengkapan('semua')" id="btnFilterSemua"
                                 class="filter-pill-btn px-2.5 py-1 rounded-lg transition-all shadow-xs bg-white text-slate-900 border border-slate-200">
@@ -423,217 +345,218 @@
                 </div>
             </div>
 
-            <!-- FORM NILAI TERPADU -->
-            <form id="formNilaiTerpadu" action="{{ route('kelas.mapel.nilai.simpan-terpadu', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="POST">
-                @csrf
-                <input type="hidden" name="tahun" value="{{ $tahun }}">
-                <input type="hidden" name="semester" value="{{ $semester }}">
+            <!-- TABEL READ-ONLY LEMBAR NILAI RAPOR -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto max-h-[70vh]">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="sticky top-0 z-10 bg-slate-100/95 backdrop-blur border-b border-slate-200 shadow-xs text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            <tr>
+                                <th class="py-3 px-3 w-12 text-center border-r border-slate-200">No</th>
+                                <th class="py-3 px-4 min-w-[220px] border-r border-slate-200">Nama Peserta Didik</th>
+                                <th class="py-3 px-3 w-32 text-center border-r border-slate-200 bg-slate-50/80">
+                                    <div>Formatif ({{ $bobotFormatif }}%)</div>
+                                    <div class="text-[9px] text-slate-400 font-medium lowercase">dari harian &amp; bulanan</div>
+                                </th>
+                                <th class="py-3 px-3 w-28 text-center border-r border-slate-200 bg-amber-50/60 text-amber-950 font-black">
+                                    <div>STS ({{ $bobotUts }}%)</div>
+                                    <div class="text-[9px] text-amber-700/80 font-medium lowercase">tengah semester</div>
+                                </th>
+                                <th class="py-3 px-3 w-28 text-center border-r border-slate-200 bg-blue-50/60 text-blue-950 font-black">
+                                    <div>SAS ({{ $bobotUas }}%)</div>
+                                    <div class="text-[9px] text-blue-700/80 font-medium lowercase">akhir semester</div>
+                                </th>
+                                <th class="py-3 px-3 w-32 text-center border-r border-slate-200 bg-emerald-50/80 text-emerald-950 font-black">
+                                    <div>Nilai Rapor</div>
+                                    <div class="text-[9px] text-emerald-700 font-medium lowercase">otomatis lengkap</div>
+                                </th>
+                                <th class="py-3 px-3 w-24 text-center border-r border-slate-200 bg-emerald-50/80 text-emerald-950 font-black">
+                                    <div>Predikat</div>
+                                    <div class="text-[9px] text-emerald-700 font-medium lowercase">otomatis lengkap</div>
+                                </th>
+                                <th class="py-3 px-4 min-w-[200px] text-left">
+                                    <div>Catatan Guru</div>
+                                    <div class="text-[9px] text-slate-400 font-medium lowercase">ringkasan capaian</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium">
+                            @forelse($kelasSiswaList as $idx => $ks)
+                                @php
+                                    $d = $siswaData[$ks->id] ?? null;
+                                    $valFmt = $d['rataFormatif'] ?? null;
+                                    $valUts = $d['nilaiUts'] ?? null;
+                                    $valUas = $d['nilaiUas'] ?? null;
+                                    $valRap = $d['nilaiRapor'] ?? null;
+                                    $pred = $d['predikat'] ?? null;
+                                    $catatan = trim((string) ($d['catatan'] ?? ''));
+                                    $hasCatatan = $catatan !== '';
+                                    $isComplete = (bool) ($d['isLengkap'] ?? false);
+                                    $butuhFmt = $bobotFormatif > 0 && $valFmt === null;
+                                    $butuhSts = $bobotUts > 0 && $valUts === null;
+                                    $butuhSas = $bobotUas > 0 && $valUas === null;
+                                @endphp
+                                <tr class="hover:bg-slate-50/80 transition student-grade-row" id="row_student_{{ $ks->id }}" data-ks-id="{{ $ks->id }}" data-complete="{{ $isComplete ? 'true' : 'false' }}">
+                                    <td class="py-3 px-3 text-center font-bold text-slate-400 border-r border-slate-200">
+                                        {{ $idx + 1 }}
+                                    </td>
 
-                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto max-h-[70vh]">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <!-- STICKY TABLE HEADER -->
-                            <thead class="sticky top-0 z-10 bg-slate-100/95 backdrop-blur border-b border-slate-200 shadow-xs text-xs font-bold text-slate-700 uppercase tracking-wider">
-                                <tr>
-                                    <th class="py-3 px-3 w-12 text-center border-r border-slate-200">No</th>
-                                    <th class="py-3 px-4 min-w-[220px] border-r border-slate-200">Nama Peserta Didik</th>
-                                    <th class="py-3 px-3 w-32 text-center border-r border-slate-200 bg-slate-50/80">
-                                        <div>Formatif ({{ $bobotFormatif }}%)</div>
-                                        <div class="text-[9px] text-slate-400 font-medium lowercase">otomatis bulanan</div>
-                                    </th>
-                                    <th class="py-3 px-3 w-36 text-center border-r border-slate-200 bg-amber-50/70 text-amber-950 font-black col-sts">
-                                        <div>STS ({{ $bobotUts }}%)</div>
-                                        <div class="text-[9px] text-amber-700/80 font-medium lowercase">diisi guru (0-100)</div>
-                                    </th>
-                                    <th class="py-3 px-3 w-36 text-center border-r border-slate-200 bg-blue-50/70 text-blue-950 font-black col-sas">
-                                        <div>SAS ({{ $bobotUas }}%)</div>
-                                        <div class="text-[9px] text-blue-700/80 font-medium lowercase">diisi guru (0-100)</div>
-                                    </th>
-                                    <th class="py-3 px-3 w-32 text-center border-r border-slate-200 bg-emerald-50/80 text-emerald-950 font-black">
-                                        <div>Nilai Rapor</div>
-                                        <div class="text-[9px] text-emerald-700 font-medium lowercase">otomatis</div>
-                                    </th>
-                                    <th class="py-3 px-3 w-24 text-center border-r border-slate-200 bg-emerald-50/80 text-emerald-950 font-black">
-                                        <div>Predikat</div>
-                                        <div class="text-[9px] text-emerald-700 font-medium lowercase">otomatis</div>
-                                    </th>
-                                    <th class="py-3 px-4 w-36 text-center">
-                                        <div>Catatan Guru</div>
-                                        <div class="text-[9px] text-slate-400 font-medium lowercase">ikon per baris</div>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 font-medium">
-                                @forelse($kelasSiswaList as $idx => $ks)
-                                    @php
-                                        $d = $siswaData[$ks->id] ?? null;
-                                        $valFmt = $d['rataFormatif'] ?? null;
-                                        $valUts = $d['nilaiUts'] ?? null;
-                                        $valUas = $d['nilaiUas'] ?? null;
-                                        $valRap = $d['nilaiRapor'] ?? null;
-                                        $pred = $d['predikat'] ?? null;
-                                        $catatan = $d['catatan'] ?? '';
-                                        $saranDef = $d['saranDefault'] ?? '';
-                                        $hasCatatan = !empty(trim($catatan));
-                                    @endphp
-                                    <tr class="hover:bg-slate-50/80 transition student-grade-row" id="row_student_{{ $ks->id }}" data-ks-id="{{ $ks->id }}" data-complete="{{ ($valUts !== null && $valUas !== null) ? 'true' : 'false' }}">
-                                        <!-- No -->
-                                        <td class="py-3 px-3 text-center font-bold text-slate-400 border-r border-slate-200">
-                                            {{ $idx + 1 }}
-                                        </td>
-
-                                        <!-- Nama Siswa & Badge Kelengkapan -->
-                                        <td class="py-3 px-4 border-r border-slate-200">
-                                            <div class="flex items-center justify-between gap-2">
-                                                <div class="font-bold text-slate-900 text-sm">{{ $ks->siswa->nama }}</div>
-                                                <div id="badge_status_{{ $ks->id }}" class="shrink-0">
-                                                    @if($valUts !== null && $valUas !== null)
-                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Nilai STS & SAS sudah lengkap">
-                                                            <i class="fa-solid fa-circle-check text-[9px]"></i> Lengkap
-                                                        </span>
-                                                    @elseif($valUts === null && $valUas === null)
-                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi STS dan SAS">
-                                                            <i class="fa-solid fa-clock text-[9px]"></i> Belum STS &amp; SAS
-                                                        </span>
-                                                    @elseif($valUts === null)
-                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi STS">
-                                                            <i class="fa-solid fa-pen text-[9px]"></i> Perlu STS
-                                                        </span>
-                                                    @else
-                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi SAS">
-                                                            <i class="fa-solid fa-pen text-[9px]"></i> Perlu SAS
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            <div class="text-[11px] text-slate-400 font-mono mt-0.5">
-                                                NIS: {{ $ks->siswa->nis ?? '-' }} &bull; NISN: {{ $ks->siswa->nisn ?? '-' }}
-                                            </div>
-                                        </td>
-
-                                        <!-- Formatif (40%) - HANYA TAMPIL / READ-ONLY -->
-                                        <td class="py-3 px-3 text-center border-r border-slate-200 bg-slate-50/50">
-                                            <input type="hidden" id="formatif_raw_{{ $ks->id }}" value="{{ $valFmt !== null ? $valFmt : '' }}">
-                                            @if($valFmt !== null)
-                                                @if($valFmt < $kkm)
-                                                    <span class="inline-block px-2.5 py-1 rounded-lg font-mono font-bold text-xs text-rose-700 bg-rose-50 border border-rose-200" title="Di bawah KKM ({{ $kkm }})">
-                                                        {{ \App\Services\HitungNilaiService::formatAngka($valFmt) }}
+                                    <!-- Nama Siswa & Badge Kelengkapan yang Bisa Diklik -->
+                                    <td class="py-3 px-4 border-r border-slate-200">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <div class="font-bold text-slate-900 text-sm">{{ $ks->siswa->nama }}</div>
+                                            <div id="badge_status_{{ $ks->id }}" class="shrink-0">
+                                                @if($isComplete)
+                                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Semua komponen nilai sudah lengkap">
+                                                        <i class="fa-solid fa-circle-check text-[9px]"></i> Lengkap
                                                     </span>
+                                                @elseif($butuhFmt && $butuhSts && $butuhSas)
+                                                    <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'formatif', 'tahun' => $tahun, 'focus_ks' => $ks->id]) }}#row_formatif_{{ $ks->id }}"
+                                                       class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition"
+                                                       title="Klik untuk mengisi nilai mulai dari Formatif Bulanan">
+                                                        <i class="fa-solid fa-clock text-[9px]"></i> Belum Lengkap
+                                                    </a>
+                                                @elseif($butuhFmt)
+                                                    <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'formatif', 'tahun' => $tahun, 'focus_ks' => $ks->id]) }}#row_formatif_{{ $ks->id }}"
+                                                       class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 transition"
+                                                       title="Klik langsung untuk mengisi Formatif Bulanan siswa ini">
+                                                        <i class="fa-solid fa-pen text-[9px]"></i> Perlu Formatif
+                                                    </a>
+                                                @elseif($butuhSts && $butuhSas)
+                                                    <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'sts', 'tahun' => $tahun, 'focus_ks' => $ks->id]) }}#row_sts_{{ $ks->id }}"
+                                                       class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition"
+                                                       title="Klik untuk mengisi STS terlebih dahulu">
+                                                        <i class="fa-solid fa-clock text-[9px]"></i> Belum STS &amp; SAS
+                                                    </a>
+                                                @elseif($butuhSts)
+                                                    <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'sts', 'tahun' => $tahun, 'focus_ks' => $ks->id]) }}#row_sts_{{ $ks->id }}"
+                                                       class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition"
+                                                       title="Klik langsung ke Form STS untuk mengisi nilai siswa ini">
+                                                        <i class="fa-solid fa-pen text-[9px]"></i> Perlu STS
+                                                    </a>
                                                 @else
-                                                    <span class="inline-block px-2.5 py-1 rounded-lg font-mono font-bold text-xs text-slate-800 bg-slate-100 border border-slate-200">
-                                                        {{ \App\Services\HitungNilaiService::formatAngka($valFmt) }}
-                                                    </span>
+                                                    <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'sas', 'tahun' => $tahun, 'focus_ks' => $ks->id]) }}#row_sas_{{ $ks->id }}"
+                                                       class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 transition"
+                                                       title="Klik langsung ke Form SAS untuk mengisi nilai siswa ini">
+                                                        <i class="fa-solid fa-pen text-[9px]"></i> Perlu SAS
+                                                    </a>
                                                 @endif
-                                            @else
-                                                <span class="font-mono text-slate-300 font-bold">–</span>
-                                            @endif
-                                        </td>
-
-                                        <!-- STS (30%) - INPUT GURU -->
-                                        <td class="py-3 px-3 text-center border-r border-slate-200 bg-amber-50/20 col-sts">
-                                            <input type="number"
-                                                   step="0.1"
-                                                   min="0"
-                                                   max="100"
-                                                   name="sts[{{ $ks->id }}]"
-                                                   id="input_sts_{{ $ks->id }}"
-                                                   data-row="{{ $idx }}"
-                                                   data-ks-id="{{ $ks->id }}"
-                                                   value="{{ old('sts.' . $ks->id, $valUts !== null ? \App\Services\HitungNilaiService::formatAngka($valUts) : '') }}"
-                                                   placeholder="–"
-                                                   oninput="recalculateRow({{ $ks->id }}, {{ $kkm }}, {{ $bobotFormatif }}, {{ $bobotUts }}, {{ $bobotUas }})"
-                                                   {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
-                                                   class="input-nilai-sts w-24 text-center font-mono font-bold text-sm px-2.5 py-1.5 border rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none transition {{ $valUts !== null && $valUts < $kkm ? 'bg-rose-50 text-rose-700 border-rose-400' : 'border-slate-300 bg-white' }}">
-                                        </td>
-
-                                        <!-- SAS (30%) - INPUT GURU -->
-                                        <td class="py-3 px-3 text-center border-r border-slate-200 bg-blue-50/20 col-sas">
-                                            <input type="number"
-                                                   step="0.1"
-                                                   min="0"
-                                                   max="100"
-                                                   name="sas[{{ $ks->id }}]"
-                                                   id="input_sas_{{ $ks->id }}"
-                                                   data-row="{{ $idx }}"
-                                                   data-ks-id="{{ $ks->id }}"
-                                                   value="{{ old('sas.' . $ks->id, $valUas !== null ? \App\Services\HitungNilaiService::formatAngka($valUas) : '') }}"
-                                                   placeholder="–"
-                                                   oninput="recalculateRow({{ $ks->id }}, {{ $kkm }}, {{ $bobotFormatif }}, {{ $bobotUts }}, {{ $bobotUas }})"
-                                                   {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
-                                                   class="input-nilai-sas w-24 text-center font-mono font-bold text-sm px-2.5 py-1.5 border rounded-xl focus:ring-2 focus:ring-blue-400 focus:outline-none transition {{ $valUas !== null && $valUas < $kkm ? 'bg-rose-50 text-rose-700 border-rose-400' : 'border-slate-300 bg-white' }}">
-                                        </td>
-
-                                        <!-- Nilai Rapor (Otomatis) -->
-                                        <td class="py-3 px-3 text-center border-r border-slate-200 bg-emerald-50/30">
-                                            @if($valRap !== null)
-                                                @if($valRap < $kkm)
-                                                    <span id="rapor_val_{{ $ks->id }}" class="font-mono font-black text-sm px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200" title="Di bawah KKM ({{ $kkm }})">
-                                                        {{ \App\Services\HitungNilaiService::formatAngka($valRap) }}
-                                                    </span>
-                                                @else
-                                                    <span id="rapor_val_{{ $ks->id }}" class="font-mono font-black text-sm px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                                        {{ \App\Services\HitungNilaiService::formatAngka($valRap) }}
-                                                    </span>
-                                                @endif
-                                            @else
-                                                <span id="rapor_val_{{ $ks->id }}" class="font-mono font-black text-sm text-slate-300">–</span>
-                                            @endif
-                                        </td>
-
-                                        <!-- Predikat (Otomatis) -->
-                                        <td class="py-3 px-3 text-center border-r border-slate-200 bg-emerald-50/30">
-                                            @php
-                                                $badgeColors = [
-                                                    'A' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
-                                                    'B' => 'bg-blue-100 text-blue-800 border-blue-300',
-                                                    'C' => 'bg-amber-100 text-amber-800 border-amber-300',
-                                                    'D' => 'bg-rose-100 text-rose-800 border-rose-300',
-                                                ];
-                                                $cls = $pred ? ($badgeColors[$pred] ?? 'bg-slate-100 text-slate-700') : '';
-                                            @endphp
-                                            <span id="predikat_badge_{{ $ks->id }}" class="{{ $pred ? 'inline-block px-2.5 py-0.5 rounded-md font-mono font-black text-xs border ' . $cls : 'text-slate-300 font-bold' }}">
-                                                {{ $pred ?? '–' }}
-                                            </span>
-                                        </td>
-
-                                        <!-- Catatan Guru (Ikon Per Baris & Modal) -->
-                                        <td class="py-3 px-4 text-center">
-                                            <input type="hidden" name="catatan[{{ $ks->id }}]" id="hidden_catatan_{{ $ks->id }}" value="{{ old('catatan.' . $ks->id, $catatan) }}">
-                                            <input type="hidden" id="saran_default_{{ $ks->id }}" value="{{ $saranDef }}">
-                                            <button type="button"
-                                                    onclick="openCatatanModal({{ $ks->id }}, '{{ addslashes($ks->siswa->nama) }}', '{{ addslashes($mapel->nama) }}')"
-                                                    id="btn_catatan_{{ $ks->id }}"
-                                                    class="px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition flex items-center gap-1.5 mx-auto {{ $hasCatatan ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100' }}">
-                                                <i id="icon_catatan_{{ $ks->id }}" class="{{ $hasCatatan ? 'fa-solid fa-comment-check text-indigo-600' : 'fa-regular fa-comment-dots text-slate-400' }}"></i>
-                                                <span id="text_catatan_{{ $ks->id }}">{{ $hasCatatan ? 'Lihat/Edit' : '+ Catatan' }}</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="8" class="py-12 text-center text-slate-400">
-                                            Belum ada data siswa terdaftar pada kelas ini.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                                <tr id="rowEmptyFilter" style="display: none;">
-                                    <td colspan="8" class="py-12 text-center text-slate-400">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <i class="fa-solid fa-filter-circle-xmark text-3xl text-slate-300 mb-2"></i>
-                                            <p class="font-bold text-slate-700 text-sm">Tidak ada siswa pada kategori filter ini</p>
-                                            <p class="text-xs text-slate-400 mt-0.5">Semua data siswa pada filter yang dipilih tidak ditemukan.</p>
-                                            <button type="button" onclick="setFilterKelengkapan('semua')" class="mt-3 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
-                                                Tampilkan Semua Siswa
-                                            </button>
+                                            </div>
+                                        </div>
+                                        <div class="text-[11px] text-slate-400 font-mono mt-0.5">
+                                            NIS: {{ $ks->siswa->nis ?? '-' }} &bull; NISN: {{ $ks->siswa->nisn ?? '-' }}
                                         </div>
                                     </td>
+
+                                    <!-- Formatif (Read-Only) -->
+                                    <td class="py-3 px-3 text-center border-r border-slate-200 bg-slate-50/50">
+                                        @if($valFmt !== null)
+                                            <span class="inline-block px-2.5 py-1 rounded-lg font-mono font-bold text-xs {{ $valFmt < $kkm ? 'text-rose-700 bg-rose-50 border border-rose-200' : 'text-slate-800 bg-slate-100 border border-slate-200' }}">
+                                                {{ \App\Services\HitungNilaiService::formatAngka($valFmt) }}
+                                            </span>
+                                        @else
+                                            <span class="font-mono text-slate-400 font-bold">–</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- STS (Read-Only) -->
+                                    <td class="py-3 px-3 text-center border-r border-slate-200 bg-amber-50/20">
+                                        @if($valUts !== null)
+                                            <span class="inline-block px-2.5 py-1 rounded-lg font-mono font-bold text-xs {{ $valUts < $kkm ? 'text-rose-700 bg-rose-50 border border-rose-200' : 'text-amber-950 bg-amber-50 border border-amber-200' }}">
+                                                {{ \App\Services\HitungNilaiService::formatAngka($valUts) }}
+                                            </span>
+                                        @else
+                                            <span class="font-mono text-slate-400 font-bold">–</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- SAS (Read-Only) -->
+                                    <td class="py-3 px-3 text-center border-r border-slate-200 bg-blue-50/20">
+                                        @if($valUas !== null)
+                                            <span class="inline-block px-2.5 py-1 rounded-lg font-mono font-bold text-xs {{ $valUas < $kkm ? 'text-rose-700 bg-rose-50 border border-rose-200' : 'text-blue-950 bg-blue-50 border border-blue-200' }}">
+                                                {{ \App\Services\HitungNilaiService::formatAngka($valUas) }}
+                                            </span>
+                                        @else
+                                            <span class="font-mono text-slate-400 font-bold">–</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Nilai Rapor (Hanya Tampil Jika Komponen Lengkap, Jika Belum = –) -->
+                                    <td class="py-3 px-3 text-center border-r border-slate-200 bg-emerald-50/30">
+                                        @if($valRap !== null)
+                                            <span id="rapor_val_{{ $ks->id }}" class="font-mono font-black text-sm px-2.5 py-1 rounded-lg {{ $valRap < $kkm ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' }}">{{ \App\Services\HitungNilaiService::formatAngka($valRap) }}</span>
+                                        @else
+                                            <span id="rapor_val_{{ $ks->id }}" class="font-mono font-black text-sm text-slate-400" title="Menunggu komponen lengkap">–</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Predikat (Hanya Tampil Jika Komponen Lengkap, Jika Belum = –) -->
+                                    <td class="py-3 px-3 text-center border-r border-slate-200 bg-emerald-50/30">
+                                        @php
+                                            $badgeColors = [
+                                                'A' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                                                'B' => 'bg-blue-100 text-blue-800 border-blue-300',
+                                                'C' => 'bg-amber-100 text-amber-800 border-amber-300',
+                                                'D' => 'bg-rose-100 text-rose-800 border-rose-300',
+                                            ];
+                                            $cls = ($valRap !== null && $pred) ? ($badgeColors[$pred] ?? 'bg-slate-100 text-slate-700') : '';
+                                        @endphp
+                                        @if($valRap !== null && $pred)
+                                            <span id="predikat_badge_{{ $ks->id }}" class="inline-block px-2.5 py-0.5 rounded-md font-mono font-black text-xs border {{ $cls }}">{{ $pred }}</span>
+                                        @else
+                                            <span id="predikat_badge_{{ $ks->id }}" class="text-slate-400 font-bold">–</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Catatan Guru (Read-Only Preview) -->
+                                    <td class="py-3 px-4 text-left">
+                                        @if($hasCatatan)
+                                            <p class="text-[11px] text-slate-700 line-clamp-2 leading-snug" title="{{ $catatan }}">
+                                                {{ \Illuminate\Support\Str::limit($catatan, 85) }}
+                                            </p>
+                                        @else
+                                            <span class="text-slate-400 text-xs font-bold">–</span>
+                                        @endif
+                                    </td>
                                 </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="py-12 text-center text-slate-400">
+                                        Belum ada data siswa terdaftar pada kelas ini.
+                                    </td>
+                                </tr>
+                            @endforelse
+                            <tr id="rowEmptyFilter" style="display: none;">
+                                <td colspan="8" class="py-12 text-center text-slate-400">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <i class="fa-solid fa-filter-circle-xmark text-3xl text-slate-300 mb-2"></i>
+                                        <p class="font-bold text-slate-700 text-sm">Tidak ada siswa pada kategori filter ini</p>
+                                        <p class="text-xs text-slate-400 mt-0.5">Semua data siswa pada filter yang dipilih tidak ditemukan.</p>
+                                        <button type="button" onclick="setFilterKelengkapan('semua')" class="mt-3 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                                            Tampilkan Semua Siswa
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </form>
+            </div>
         </div>
+    @endif
+
+    <!-- ========================================================================================= -->
+    <!-- FORM STS & FORM SAS TERPISAH                                                              -->
+    <!-- ========================================================================================= -->
+    @if($tab === 'sts')
+        @include('kelas.mapel.partials.form_sts_sas', ['mode' => 'sts'])
+    @endif
+
+    @if($tab === 'sas')
+        @include('kelas.mapel.partials.form_sts_sas', ['mode' => 'sas'])
+    @endif
+
+    @if($tab === 'rapor')
+        @include('kelas.mapel.partials.form_catatan_rapor')
     @endif
 
     <!-- ========================================================================================= -->
@@ -802,12 +725,19 @@
                             </p>
                         </div>
                     </div>
-                    <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
-                       class="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
-                       title="Buka rincian penilaian harian per bulan untuk {{ $mapel->nama }}">
-                        <i class="fa-solid fa-list-check"></i>
-                        <span>Rincian Nilai Harian</span>
-                    </a>
+                    <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+                        <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
+                           class="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
+                           title="Buka rincian penilaian harian per bulan untuk {{ $mapel->nama }}">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span>Rincian Nilai Harian</span>
+                        </a>
+                        <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'mapel', 'tahun' => $tahun]) }}"
+                           class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            <span>Kembali ke Lembar Nilai Rapor</span>
+                        </a>
+                    </div>
                 </div>
             @elseif($isPjok)
                 <div class="bg-cyan-50 border border-cyan-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-cyan-950">
@@ -826,12 +756,19 @@
                             </p>
                         </div>
                     </div>
-                    <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
-                       class="px-3.5 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
-                       title="Buka rincian penilaian harian per bulan untuk {{ $mapel->nama }}">
-                        <i class="fa-solid fa-list-check"></i>
-                        <span>Rincian Nilai Harian</span>
-                    </a>
+                    <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+                        <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
+                           class="px-3.5 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
+                           title="Buka rincian penilaian harian per bulan untuk {{ $mapel->nama }}">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span>Rincian Nilai Harian</span>
+                        </a>
+                        <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'mapel', 'tahun' => $tahun]) }}"
+                           class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            <span>Kembali ke Lembar Nilai Rapor</span>
+                        </a>
+                    </div>
                 </div>
             @else
                 <div class="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-blue-900">
@@ -847,17 +784,24 @@
                             </p>
                         </div>
                     </div>
-                    <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
-                       class="px-3.5 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
-                       title="Buka rincian penilaian harian per bulan untuk {{ $mapel->nama }}">
-                        <i class="fa-solid fa-list-check"></i>
-                        <span>Rincian Nilai Harian</span>
-                    </a>
+                    <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+                        <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
+                           class="px-3.5 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5"
+                           title="Buka rincian penilaian harian per bulan untuk {{ $mapel->nama }}">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span>Rincian Nilai Harian</span>
+                        </a>
+                        <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'mapel', 'tahun' => $tahun]) }}"
+                           class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            <span>Kembali ke Lembar Nilai Rapor</span>
+                        </a>
+                    </div>
                 </div>
             @endif
 
             <!-- Formulir Nilai Formatif Bulanan -->
-            <form action="{{ route('kelas.mapel.nilai.formatif', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="POST">
+            <form id="formFormatifBulanan" action="{{ route('kelas.mapel.nilai.formatif', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="POST">
                 @csrf
                 <input type="hidden" name="tahun" value="{{ $tahun }}">
                 <input type="hidden" name="semester" value="{{ $semester }}">
@@ -974,8 +918,10 @@
                                 @forelse($kelasSiswaList as $idx => $ks)
                                     @php
                                         $d = $siswaData[$ks->id] ?? null;
+                                        $isFocusedFmt = ($focusKsId ?? null) !== null && $focusKsId === $ks->id;
                                     @endphp
-                                    <tr class="hover:bg-slate-50/70 transition">
+                                    <tr id="row_formatif_{{ $ks->id }}"
+                                        class="transition {{ $isFocusedFmt ? 'bg-amber-50/90 ring-2 ring-inset ring-amber-400' : 'hover:bg-slate-50/70' }}">
                                         <td class="py-3 px-3 text-center font-bold text-slate-400 border-r border-slate-200">
                                             {{ $idx + 1 }}
                                         </td>
@@ -996,6 +942,8 @@
                                                            name="formatif[{{ $ks->id }}][{{ $bNum }}]"
                                                            value="{{ old('formatif.' . $ks->id . '.' . $bNum, $valFmt) }}"
                                                            placeholder="-"
+                                                           oninput="setDirty(true)"
+                                                           {{ ($isFocusedFmt && $loop->first) ? 'autofocus' : '' }}
                                                            title="Formatif Teori {{ $bNama }} - {{ $ks->siswa->nama }}"
                                                            data-siswa-id="{{ $ks->id }}"
                                                            {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
@@ -1006,6 +954,7 @@
                                                            name="praktik[{{ $ks->id }}][{{ $bNum }}]"
                                                            value="{{ old('praktik.' . $ks->id . '.' . $bNum, $valPrak) }}"
                                                            placeholder="-"
+                                                           oninput="setDirty(true)"
                                                            title="Praktik Jasmani {{ $bNama }} - {{ $ks->siswa->nama }}"
                                                            data-siswa-id="{{ $ks->id }}"
                                                            {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
@@ -1026,6 +975,8 @@
                                                            name="formatif[{{ $ks->id }}][{{ $bNum }}]"
                                                            value="{{ old('formatif.' . $ks->id . '.' . $bNum, $val) }}"
                                                            placeholder="-"
+                                                           oninput="setDirty(true)"
+                                                           {{ ($isFocusedFmt && $loop->first) ? 'autofocus' : '' }}
                                                            title="Formatif {{ $bNama }} - {{ $ks->siswa->nama }}"
                                                            data-siswa-id="{{ $ks->id }}"
                                                            {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
@@ -1037,6 +988,7 @@
                                                                name="praktik_1[{{ $ks->id }}]"
                                                                value="{{ old('praktik_1.' . $ks->id, $d['praktik_1'] ?? '') }}"
                                                                placeholder="-"
+                                                               oninput="setDirty(true)"
                                                                title="Praktik 1 (Pra-UTS) - {{ $ks->siswa->nama }}"
                                                                data-siswa-id="{{ $ks->id }}"
                                                                {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
@@ -1049,6 +1001,7 @@
                                                                name="praktik_2[{{ $ks->id }}]"
                                                                value="{{ old('praktik_2.' . $ks->id, $d['praktik_2'] ?? '') }}"
                                                                placeholder="-"
+                                                               oninput="setDirty(true)"
                                                                title="Praktik 2 (Pra-UAS) - {{ $ks->siswa->nama }}"
                                                                data-siswa-id="{{ $ks->id }}"
                                                                {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
@@ -1068,6 +1021,8 @@
                                                            name="formatif[{{ $ks->id }}][{{ $bNum }}]"
                                                            value="{{ old('formatif.' . $ks->id . '.' . $bNum, $val) }}"
                                                            placeholder="-"
+                                                           oninput="setDirty(true)"
+                                                           {{ ($isFocusedFmt && $loop->first) ? 'autofocus' : '' }}
                                                            title="Formatif {{ $bNama }} - {{ $ks->siswa->nama }}"
                                                            data-siswa-id="{{ $ks->id }}"
                                                            {{ ($d['isLocked'] ?? false) ? 'disabled' : '' }}
@@ -1148,72 +1103,6 @@
     </div>
 </div>
 
-<!-- ========================================================================================= -->
-<!-- 4. MODAL CATATAN GURU PER SISWA                                                           -->
-<!-- ========================================================================================= -->
-<div id="modalCatatanGuru" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs hidden">
-    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden transform transition-all">
-        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-            <div>
-                <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                    <i class="fa-solid fa-comment-dots text-indigo-600"></i>
-                    <span>Catatan Capaian Pembelajaran</span>
-                </h3>
-                <p class="text-xs text-slate-500 mt-0.5" id="modalStudentInfo">Siswa: -</p>
-            </div>
-            <button type="button" onclick="closeCatatanModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/60 transition">
-                <i class="fa-solid fa-xmark text-sm"></i>
-            </button>
-        </div>
-
-        <div class="p-5 space-y-4">
-            <input type="hidden" id="modalKsId" value="">
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <label class="text-xs font-bold text-slate-700">Catatan Guru untuk Rapor:</label>
-                    <button type="button" onclick="terapkanSaranModal()"
-                            class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1">
-                        <i class="fa-solid fa-wand-sparkles text-amber-500"></i>
-                        <span>Gunakan Saran Otomatis</span>
-                    </button>
-                </div>
-                <textarea id="modalCatatanTextarea"
-                          rows="4"
-                          placeholder="Tuliskan catatan deskripsi capaian pembelajaran peserta didik..."
-                          class="w-full text-xs font-normal px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition leading-relaxed"></textarea>
-            </div>
-
-            <!-- Saran Capaian Default Preview -->
-            <div class="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 text-[11px] text-indigo-900">
-                <span class="font-bold flex items-center gap-1 mb-1">
-                    <i class="fa-solid fa-circle-info text-indigo-500"></i> Saran Deskripsi Standar:
-                </span>
-                <p id="modalSaranDefaultPreview" class="text-slate-600 italic leading-relaxed">-</p>
-            </div>
-        </div>
-
-        <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
-            <button type="button" onclick="closeCatatanModal()"
-                    class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 hover:bg-slate-300 text-slate-700 transition">
-                Batal
-            </button>
-            <div class="flex items-center gap-2">
-                <button type="button" onclick="simpanCatatanKeForm()"
-                        class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-check"></i>
-                    <span>Terapkan ke Form</span>
-                </button>
-                <button type="button" onclick="simpanCatatanAjaxDirect()"
-                        id="btnSimpanCatatanAjax"
-                        class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span>Simpan Sekarang</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Modal Edit Nama dan NIP Wali Kelas -->
 @include('kelas.modal_edit_wali')
 
@@ -1226,38 +1115,54 @@
 <!-- Modal Kosongkan Nilai Kelas -->
 @include('nilai.modal_kosongkan_nilai', ['periode' => ($semester === 'genap' ? 'sas' : 'sts')])
 
+<!-- Modal Dialog Cetak Universal (A4/F4, Cakupan Terpadu, Filter Mapel Opsional, Cek Kelengkapan) -->
+@include('partials.modal_cetak_universal', [
+    'kelas' => $kelas,
+    'sekolah' => $sekolah ?? $kelas->sekolah,
+    'mapelList' => $allMapel,
+    'kelasSiswaList' => $kelasSiswaList,
+    'tahun' => $tahun,
+    'semester' => $semester,
+])
+
 <!-- ========================================================================================= -->
-<!-- 5. JAVASCRIPT: LOGIKA REAL-TIME, KEYBOARD NAVIGATION, & MODAL                             -->
+<!-- 4. JAVASCRIPT: NAVIGASI, FILTER KELENGKAPAN, & KEYBOARD SHORTCUTS                         -->
 <!-- ========================================================================================= -->
 <script>
     let isDirty = false;
     window.isSubmitting = false;
 
-    // Aktifkan indikator perubahan
     function setDirty(dirty = true) {
         isDirty = dirty;
         const saveBar = document.getElementById('stickySaveBar');
-        if (saveBar) {
-            if (dirty) {
-                saveBar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
-                saveBar.classList.add('translate-y-0', 'opacity-100');
-            }
+        if (saveBar && dirty) {
+            saveBar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+            saveBar.classList.add('translate-y-0', 'opacity-100');
         }
     }
 
-    // Submit form yang sedang aktif
     function submitActiveForm() {
-        window.isSubmitting = true;
-        const formTerpadu = document.getElementById('formNilaiTerpadu');
-        const formSia = document.getElementById('formSiaPembiasaan');
-        if (formTerpadu) {
-            formTerpadu.submit();
-        } else if (formSia) {
-            formSia.submit();
+        const activeForm =
+            document.getElementById('formSingleComponent') ||
+            document.getElementById('formFormatifBulanan') ||
+            document.getElementById('formCatatanRapor') ||
+            document.getElementById('formSiaPembiasaan');
+
+        if (activeForm) {
+            window.isSubmitting = true;
+            activeForm.submit();
         }
     }
 
-    // Peringatan jika meninggalkan halaman sebelum menyimpan
+    ['formSingleComponent', 'formFormatifBulanan', 'formCatatanRapor', 'formSiaPembiasaan'].forEach(id => {
+        const formEl = document.getElementById(id);
+        if (formEl) {
+            formEl.addEventListener('submit', () => {
+                window.isSubmitting = true;
+            });
+        }
+    });
+
     window.addEventListener('beforeunload', function(e) {
         if (isDirty && !window.isSubmitting) {
             e.preventDefault();
@@ -1265,135 +1170,34 @@
         }
     });
 
-    // Perhitungan Nilai Rapor di sisi Client
-    function hitungNilaiRaporClient(formatif, sts, sas, bobotF = 40, bobotUts = 30, bobotUas = 30) {
-        let komponen = [];
-        if (formatif !== null && !isNaN(formatif) && formatif !== '') {
-            komponen.push({ nilai: parseFloat(formatif), bobot: bobotF });
-        }
-        if (sts !== null && !isNaN(sts) && sts !== '') {
-            komponen.push({ nilai: parseFloat(sts), bobot: bobotUts });
-        }
-        if (sas !== null && !isNaN(sas) && sas !== '') {
-            komponen.push({ nilai: parseFloat(sas), bobot: bobotUas });
-        }
-        if (komponen.length === 0) return null;
-
-        let totalBobot = komponen.reduce((sum, item) => sum + item.bobot, 0);
-        if (totalBobot <= 0) return null;
-
-        let subtotal = komponen.reduce((sum, item) => sum + (item.nilai * item.bobot), 0);
-        return Math.round((subtotal / totalBobot) * 10) / 10;
-    }
-
-    function hitungPredikatClient(nilai) {
-        if (nilai === null || isNaN(nilai)) return null;
-        if (nilai >= 90) return 'A';
-        if (nilai >= 80) return 'B';
-        if (nilai >= 70) return 'C';
-        return 'D';
-    }
-
-    // Update real-time 1 baris siswa saat STS atau SAS diketik
-    function recalculateRow(ksId, kkm, bobotF, bobotUts, bobotUas) {
+    function updateSingleComponentStatus(inputEl) {
         setDirty(true);
+        const kkm = parseFloat(inputEl.dataset.kkm || '70');
+        const targetId = inputEl.dataset.statusTarget;
+        const targetEl = targetId ? document.getElementById(targetId) : null;
+        const raw = inputEl.value.trim().replace(',', '.');
+        const val = (raw !== '' && !isNaN(raw)) ? parseFloat(raw) : null;
 
-        const formatifEl = document.getElementById('formatif_raw_' + ksId);
-        const stsEl = document.getElementById('input_sts_' + ksId);
-        const sasEl = document.getElementById('input_sas_' + ksId);
-        const raporValEl = document.getElementById('rapor_val_' + ksId);
-        const predikatBadgeEl = document.getElementById('predikat_badge_' + ksId);
-
-        const formatif = formatifEl && formatifEl.value !== '' ? parseFloat(formatifEl.value) : null;
-        const rawSts = stsEl ? stsEl.value.trim().replace(',', '.') : '';
-        const rawSas = sasEl ? sasEl.value.trim().replace(',', '.') : '';
-
-        const sts = (rawSts !== '' && !isNaN(rawSts)) ? parseFloat(rawSts) : null;
-        const sas = (rawSas !== '' && !isNaN(rawSas)) ? parseFloat(rawSas) : null;
-
-        // Beri warna merah pada input jika nilai di bawah KKM
-        if (stsEl) {
-            if (sts !== null && sts < kkm) {
-                stsEl.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-400');
-                stsEl.classList.remove('border-slate-300', 'bg-white');
-            } else {
-                stsEl.classList.remove('bg-rose-50', 'text-rose-700', 'border-rose-400');
-                stsEl.classList.add('border-slate-300', 'bg-white');
-            }
+        if (val !== null && val < kkm) {
+            inputEl.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-400');
+            inputEl.classList.remove('border-slate-300', 'bg-white');
+        } else {
+            inputEl.classList.remove('bg-rose-50', 'text-rose-700', 'border-rose-400');
+            inputEl.classList.add('border-slate-300', 'bg-white');
         }
 
-        if (sasEl) {
-            if (sas !== null && sas < kkm) {
-                sasEl.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-400');
-                sasEl.classList.remove('border-slate-300', 'bg-white');
-            } else {
-                sasEl.classList.remove('bg-rose-50', 'text-rose-700', 'border-rose-400');
-                sasEl.classList.add('border-slate-300', 'bg-white');
-            }
-        }
+        if (!targetEl) return;
 
-        const nilaiRapor = hitungNilaiRaporClient(formatif, sts, sas, bobotF, bobotUts, bobotUas);
-        const predikat = hitungPredikatClient(nilaiRapor);
-
-        if (raporValEl) {
-            if (nilaiRapor !== null) {
-                raporValEl.textContent = nilaiRapor.toFixed(1).replace('.0', '');
-                if (nilaiRapor < kkm) {
-                    raporValEl.className = 'font-mono font-black text-sm px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200';
-                } else {
-                    raporValEl.className = 'font-mono font-black text-sm px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200';
-                }
-            } else {
-                raporValEl.textContent = '–';
-                raporValEl.className = 'font-mono font-black text-sm text-slate-300';
-            }
-        }
-
-        if (predikatBadgeEl) {
-            if (predikat) {
-                predikatBadgeEl.textContent = predikat;
-                const badgeCls = {
-                    'A': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-                    'B': 'bg-blue-100 text-blue-800 border-blue-300',
-                    'C': 'bg-amber-100 text-amber-800 border-amber-300',
-                    'D': 'bg-rose-100 text-rose-800 border-rose-300'
-                };
-                predikatBadgeEl.className = 'inline-block px-2.5 py-0.5 rounded-md font-mono font-black text-xs border ' + (badgeCls[predikat] || 'bg-slate-100 text-slate-700');
-            } else {
-                predikatBadgeEl.textContent = '–';
-                predikatBadgeEl.className = 'text-slate-300 font-bold';
-            }
-        }
-
-        // Update atribut data-complete dan status badge kelengkapan pada baris
-        const rowEl = document.getElementById('row_student_' + ksId);
-        const badgeStatusEl = document.getElementById('badge_status_' + ksId);
-        const isComplete = (sts !== null && sas !== null);
-
-        if (rowEl) {
-            rowEl.dataset.complete = isComplete ? 'true' : 'false';
-        }
-
-        if (badgeStatusEl) {
-            if (isComplete) {
-                badgeStatusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Nilai STS & SAS sudah lengkap"><i class="fa-solid fa-circle-check text-[9px]"></i> Lengkap</span>';
-            } else if (sts === null && sas === null) {
-                badgeStatusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi STS dan SAS"><i class="fa-solid fa-clock text-[9px]"></i> Belum STS &amp; SAS</span>';
-            } else if (sts === null) {
-                badgeStatusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi STS"><i class="fa-solid fa-pen text-[9px]"></i> Perlu STS</span>';
-            } else {
-                badgeStatusEl.innerHTML = '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Belum mengisi SAS"><i class="fa-solid fa-pen text-[9px]"></i> Perlu SAS</span>';
-            }
-        }
-
-        updateGlobalCounters();
-
-        if (currentFilter !== 'semua') {
-            applyCurrentFilter();
+        if (val === null) {
+            targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-500 border border-slate-200">Belum Diisi</span>';
+        } else if (val >= kkm) {
+            targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check text-[10px]"></i> Tuntas</span>';
+        } else {
+            targetEl.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Belum Tuntas</span>';
         }
     }
 
-    // Manajemen Filter Kelengkapan (Semua / Belum Lengkap / Lengkap)
+    // Manajemen Filter Kelengkapan pada Lembar Nilai Rapor (Read-Only)
     let currentFilter = 'semua';
 
     function setFilterKelengkapan(mode) {
@@ -1402,7 +1206,6 @@
         const btnBelum = document.getElementById('btnFilterBelum');
         const btnLengkap = document.getElementById('btnFilterLengkap');
 
-        // Reset style tombol filter
         [btnSemua, btnBelum, btnLengkap].forEach(b => {
             if (!b) return;
             b.className = 'filter-pill-btn px-3 py-1.5 rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-white/60';
@@ -1442,123 +1245,18 @@
         }
     }
 
-    function updateGlobalCounters() {
-        const rows = document.querySelectorAll('.student-grade-row');
-        let lengkap = 0;
-        let belum = 0;
-        let stsCount = 0;
-        let sasCount = 0;
-
-        rows.forEach(row => {
-            const ksId = row.dataset.ksId;
-            const stsInput = document.getElementById('input_sts_' + ksId);
-            const sasInput = document.getElementById('input_sas_' + ksId);
-            if (stsInput && stsInput.value.trim() !== '') stsCount++;
-            if (sasInput && sasInput.value.trim() !== '') sasCount++;
-
-            if (row.dataset.complete === 'true') {
-                lengkap++;
-            } else {
-                belum++;
-            }
-        });
-
-        const badgeFilterBelum = document.getElementById('badgeFilterBelum');
-        const badgeFilterLengkap = document.getElementById('badgeFilterLengkap');
-        const textStatLengkap = document.getElementById('textStatLengkap');
-        const textStatBelumLengkap = document.getElementById('textStatBelumLengkap');
-        const labelBelumLengkap = document.getElementById('labelBelumLengkap');
-        const badgeSummary = document.getElementById('badgeSummaryKelengkapan');
-        const iconKelengkapanBox = document.getElementById('iconKelengkapanBox');
-        const iconKelengkapan = document.getElementById('iconKelengkapan');
-        const statStsEl = document.getElementById('statStsFilled');
-        const statSasEl = document.getElementById('statSasFilled');
-
-        if (statStsEl) statStsEl.textContent = stsCount;
-        if (statSasEl) statSasEl.textContent = sasCount;
-
-        if (badgeFilterBelum) badgeFilterBelum.textContent = belum;
-        if (badgeFilterLengkap) badgeFilterLengkap.textContent = lengkap;
-        if (textStatLengkap) textStatLengkap.textContent = lengkap + ' lengkap';
-        if (textStatBelumLengkap) textStatBelumLengkap.textContent = belum + ' belum lengkap';
-        if (labelBelumLengkap) {
-            labelBelumLengkap.textContent = belum > 0 ? (belum + ' Belum Lengkap') : 'Semua Lengkap';
-        }
-
-        if (badgeSummary) {
-            if (belum > 0) {
-                badgeSummary.className = 'px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-300';
-            } else {
-                badgeSummary.className = 'px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300';
-            }
-        }
-
-        if (iconKelengkapanBox && iconKelengkapan) {
-            if (belum > 0) {
-                iconKelengkapanBox.className = 'w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0 shadow-2xs font-bold';
-                iconKelengkapan.className = 'fa-solid fa-clipboard-question';
-            } else {
-                iconKelengkapanBox.className = 'w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base shrink-0 shadow-2xs font-bold';
-                iconKelengkapan.className = 'fa-solid fa-circle-check';
-            }
-        }
-    }
-
-    // Manajemen Mode Fokus Pengisian (Semua / Fokus STS / Fokus SAS)
-    let currentModeFokus = 'semua';
-
-    function setModeFokus(mode) {
-        currentModeFokus = mode;
-        const btnSemua = document.getElementById('btnFokusSemua');
-        const btnSts = document.getElementById('btnFokusSts');
-        const btnSas = document.getElementById('btnFokusSas');
-
-        [btnSemua, btnSts, btnSas].forEach(b => {
-            if (!b) return;
-            b.className = 'px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-white/60 font-bold';
-        });
-
-        const stsCols = document.querySelectorAll('.col-sts');
-        const sasCols = document.querySelectorAll('.col-sas');
-
-        if (mode === 'sts') {
-            if (btnSts) btnSts.className = 'px-2.5 py-1 rounded-lg transition-all shadow-xs bg-amber-500 text-slate-950 font-black border border-amber-400';
-            stsCols.forEach(el => el.style.display = '');
-            sasCols.forEach(el => el.style.display = 'none');
-            const firstInput = document.querySelector('.input-nilai-sts');
-            if (firstInput) {
-                firstInput.focus();
-                firstInput.select();
-            }
-        } else if (mode === 'sas') {
-            if (btnSas) btnSas.className = 'px-2.5 py-1 rounded-lg transition-all shadow-xs bg-blue-600 text-white font-black border border-blue-500';
-            stsCols.forEach(el => el.style.display = 'none');
-            sasCols.forEach(el => el.style.display = '');
-            const firstInput = document.querySelector('.input-nilai-sas');
-            if (firstInput) {
-                firstInput.focus();
-                firstInput.select();
-            }
-        } else {
-            if (btnSemua) btnSemua.className = 'px-2.5 py-1 rounded-lg transition-all shadow-xs bg-white text-slate-900 border border-slate-200 font-bold';
-            stsCols.forEach(el => el.style.display = '');
-            sasCols.forEach(el => el.style.display = '');
-        }
-    }
-
-    // Keyboard Navigation: Enter atau ↓ pindah ke baris berikutnya, ↑ ke baris sebelumnya
+    // Keyboard Navigation: Enter / ArrowDown pindah ke baris berikutnya, ArrowUp ke sebelumnya, Ctrl+S simpan
     document.addEventListener('keydown', function(e) {
         if (e.target && (e.target.classList.contains('input-nilai-sts') || e.target.classList.contains('input-nilai-sas'))) {
-            const isSts = e.target.classList.contains('input-nilai-sts');
+            const cls = e.target.classList.contains('input-nilai-sts') ? 'input-nilai-sts' : 'input-nilai-sas';
             const currentRow = parseInt(e.target.dataset.row);
-            const totalRows = document.querySelectorAll('.input-nilai-sts').length;
+            const totalRows = document.querySelectorAll('.' + cls).length;
 
             if (e.key === 'Enter' || e.key === 'ArrowDown') {
                 e.preventDefault();
                 const nextRow = currentRow + 1;
                 if (nextRow < totalRows) {
-                    const selector = isSts ? `.input-nilai-sts[data-row="${nextRow}"]` : `.input-nilai-sas[data-row="${nextRow}"]`;
-                    const targetEl = document.querySelector(selector);
+                    const targetEl = document.querySelector(`.${cls}[data-row="${nextRow}"]`);
                     if (targetEl) {
                         targetEl.focus();
                         targetEl.select();
@@ -1568,8 +1266,7 @@
                 e.preventDefault();
                 const prevRow = currentRow - 1;
                 if (prevRow >= 0) {
-                    const selector = isSts ? `.input-nilai-sts[data-row="${prevRow}"]` : `.input-nilai-sas[data-row="${prevRow}"]`;
-                    const targetEl = document.querySelector(selector);
+                    const targetEl = document.querySelector(`.${cls}[data-row="${prevRow}"]`);
                     if (targetEl) {
                         targetEl.focus();
                         targetEl.select();
@@ -1578,23 +1275,26 @@
             }
         }
 
-        // Shortcut Ctrl+S / Cmd+S untuk menyimpan perubahan
         if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
-            e.preventDefault();
-            submitActiveForm();
+            const hasActiveForm =
+                document.getElementById('formSingleComponent') ||
+                document.getElementById('formFormatifBulanan') ||
+                document.getElementById('formCatatanRapor') ||
+                document.getElementById('formSiaPembiasaan');
+            if (hasActiveForm) {
+                e.preventDefault();
+                submitActiveForm();
+            }
         }
     });
 
-    // Pilihan Cepat Pembiasaan: "Isi semua Baik" per kolom
     function isiSemuaBaik(pembiasaanId) {
-        const selects = document.querySelectorAll('.select-pembiasaan-' + pembiasaanId);
-        selects.forEach(sel => {
+        document.querySelectorAll('.select-pembiasaan-' + pembiasaanId).forEach(sel => {
             sel.value = 'Baik';
         });
         setDirty(true);
     }
 
-    // Pilihan Cepat Pembiasaan: Isi SEMUA Butir Sekelas dengan "Baik"
     function isiSemuaPembiasaanSekelasBaik() {
         document.querySelectorAll('select[class*="select-pembiasaan-"]').forEach(sel => {
             sel.value = 'Baik';
@@ -1602,117 +1302,12 @@
         setDirty(true);
     }
 
-    // Modal Catatan Guru
-    function openCatatanModal(ksId, studentName, mapelName) {
-        const modal = document.getElementById('modalCatatanGuru');
-        const modalKsId = document.getElementById('modalKsId');
-        const modalStudentInfo = document.getElementById('modalStudentInfo');
-        const textarea = document.getElementById('modalCatatanTextarea');
-        const previewSaran = document.getElementById('modalSaranDefaultPreview');
-
-        const hiddenInput = document.getElementById('hidden_catatan_' + ksId);
-        const saranDefaultInput = document.getElementById('saran_default_' + ksId);
-
-        if (modalKsId) modalKsId.value = ksId;
-        if (modalStudentInfo) modalStudentInfo.textContent = `Peserta Didik: ${studentName} • Mata Pelajaran: ${mapelName}`;
-        if (textarea) textarea.value = hiddenInput ? hiddenInput.value : '';
-        if (previewSaran) previewSaran.textContent = (saranDefaultInput && saranDefaultInput.value) ? saranDefaultInput.value : 'Belum ada saran otomatis yang dikonfigurasi.';
-
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeCatatanModal() {
-        const modal = document.getElementById('modalCatatanGuru');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    function terapkanSaranModal() {
-        const ksId = document.getElementById('modalKsId').value;
-        const saranDefaultInput = document.getElementById('saran_default_' + ksId);
-        const textarea = document.getElementById('modalCatatanTextarea');
-        if (saranDefaultInput && textarea) {
-            textarea.value = saranDefaultInput.value;
+    document.addEventListener('DOMContentLoaded', () => {
+        const focusedInput = document.querySelector('[autofocus]');
+        if (focusedInput) {
+            focusedInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            focusedInput.select();
         }
-    }
-
-    function simpanCatatanKeForm() {
-        const ksId = document.getElementById('modalKsId').value;
-        const textarea = document.getElementById('modalCatatanTextarea');
-        const hiddenInput = document.getElementById('hidden_catatan_' + ksId);
-        const btnCatatan = document.getElementById('btn_catatan_' + ksId);
-        const textCatatan = document.getElementById('text_catatan_' + ksId);
-        const iconCatatan = document.getElementById('icon_catatan_' + ksId);
-
-        if (hiddenInput && textarea) {
-            hiddenInput.value = textarea.value.trim();
-            setDirty(true);
-
-            // Update tampilan tombol catatan di baris siswa
-            const hasText = textarea.value.trim().length > 0;
-            if (textCatatan) textCatatan.textContent = hasText ? 'Lihat/Edit' : '+ Catatan';
-            if (iconCatatan) {
-                iconCatatan.className = hasText ? 'fa-solid fa-comment-check text-indigo-600' : 'fa-regular fa-comment-dots text-slate-400';
-            }
-            if (btnCatatan) {
-                if (hasText) {
-                    btnCatatan.classList.add('bg-indigo-50', 'border-indigo-200', 'text-indigo-700');
-                    btnCatatan.classList.remove('bg-slate-50', 'border-slate-200', 'text-slate-500');
-                } else {
-                    btnCatatan.classList.remove('bg-indigo-50', 'border-indigo-200', 'text-indigo-700');
-                    btnCatatan.classList.add('bg-slate-50', 'border-slate-200', 'text-slate-500');
-                }
-            }
-        }
-        closeCatatanModal();
-    }
-
-    function simpanCatatanAjaxDirect() {
-        const ksId = document.getElementById('modalKsId').value;
-        const textarea = document.getElementById('modalCatatanTextarea');
-        const catatanText = textarea ? textarea.value.trim() : '';
-        const btn = document.getElementById('btnSimpanCatatanAjax');
-        const mapelId = "{{ $mapel->id ?? 0 }}";
-        const kelasId = "{{ $kelas->id }}";
-        const csrfToken = "{{ csrf_token() }}";
-
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-        }
-
-        fetch(`{{ url('kelas') }}/${kelasId}/mapel/${mapelId}/nilai/simpan-catatan-ajax`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                kelas_siswa_id: ksId,
-                catatan: catatanText,
-                tahun: "{{ $tahun }}",
-                semester: "{{ $semester }}"
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Simpan Sekarang</span>';
-            }
-            if (data.success) {
-                simpanCatatanKeForm();
-            } else {
-                alert(data.message || 'Gagal menyimpan catatan');
-            }
-        })
-        .catch(err => {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>Simpan Sekarang</span>';
-            }
-            alert('Terjadi kesalahan jaringan saat menyimpan catatan.');
-        });
-    }
+    });
 </script>
 @endsection

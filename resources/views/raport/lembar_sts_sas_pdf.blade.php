@@ -3,14 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <title>Laporan Hasil Belajar {{ strtoupper($periode) }} - {{ $siswa->nama }}</title>
+    @php
+        $cfg = $printConfig ?? ($sekolah ? $sekolah->resolvePrintConfig() : [
+            'css_page_size' => '210mm 297mm',
+            'orientation' => 'portrait',
+            'css_margin' => '10mm 12mm',
+            'layout' => ['body_font' => '8pt'],
+        ]);
+    @endphp
     <style>
         @page {
-            size: 215mm 330mm portrait; /* Standar F4 */
-            margin: 10mm 15mm 12mm 15mm;
+            size: {{ $cfg['css_page_size'] }} {{ $cfg['orientation'] }};
+            margin: {{ $cfg['css_margin'] }};
         }
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 8.5pt;
+            font-size: {{ $cfg['layout']['body_font'] ?? '8.5pt' }};
             line-height: 1.25;
             color: #000;
         }

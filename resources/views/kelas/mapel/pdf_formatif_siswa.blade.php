@@ -5,8 +5,8 @@
     <title>Lembar Nilai Formatif - {{ $siswa->nama }} - {{ $mapel->nama }}</title>
     <style>
         @page {
-            size: 215mm 330mm; /* Standar F4 / Folio */
-            margin: 12mm 18mm 15mm 18mm;
+            size: {{ $printConfig['css_page_size'] ?? '210mm 297mm' }};
+            margin: {{ $printConfig['css_margin'] ?? '10mm 12mm 10mm 12mm' }};
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;

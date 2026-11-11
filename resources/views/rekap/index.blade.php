@@ -199,6 +199,10 @@
             <a id="btnPdfSekelas" href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center" title="Unduh PDF Raport Sekelas">
                 <i class="fa-solid fa-file-pdf mr-1.5"></i> PDF Sekelas
             </a>
+            @include('partials.dropdown_cetak_menu', [
+                'label' => 'Dialog Cetak A4/F4',
+                'buttonClass' => 'px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer',
+            ])
         </div>
     </div>
 
@@ -1466,6 +1470,11 @@
             });
         }
     </script>
+
+    @include('partials.modal_cetak_universal', [
+        'kelas' => $kelas,
+        'sekolah' => $sekolah ?? $kelas->sekolah,
+    ])
 </div>
 @endsection
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Kehadiran;
 use App\Models\Kelas;
+use App\Models\Sekolah;
 use App\Services\HitungNilaiService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -84,6 +85,13 @@ class RekapController extends Controller
                 ->keyBy('kelas_siswa_id');
         }
 
-        return view('rekap.cetak', compact('kelas', 'periode', 'sortBy', 'rekapData', 'tanggal', 'tanggalObj', 'kehadiranList'));
+        $sekolah = $kelas->sekolah ?? Sekolah::first() ?? new Sekolah;
+        $printConfig = $sekolah->resolvePrintConfig(
+            $request->input('paper'),
+            $request->input('orientation') ?: 'landscape',
+            $request->input('margin') ?: 'sempit'
+        );
+
+        return view('rekap.cetak', compact('kelas', 'periode', 'sortBy', 'rekapData', 'tanggal', 'tanggalObj', 'kehadiranList', 'printConfig'));
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AbsensiBulananController;
 use App\Http\Controllers\AbsensiHarianController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CetakController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\KenaikanKelasController;
@@ -141,6 +142,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/mapel/{mapel}/siswa/{kelasSiswa}/cetak-formatif-pdf', [NilaiMapelController::class, 'cetakFormatifSiswaPdf'])->name('kelas.mapel.nilai.cetak-formatif-siswa-pdf');
         Route::get('/mapel/{mapel}/cetak-uts-pdf', [NilaiMapelController::class, 'cetakUtsPdf'])->name('kelas.mapel.nilai.cetak-uts-pdf');
         Route::get('/mapel/{mapel}/cetak-uas-pdf', [NilaiMapelController::class, 'cetakUasPdf'])->name('kelas.mapel.nilai.cetak-uas-pdf');
+        Route::get('/mapel/{mapel}/cetak-rapor-pdf', [NilaiMapelController::class, 'cetakRaporMapelPdf'])->name('kelas.mapel.nilai.cetak-rapor-pdf');
 
         // Rincian Penilaian Harian di dalam Nilai Formatif Bulanan (Fitur Terpadu)
         Route::get('/mapel/{mapel}/formatif-harian', [NilaiFormatifHarianController::class, 'index'])->name('kelas.mapel.formatif-harian');
@@ -149,6 +151,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('/mapel/{mapel}/formatif-harian/penilaian/{penilaian}', [NilaiFormatifHarianController::class, 'hapusPenilaian'])->name('kelas.mapel.formatif-harian.hapus-penilaian');
         Route::post('/mapel/{mapel}/formatif-harian/simpan', [NilaiFormatifHarianController::class, 'simpan'])->name('kelas.mapel.formatif-harian.simpan');
         Route::get('/mapel/{mapel}/formatif-harian/cetak', [NilaiFormatifHarianController::class, 'cetak'])->name('kelas.mapel.formatif-harian.cetak');
+
+        // Pusat Cetak Terpadu (Cek Kelengkapan & Cetak Kolektif Semua Mapel / Filter Mapel / Cakupan Kelas & Sekolah)
+        Route::get('/cetak/cek-kelengkapan', [CetakController::class, 'cekKelengkapan'])->name('kelas.cetak.cek-kelengkapan');
+        Route::get('/cetak/dokumen', [CetakController::class, 'cetakDokumen'])->name('kelas.cetak.dokumen');
     });
 
     // HANYA ADMIN YANG DAPAT MENGINPUT & MENGUBAH DATA MASTER / PENGGUNA

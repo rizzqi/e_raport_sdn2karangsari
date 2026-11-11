@@ -6,17 +6,27 @@
     <!-- Tailwind CSS (CDN / local) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    @php
+        $cfg = $printConfig ?? ($sekolah ? $sekolah->resolvePrintConfig() : [
+            'paper' => 'a4',
+            'orientation' => 'portrait',
+            'margin' => 'normal',
+            'css_page_size' => '210mm 297mm',
+            'css_margin' => '10mm 12mm',
+            'layout' => ['body_font' => '8pt', 'css_max_width' => '210mm'],
+        ]);
+    @endphp
     <style>
         @page {
-            size: 215mm 330mm portrait; /* Standar F4 */
-            margin: 10mm 15mm 12mm 15mm;
+            size: {{ $cfg['css_page_size'] }} {{ $cfg['orientation'] }};
+            margin: {{ $cfg['css_margin'] }};
         }
         @media print {
             body {
                 background: white !important;
                 color: #000 !important;
                 font-family: Arial, Helvetica, sans-serif !important;
-                font-size: 8.5pt !important;
+                font-size: {{ $cfg['layout']['body_font'] ?? '8.5pt' }} !important;
                 padding: 0 !important;
                 margin: 0 !important;
             }
@@ -149,14 +159,14 @@
 
                 @if(!empty($isSingleSiswa))
                     <!-- Unduh PDF Siswa -->
-                    <a href="{{ route('kelas.lembar-sts-sas.pdf-siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $kelasSiswa->id, 'periode' => $periode, 'tanggal' => $tanggal]) }}"
+                    <a href="{{ route('kelas.lembar-sts-sas.pdf-siswa', ['kelas' => $kelas->id, 'kelasSiswa' => $kelasSiswa->id, 'periode' => $periode, 'tanggal' => $tanggal, 'paper' => $cfg['paper'], 'orientation' => $cfg['orientation'], 'margin' => $cfg['margin']]) }}"
                        class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center gap-1.5">
                         <i class="fa-solid fa-file-pdf"></i>
                         <span>Unduh PDF</span>
                     </a>
                 @else
                     <!-- Unduh PDF Sekelas -->
-                    <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggal]) }}"
+                    <a href="{{ route('kelas.lembar-sts-sas.pdf-sekelas', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggal, 'paper' => $cfg['paper'], 'orientation' => $cfg['orientation'], 'margin' => $cfg['margin']]) }}"
                        class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center gap-1.5">
                         <i class="fa-solid fa-file-pdf"></i>
                         <span>Unduh PDF Sekelas</span>
@@ -166,7 +176,7 @@
                 <!-- Cetak Langsung (Ctrl+P) -->
                 <button onclick="window.print()" class="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center gap-1.5">
                     <i class="fa-solid fa-print text-amber-400"></i>
-                    <span>{{ !empty($isSingleSiswa) ? 'Cetak Lembar Ini (F4)' : 'Cetak Semua (Ctrl+P)' }}</span>
+                    <span>{{ !empty($isSingleSiswa) ? 'Cetak Lembar Ini (' . strtoupper($cfg['paper']) . ')' : 'Cetak Semua (Ctrl+P)' }}</span>
                 </button>
             </div>
         </div>
