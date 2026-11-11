@@ -6,8 +6,8 @@
 <style>
     @media print {
         @page {
-            size: 330mm 215mm landscape;
-            margin: 6mm 8mm;
+            size: {{ $printConfig['css_page_size'] ?? '297mm 210mm' }};
+            margin: {{ $printConfig['css_margin'] ?? '6mm 8mm 6mm 8mm' }};
         }
         body {
             -webkit-print-color-adjust: exact !important;
@@ -96,6 +96,16 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <!-- Switcher A4 / F4 Cepat -->
+            <div class="bg-slate-100 p-1 rounded-xl flex items-center space-x-1 text-xs font-bold">
+                @foreach(['a4' => 'A4', 'f4' => 'F4'] as $pKey => $pLbl)
+                    <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggal, 'paper' => $pKey, 'orientation' => $printConfig['orientation'] ?? 'landscape', 'margin' => $printConfig['margin'] ?? 'sempit']) }}"
+                       class="px-2.5 py-1 rounded-lg transition {{ ($printConfig['paper'] ?? 'a4') === $pKey ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
+                        {{ $pLbl }}
+                    </a>
+                @endforeach
+            </div>
+
             <!-- Ganti Tanggal Rekap -->
             <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl text-xs">
                 <i class="fa-regular fa-calendar-days text-slate-500"></i>

@@ -5,8 +5,8 @@
     <title>Rekap Nilai Formatif - {{ $mapel->nama }} ({{ $namaBulan }} {{ $tahun }})</title>
     <style>
         @page {
-            size: 215mm 330mm; /* Standard F4 / Folio */
-            margin: 12mm 15mm 15mm 15mm;
+            size: {{ $printConfig['css_page_size'] ?? '210mm 297mm' }};
+            margin: {{ $printConfig['css_margin'] ?? '10mm 12mm 10mm 12mm' }};
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;

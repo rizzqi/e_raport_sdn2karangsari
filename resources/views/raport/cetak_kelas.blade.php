@@ -3,11 +3,22 @@
 @section('title', 'Cetak Raport Sekelas - ' . $kelas->nama)
 
 @section('content')
+@php
+    $cfg = $printConfig ?? ($sekolah ? $sekolah->resolvePrintConfig() : [
+        'paper' => 'a4',
+        'paper_label' => 'A4 (210 × 297 mm)',
+        'orientation' => 'portrait',
+        'margin' => 'normal',
+        'css_page_size' => '210mm 297mm',
+        'css_margin' => '10mm 12mm',
+        'layout' => ['css_max_width' => '210mm', 'is_compact' => true],
+    ]);
+@endphp
 <style>
     @media print {
         @page {
-            size: 215mm 330mm portrait;
-            margin: 10mm 15mm;
+            size: {{ $cfg['css_page_size'] }} {{ $cfg['orientation'] }};
+            margin: {{ $cfg['css_margin'] }};
         }
         body {
             -webkit-print-color-adjust: exact;
@@ -68,9 +79,23 @@
             <span class="inline-flex items-center px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-semibold">
                 <i class="fa-solid fa-users mr-1.5 text-emerald-600"></i> {{ count($laporanSiswa) }} Siswa
             </span>
-            <span class="hidden lg:inline-flex items-center px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-xs font-semibold">
-                <i class="fa-solid fa-ruler-combined mr-1 text-amber-600"></i> Format F4 (215 × 330 mm)
-            </span>
+            <form method="GET" action="{{ route('raport.cetak.kelas', $kelas->id) }}" class="flex flex-wrap items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded-xl text-[11px]">
+                <input type="hidden" name="periode" value="{{ $periode }}">
+                <input type="hidden" name="tanggal" value="{{ $tanggalObj->format('Y-m-d') }}">
+                <select name="paper" onchange="this.form.submit()" class="bg-white border border-slate-300 rounded-lg px-2 py-0.5 font-bold text-slate-800" title="Ukuran Kertas">
+                    <option value="a4" {{ $cfg['paper'] === 'a4' ? 'selected' : '' }}>A4 (210 × 297 mm)</option>
+                    <option value="f4" {{ $cfg['paper'] === 'f4' ? 'selected' : '' }}>Format F4 (215 × 330 mm)</option>
+                </select>
+                <select name="orientation" onchange="this.form.submit()" class="bg-white border border-slate-300 rounded-lg px-2 py-0.5 font-semibold text-slate-700" title="Orientasi Kertas">
+                    <option value="portrait" {{ $cfg['orientation'] === 'portrait' ? 'selected' : '' }}>Portrait</option>
+                    <option value="landscape" {{ $cfg['orientation'] === 'landscape' ? 'selected' : '' }}>Landscape</option>
+                </select>
+                <select name="margin" onchange="this.form.submit()" class="bg-white border border-slate-300 rounded-lg px-2 py-0.5 font-semibold text-slate-700" title="Margin Cetak">
+                    <option value="sempit" {{ $cfg['margin'] === 'sempit' ? 'selected' : '' }}>Sempit</option>
+                    <option value="normal" {{ $cfg['margin'] === 'normal' ? 'selected' : '' }}>Normal</option>
+                    <option value="lebar" {{ $cfg['margin'] === 'lebar' ? 'selected' : '' }}>Lebar</option>
+                </select>
+            </form>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -104,7 +129,7 @@
                     class="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
                 <i class="fa-solid fa-print mr-1.5 text-amber-400"></i> Cetak Semua (Ctrl+P)
             </button>
-            <a id="btnDownloadKelasPdf" href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
+            <a id="btnDownloadKelasPdf" href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d'), 'paper' => $cfg['paper'], 'orientation' => $cfg['orientation'], 'margin' => $cfg['margin']]) }}"
                class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center">
                 <i class="fa-solid fa-file-pdf mr-1.5"></i> Unduh PDF Sekelas
             </a>
@@ -235,7 +260,7 @@
                                 <th class="border border-slate-900 py-2 px-2 w-14">KKM</th>
                                 <th class="border border-slate-900 py-2 px-2 w-20">Nilai Rapor</th>
                                 <th class="border border-slate-900 py-2 px-2 w-14">Predikat</th>
-                                <th class="border border-slate-900 py-2 px-3 text-left">Capaian Kompetensi</th>
+                                <th class="border border-slate-900 py-2 px-3 text-left">Catatan Guru &amp; Capaian Kompetensi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -251,7 +276,14 @@
                                         {{ $b['predikat'] }}
                                     </td>
                                     <td class="border border-slate-900 py-2 px-3 text-xs leading-relaxed text-justify align-top">
-                                        {{ $b['capaian_kompetensi'] }}
+                                        @if(!empty($b['catatan_guru']))
+                                            <div class="font-semibold text-slate-900"><span class="font-bold">Catatan Guru:</span> {{ $b['catatan_guru'] }}</div>
+                                            @if(!empty($b['auto_cp']) && $b['auto_cp'] !== 'Belum ada penilaian capaian pembelajaran')
+                                                <div class="text-slate-600 mt-0.5">{{ $b['auto_cp'] }}</div>
+                                            @endif
+                                        @else
+                                            {{ $b['capaian_kompetensi'] }}
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

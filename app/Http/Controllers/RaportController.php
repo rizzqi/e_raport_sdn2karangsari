@@ -29,6 +29,32 @@ class RaportController extends Controller
     }
 
     /**
+     * Selesaikan konfigurasi cetak (kertas A4/F4, orientasi, dan margin) dengan fallback ke pengaturan sekolah.
+     *
+     * @return array<string, mixed>
+     */
+    protected function resolvePrintConfig(?Sekolah $sekolah, Request $request): array
+    {
+        $targetSekolah = $sekolah ?? new Sekolah;
+
+        return $targetSekolah->resolvePrintConfig(
+            $request->input('paper'),
+            $request->input('orientation'),
+            $request->input('margin')
+        );
+    }
+
+    /**
+     * Ambil filter mapel opsional dari request jika ada.
+     */
+    protected function resolveMapelFilter(Request $request): ?int
+    {
+        $mapelId = $request->input('mapel_id');
+
+        return is_numeric($mapelId) && (int) $mapelId > 0 ? (int) $mapelId : null;
+    }
+
+    /**
      * Dapatkan objek Carbon tanggal cetak raport berdasarkan input request atau pengaturan kelas.
      */
     protected function resolveTanggalRaport(Kelas $kelas, string $periode, Request $request): Carbon
@@ -99,11 +125,13 @@ class RaportController extends Controller
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $siswa = $kelasSiswa->siswa;
         $tahun = $kelas->tahunAjaran;
+        $printConfig = $this->resolvePrintConfig($sekolah, $request);
+        $filterMapelId = $this->resolveMapelFilter($request);
 
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
         $tanggal = $tanggalObj->format('Y-m-d');
 
-        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode);
+        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode, null, null, null, $filterMapelId);
         $pembiasaanList = Pembiasaan::aktif()->get();
         $nilaiPemList = NilaiPembiasaan::where('kelas_siswa_id', $kelasSiswa->id)
             ->where('periode', $periode)
@@ -131,7 +159,9 @@ class RaportController extends Controller
             'hasilNilai',
             'pembiasaanList',
             'nilaiPemList',
-            'kehadiran'
+            'kehadiran',
+            'printConfig',
+            'filterMapelId'
         ));
     }
 
@@ -202,6 +232,8 @@ class RaportController extends Controller
         $periode = $request->input('periode', 'sts');
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $tahun = $kelas->tahunAjaran;
+        $printConfig = $this->resolvePrintConfig($sekolah, $request);
+        $filterMapelId = $this->resolveMapelFilter($request);
 
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
         $tanggal = $tanggalObj->format('Y-m-d');
@@ -230,7 +262,7 @@ class RaportController extends Controller
             $laporanSiswa[] = [
                 'kelasSiswa' => $ks,
                 'siswa' => $ks->siswa,
-                'hasilNilai' => $this->hitungService->hitungNilaiSiswa($ks, $periode),
+                'hasilNilai' => $this->hitungService->hitungNilaiSiswa($ks, $periode, null, null, null, $filterMapelId),
                 'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
                 'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
             ];
@@ -244,7 +276,9 @@ class RaportController extends Controller
             'tanggal',
             'tanggalObj',
             'pembiasaanList',
-            'laporanSiswa'
+            'laporanSiswa',
+            'printConfig',
+            'filterMapelId'
         ));
     }
 
@@ -258,6 +292,8 @@ class RaportController extends Controller
         $periode = $request->input('periode', 'sts');
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $tahun = $kelas->tahunAjaran;
+        $printConfig = $this->resolvePrintConfig($sekolah, $request);
+        $filterMapelId = $this->resolveMapelFilter($request);
 
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
         $tanggal = $tanggalObj->format('Y-m-d');
@@ -286,7 +322,7 @@ class RaportController extends Controller
             $laporanSiswa[] = [
                 'kelasSiswa' => $ks,
                 'siswa' => $ks->siswa,
-                'hasilNilai' => $this->hitungService->hitungNilaiSiswa($ks, $periode),
+                'hasilNilai' => $this->hitungService->hitungNilaiSiswa($ks, $periode, null, null, null, $filterMapelId),
                 'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
                 'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
             ];
@@ -309,8 +345,10 @@ class RaportController extends Controller
             'tanggal',
             'tanggalObj',
             'pembiasaanList',
-            'laporanSiswa'
-        ))->setPaper([0, 0, 609.45, 935.43], 'portrait');
+            'laporanSiswa',
+            'printConfig',
+            'filterMapelId'
+        ))->setPaper($printConfig['dompdf_paper'], $printConfig['orientation']);
 
         $fileName = 'Raport_Kelas_'.str_replace(' ', '_', $kelas->nama).'_'.strtoupper($periode).'.pdf';
 
@@ -329,11 +367,13 @@ class RaportController extends Controller
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $siswa = $kelasSiswa->siswa;
         $tahun = $kelas->tahunAjaran;
+        $printConfig = $this->resolvePrintConfig($sekolah, $request);
+        $filterMapelId = $this->resolveMapelFilter($request);
 
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
         $tanggal = $tanggalObj->format('Y-m-d');
 
-        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode);
+        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode, null, null, null, $filterMapelId);
         $pembiasaanList = Pembiasaan::aktif()->get();
         $nilaiPemList = NilaiPembiasaan::where('kelas_siswa_id', $kelasSiswa->id)
             ->where('periode', $periode)
@@ -365,8 +405,10 @@ class RaportController extends Controller
             'hasilNilai',
             'pembiasaanList',
             'nilaiPemList',
-            'kehadiran'
-        ))->setPaper([0, 0, 609.45, 935.43], 'portrait');
+            'kehadiran',
+            'printConfig',
+            'filterMapelId'
+        ))->setPaper($printConfig['dompdf_paper'], $printConfig['orientation']);
 
         $fileName = 'Raport_'.str_replace(' ', '_', $siswa->nama).'_'.strtoupper($periode).'.pdf';
 
@@ -488,11 +530,13 @@ class RaportController extends Controller
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $siswa = $kelasSiswa->siswa;
         $tahun = $kelas->tahunAjaran;
+        $printConfig = $this->resolvePrintConfig($sekolah, $request);
+        $filterMapelId = $this->resolveMapelFilter($request);
 
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
         $tanggal = $tanggalObj->format('Y-m-d');
 
-        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode);
+        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode, null, null, null, $filterMapelId);
         $pembiasaanList = Pembiasaan::aktif()->orderBy('urutan')->get();
         $nilaiPemList = NilaiPembiasaan::where('kelas_siswa_id', $kelasSiswa->id)
             ->where('periode', $periode)
@@ -543,7 +587,9 @@ class RaportController extends Controller
             'pembiasaanList',
             'laporanSiswa',
             'isSingleSiswa',
-            'kelasSiswa'
+            'kelasSiswa',
+            'printConfig',
+            'filterMapelId'
         ));
     }
 
@@ -568,11 +614,13 @@ class RaportController extends Controller
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $siswa = $kelasSiswa->siswa;
         $tahun = $kelas->tahunAjaran;
+        $printConfig = $this->resolvePrintConfig($sekolah, $request);
+        $filterMapelId = $this->resolveMapelFilter($request);
 
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
         $tanggal = $tanggalObj->format('Y-m-d');
 
-        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode);
+        $hasilNilai = $this->hitungService->hitungNilaiSiswa($kelasSiswa, $periode, null, null, null, $filterMapelId);
         $pembiasaanList = Pembiasaan::aktif()->orderBy('urutan')->get();
         $nilaiPemList = NilaiPembiasaan::where('kelas_siswa_id', $kelasSiswa->id)
             ->where('periode', $periode)
@@ -613,8 +661,10 @@ class RaportController extends Controller
             'rataNilai',
             'pembiasaanList',
             'nilaiPemList',
-            'kehadiran'
-        ))->setPaper([0, 0, 609.45, 935.43], 'portrait');
+            'kehadiran',
+            'printConfig',
+            'filterMapelId'
+        ))->setPaper($printConfig['dompdf_paper'], $printConfig['orientation']);
 
         $fileName = 'Lembar_'.strtoupper($periode).'_'.str_replace(' ', '_', $siswa->nama).'.pdf';
 
@@ -631,6 +681,8 @@ class RaportController extends Controller
         $periode = $request->input('periode', 'sts');
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $tahun = $kelas->tahunAjaran;
+        $printConfig = $this->resolvePrintConfig($sekolah, $request);
+        $filterMapelId = $this->resolveMapelFilter($request);
 
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
         $tanggal = $tanggalObj->format('Y-m-d');
@@ -656,7 +708,7 @@ class RaportController extends Controller
 
         $laporanSiswa = [];
         foreach ($kelasSiswaList as $ks) {
-            $hasilNilai = $this->hitungService->hitungNilaiSiswa($ks, $periode);
+            $hasilNilai = $this->hitungService->hitungNilaiSiswa($ks, $periode, null, null, null, $filterMapelId);
             $totalNilai = 0;
             $countNilai = 0;
             foreach ($hasilNilai['baris'] as $b) {
@@ -691,8 +743,10 @@ class RaportController extends Controller
             'tanggal',
             'tanggalObj',
             'pembiasaanList',
-            'laporanSiswa'
-        ))->setPaper([0, 0, 609.45, 935.43], 'portrait');
+            'laporanSiswa',
+            'printConfig',
+            'filterMapelId'
+        ))->setPaper($printConfig['dompdf_paper'], $printConfig['orientation']);
 
         $fileName = 'Lembar_'.strtoupper($periode).'_Kelas_'.str_replace(' ', '_', $kelas->nama).'.pdf';
 
@@ -709,6 +763,8 @@ class RaportController extends Controller
         $periode = $request->input('periode', 'sts');
         $sekolah = $kelas->sekolah ?? Sekolah::first();
         $tahun = $kelas->tahunAjaran;
+        $printConfig = $this->resolvePrintConfig($sekolah, $request);
+        $filterMapelId = $this->resolveMapelFilter($request);
 
         $tanggalObj = $this->resolveTanggalRaport($kelas, $periode, $request);
         $tanggal = $tanggalObj->format('Y-m-d');
@@ -734,7 +790,7 @@ class RaportController extends Controller
 
         $laporanSiswa = [];
         foreach ($kelasSiswaList as $ks) {
-            $hasilNilai = $this->hitungService->hitungNilaiSiswa($ks, $periode);
+            $hasilNilai = $this->hitungService->hitungNilaiSiswa($ks, $periode, null, null, null, $filterMapelId);
             $totalNilai = 0;
             $countNilai = 0;
             foreach ($hasilNilai['baris'] as $b) {
@@ -769,7 +825,9 @@ class RaportController extends Controller
             'tanggal',
             'tanggalObj',
             'pembiasaanList',
-            'laporanSiswa'
+            'laporanSiswa',
+            'printConfig',
+            'filterMapelId'
         ));
     }
 }

@@ -5,8 +5,8 @@
     <title>Daftar Nilai SAS (UAS) - {{ $mapel->nama }} Kelas {{ $kelas->nama }}</title>
     <style>
         @page {
-            size: 215mm 330mm; /* Standard F4 / Folio */
-            margin: 12mm 15mm 15mm 15mm;
+            size: {{ $printConfig['css_page_size'] ?? '210mm 297mm' }};
+            margin: {{ $printConfig['css_margin'] ?? '10mm 12mm 10mm 12mm' }};
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -149,7 +149,7 @@
 
     <!-- JUDUL DOKUMEN -->
     <div class="title-block">
-        <h1>DAFTAR NILAI SUMATIF AKHIR SEMESTER (SAS / UAS)</h1>
+        <h1>DAFTAR NILAI SUMATIF AKHIR SEMESTER (SAS)</h1>
         <p>SEMESTER {{ strtoupper($semester) }} &bull; TAHUN PELAJARAN {{ $kelas->tahunAjaran->tahun ?? $tahun }}</p>
     </div>
 
@@ -190,7 +190,7 @@
                 <th style="width: 48%; text-align: left;">Nama Peserta Didik</th>
                 <th style="width: 7%;">L/P</th>
                 <th style="width: 12%;">Nilai SAS</th>
-                <th style="width: 13%;">Ketuntasan</th>
+                <th style="width: 13%;">Ketuntasan SAS</th>
             </tr>
         </thead>
         <tbody>

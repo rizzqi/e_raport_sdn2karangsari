@@ -171,7 +171,7 @@ class NilaiFormatifHarianTest extends TestCase
         $this->assertNotNull($bulanan);
         $this->assertEquals(85.0, (float) $bulanan->nilai);
 
-        // 3. Verifikasi otomatis sinkron ke NilaiRaporMapel (semester)
+        // 3. Verifikasi otomatis sinkron ke NilaiRaporMapel (rata_formatif terisi, nilai_rapor & predikat tetap null sebelum STS & SAS lengkap)
         $rapor = NilaiRaporMapel::where('kelas_siswa_id', $ks->id)
             ->where('mapel_id', $mapel->id)
             ->where('tahun', 2026)
@@ -180,7 +180,25 @@ class NilaiFormatifHarianTest extends TestCase
 
         $this->assertNotNull($rapor);
         $this->assertEquals(85.0, (float) $rapor->rata_formatif);
-        $this->assertNotNull($rapor->nilai_rapor);
+        $this->assertNull($rapor->nilai_rapor);
+        $this->assertNull($rapor->predikat);
+
+        // 4. Lengkapi STS (80) & SAS (90) melalui form terpisah -> otomatis terhitung Nilai Rapor & Predikat
+        $this->actingAs($admin)->post(route('kelas.mapel.nilai.uts', ['kelas' => $kelas->id, 'mapel' => $mapel->id]), [
+            'tahun' => 2026,
+            'semester' => 'ganjil',
+            'sts' => [$ks->id => 80],
+        ])->assertSessionHas('success');
+
+        $this->actingAs($admin)->post(route('kelas.mapel.nilai.uas', ['kelas' => $kelas->id, 'mapel' => $mapel->id]), [
+            'tahun' => 2026,
+            'semester' => 'ganjil',
+            'sas' => [$ks->id => 90],
+        ])->assertSessionHas('success');
+
+        $rapor->refresh();
+        $this->assertEquals(85.0, (float) $rapor->nilai_rapor);
+        $this->assertEquals('B', $rapor->predikat);
     }
 
     public function test_cetak_lembar_penilaian_harian_berhasil(): void

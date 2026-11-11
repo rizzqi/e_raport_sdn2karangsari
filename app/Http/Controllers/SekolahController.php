@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sekolah;
+use App\Services\HitungNilaiService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -53,6 +54,9 @@ class SekolahController extends Controller
             'persen_kehadiran_minimal' => 'nullable|integer|min:1|max:100',
             'batas_alpa_maksimal' => 'nullable|integer|min:0|max:50',
             'batas_izin_maksimal' => 'nullable|integer|min:0|max:50',
+            'default_paper_size' => 'nullable|in:a4,f4',
+            'default_paper_orientation' => 'nullable|in:portrait,landscape',
+            'default_margin_preset' => 'nullable|in:sempit,normal,lebar',
         ]);
 
         $sekolah = Sekolah::first();
@@ -60,10 +64,29 @@ class SekolahController extends Controller
             $sekolah = new Sekolah;
         }
 
+        if ($request->hasAny(['bobot_formatif', 'bobot_uts', 'bobot_uas'])) {
+            $bFmt = $request->filled('bobot_formatif') ? (int) $request->input('bobot_formatif') : $sekolah->getBobotFormatif();
+            $bUts = $request->filled('bobot_uts') ? (int) $request->input('bobot_uts') : $sekolah->getBobotUts();
+            $bUas = $request->filled('bobot_uas') ? (int) $request->input('bobot_uas') : $sekolah->getBobotUas();
+            $totalBobot = $bFmt + $bUts + $bUas;
+            if ($totalBobot !== 100) {
+                throw ValidationException::withMessages([
+                    'bobot_total' => "Total bobot Formatif, STS, dan SAS harus tepat 100% (saat ini {$totalBobot}%).",
+                ]);
+            }
+        }
+
+        $oldBobot = [
+            $sekolah->getBobotFormatif(),
+            $sekolah->getBobotUts(),
+            $sekolah->getBobotUas(),
+        ];
+
         $data = $request->only([
             'nama', 'pemda', 'dinas', 'kota', 'alamat', 'kontak', 'kepsek', 'nip',
             'bobot_formatif', 'bobot_uts', 'bobot_uas',
             'hari_efektif_semester', 'persen_kehadiran_minimal', 'batas_alpa_maksimal', 'batas_izin_maksimal',
+            'default_paper_size', 'default_paper_orientation', 'default_margin_preset',
         ]);
 
         // Hapus logo jika diminta
@@ -138,7 +161,16 @@ class SekolahController extends Controller
 
         $sekolah->fill($data)->save();
 
-        return redirect()->route('sekolah.edit')->with('success', 'Identitas dan Kop Sekolah berhasil diperbarui.');
+        $newBobot = [
+            $sekolah->getBobotFormatif(),
+            $sekolah->getBobotUts(),
+            $sekolah->getBobotUas(),
+        ];
+        if ($oldBobot !== $newBobot) {
+            HitungNilaiService::sinkronkanBobotSekolah($sekolah);
+        }
+
+        return redirect()->route('sekolah.edit')->with('success', 'Identitas, Kop Sekolah, dan Pengaturan Bobot berhasil diperbarui.');
     }
 
     /**

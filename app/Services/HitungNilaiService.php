@@ -34,6 +34,7 @@ class HitungNilaiService
         ?Collection $preloadedNilai = null,
         ?Collection $preloadedRaporMapel = null,
         ?Collection $preloadedKehadiran = null,
+        ?int $filterMapelId = null,
     ): array {
         $kelas = $kelasSiswa->kelas;
         if ($kelas && ! $kelas->relationLoaded('mapelKkm')) {
@@ -45,6 +46,9 @@ class HitungNilaiService
         $semesterAktif = strtolower($tahunAjaran ? ($tahunAjaran->semester ?? 'ganjil') : 'ganjil');
 
         $mapels = $kelas ? $kelas->mataPelajaran() : MataPelajaran::aktif()->get();
+        if ($filterMapelId !== null) {
+            $mapels = $mapels->where('id', $filterMapelId)->values();
+        }
 
         // Gunakan data pre-loaded jika tersedia (optimasi N+1), jika tidak query sendiri
         if ($preloadedNilai !== null) {
@@ -151,33 +155,22 @@ class HitungNilaiService
                 }
             }
 
-            // 4. Hitung Nilai Katrol Rapor (Bobot Proporsional: Formatif 40% + STS 30% + SAS 30%)
-            $komponenKatrol = [];
-            if ($valFormatif !== null) {
-                $komponenKatrol[] = ['nilai' => (float) $valFormatif, 'bobot' => $bobotFormatif];
-            }
-            if ($valUts !== null) {
-                $komponenKatrol[] = ['nilai' => (float) $valUts, 'bobot' => $bobotUts];
-            }
-            if ($valUas !== null) {
-                $komponenKatrol[] = ['nilai' => (float) $valUas, 'bobot' => $bobotUas];
-            }
-
-            $nilaiKatrol = null;
-            if (! empty($komponenKatrol)) {
-                $subtotal = 0;
-                $totBobot = 0;
-                foreach ($komponenKatrol as $k) {
-                    $subtotal += ($k['nilai'] * $k['bobot']);
-                    $totBobot += $k['bobot'];
-                }
-                $nilaiKatrol = $totBobot > 0 ? round($subtotal / $totBobot, 1) : null;
-            }
+            // 4. Hitung Nilai Katrol Rapor sesuai bobot dinamis sekolah (wajib komponen lengkap)
+            $nilaiKatrol = self::hitungNilaiRaporKomponen(
+                $valFormatif !== null ? (float) $valFormatif : null,
+                $valUts !== null ? (float) $valUts : null,
+                $valUas !== null ? (float) $valUas : null,
+                $bobotFormatif,
+                $bobotUts,
+                $bobotUas,
+                true
+            );
 
             // Tentukan Nilai Akhir Berdasarkan Periode Laporan
             $nilaiMapelAkhir = null;
             $predikat = null;
             $catatan = '';
+            $rawCatatanGuru = trim((string) ($recRapor?->catatan ?? ''));
 
             if ($periode === 'sts') {
                 // Periode STS (Tengah Semester): Prioritaskan Nilai UTS / STS murni
@@ -189,29 +182,27 @@ class HitungNilaiService
                     $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
                 }
                 $predikat = $nilaiMapelAkhir !== null ? NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir) : null;
-                $catatan = '';
+                $catatan = $rawCatatanGuru;
             } else {
                 // Periode SAS / Semester Penuh / Lembar Rapor:
-                // LANGSUNG MENJADI NILAI KATROL DARI FORMATIF, STS, DAN SAS
+                // Dihitung satu arah dari Formatif + STS + SAS; tetap null ('-') sebelum komponen lengkap.
                 if ($recRapor && $recRapor->is_locked && $recRapor->nilai_rapor !== null) {
                     $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
                 } elseif ($nilaiKatrol !== null) {
                     $nilaiMapelAkhir = $nilaiKatrol;
-                } elseif ($recRapor && $recRapor->nilai_rapor !== null) {
-                    $nilaiMapelAkhir = (float) $recRapor->nilai_rapor;
-                } elseif ($valUas !== null) {
-                    $nilaiMapelAkhir = (float) $valUas;
-                } elseif ($valUts !== null) {
-                    $nilaiMapelAkhir = (float) $valUts;
-                } elseif ($n && ($n->sumatif !== null || $n->formatif !== null)) {
-                    $nilaiMapelAkhir = $n->sumatif !== null ? (float) $n->sumatif : (float) $n->formatif;
                 }
 
                 $predikat = $nilaiMapelAkhir !== null
-                    ? ($recRapor?->predikat ?? NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir))
+                    ? (($recRapor && $recRapor->is_locked && $recRapor->predikat)
+                        ? $recRapor->predikat
+                        : NilaiRaporMapel::hitungPredikat($nilaiMapelAkhir))
                     : null;
-                $catatan = $recRapor?->catatan ?? '';
+                $catatan = $rawCatatanGuru;
             }
+
+            $autoCp = $nilaiMapelAkhir !== null
+                ? self::generateDeskripsiCpKurikulumMerdeka($mapel, $nilaiMapelAkhir, $fase)
+                : 'Belum ada penilaian capaian pembelajaran';
 
             if ($nilaiMapelAkhir !== null) {
                 $totalAkhir += $nilaiMapelAkhir;
@@ -270,6 +261,9 @@ class HitungNilaiService
                 'predikat' => $predikat ?? '-',
                 'capaian_kompetensi' => $catatan,
                 'catatan' => $catatan,
+                'catatan_guru' => $rawCatatanGuru,
+                'catatan_guru_kosong' => $rawCatatanGuru === '',
+                'auto_cp' => $autoCp,
                 'keterangan' => $keterangan,
                 'is_kosong' => $isKosong,
                 'formatif_format' => $valFormatif !== null ? self::formatAngka($valFormatif) : (string) $kkm,
@@ -1730,19 +1724,115 @@ class HitungNilaiService
             $bobotUas = $sekolah ? $sekolah->getBobotUas() : 30;
 
             $rapor->rata_formatif = $rataFormatif;
-            $totBobot = $bobotFormatif + $bobotUts + $bobotUas;
-            if ($totBobot > 0 && ($rataFormatif !== null || $rapor->nilai_uts !== null || $rapor->nilai_uas !== null)) {
-                $f = $rataFormatif ?? 0;
-                $u = $rapor->nilai_uts ?? 0;
-                $a = $rapor->nilai_uas ?? 0;
-                $rapor->nilai_rapor = round((($f * $bobotFormatif) + ($u * $bobotUts) + ($a * $bobotUas)) / $totBobot, 1);
-            } else {
-                $rapor->nilai_rapor = $rataFormatif;
-            }
-            $rapor->predikat = $rapor->nilai_rapor !== null ? NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor) : '-';
+            $rapor->nilai_rapor = self::hitungNilaiRaporKomponen(
+                $rataFormatif,
+                $rapor->nilai_uts !== null ? (float) $rapor->nilai_uts : null,
+                $rapor->nilai_uas !== null ? (float) $rapor->nilai_uas : null,
+                $bobotFormatif,
+                $bobotUts,
+                $bobotUas,
+                true
+            );
+            $rapor->predikat = NilaiRaporMapel::hitungPredikat($rapor->nilai_rapor);
             $rapor->save();
         }
 
         return $rapor;
+    }
+
+    /**
+     * Hitung Nilai Rapor Akhir dari komponen Formatif, STS, dan SAS sesuai bobot sekolah.
+     *
+     * Mengembalikan null jika total bobot <= 0 atau (saat $wajibLengkap bernilai true)
+     * ada komponen dengan bobot > 0 yang belum terisi agar nilai 0 / predikat D
+     * tidak tampil sebelum komponen lengkap.
+     */
+    public static function hitungNilaiRaporKomponen(
+        ?float $rataFormatif,
+        ?float $nilaiUts,
+        ?float $nilaiUas,
+        int $bobotFormatif,
+        int $bobotUts,
+        int $bobotUas,
+        bool $wajibLengkap = true,
+    ): ?float {
+        $totalBobot = $bobotFormatif + $bobotUts + $bobotUas;
+        if ($totalBobot <= 0) {
+            return null;
+        }
+
+        $komponen = [];
+        $pasangan = [
+            ['nilai' => $rataFormatif, 'bobot' => $bobotFormatif],
+            ['nilai' => $nilaiUts, 'bobot' => $bobotUts],
+            ['nilai' => $nilaiUas, 'bobot' => $bobotUas],
+        ];
+
+        foreach ($pasangan as $item) {
+            if ($item['bobot'] <= 0) {
+                continue;
+            }
+            if ($item['nilai'] === null) {
+                if ($wajibLengkap) {
+                    return null;
+                }
+
+                continue;
+            }
+            $komponen[] = $item;
+        }
+
+        if (empty($komponen)) {
+            return null;
+        }
+
+        $totalBobotTerisi = array_sum(array_column($komponen, 'bobot'));
+        if ($totalBobotTerisi <= 0) {
+            return null;
+        }
+
+        $subtotal = 0.0;
+        foreach ($komponen as $k) {
+            $subtotal += ($k['nilai'] * $k['bobot']);
+        }
+
+        return round($subtotal / $totalBobotTerisi, 1);
+    }
+
+    /**
+     * Hitung ulang seluruh NilaiRaporMapel yang belum terkunci saat bobot penilaian sekolah berubah.
+     */
+    public static function sinkronkanBobotSekolah(Sekolah $sekolah): int
+    {
+        $bobotFormatif = $sekolah->getBobotFormatif();
+        $bobotUts = $sekolah->getBobotUts();
+        $bobotUas = $sekolah->getBobotUas();
+        $updated = 0;
+
+        NilaiRaporMapel::where('is_locked', false)
+            ->orderBy('id')
+            ->chunkById(200, function ($records) use ($bobotFormatif, $bobotUts, $bobotUas, &$updated) {
+                foreach ($records as $rapor) {
+                    $nilaiBaru = self::hitungNilaiRaporKomponen(
+                        $rapor->rata_formatif !== null ? (float) $rapor->rata_formatif : null,
+                        $rapor->nilai_uts !== null ? (float) $rapor->nilai_uts : null,
+                        $rapor->nilai_uas !== null ? (float) $rapor->nilai_uas : null,
+                        $bobotFormatif,
+                        $bobotUts,
+                        $bobotUas,
+                        true
+                    );
+                    $predikatBaru = NilaiRaporMapel::hitungPredikat($nilaiBaru);
+
+                    if ($rapor->nilai_rapor !== $nilaiBaru || $rapor->predikat !== $predikatBaru) {
+                        $rapor->nilai_rapor = $nilaiBaru;
+                        $rapor->predikat = $predikatBaru;
+                        $rapor->save();
+                        $updated++;
+                    }
+                }
+            });
+
+        return $updated;
     }
 }
