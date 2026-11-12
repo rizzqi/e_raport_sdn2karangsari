@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ekstrakurikuler;
 use App\Models\Kehadiran;
 use App\Models\KehadiranBulanan;
 use App\Models\Kelas;
 use App\Models\KelasSiswa;
 use App\Models\MataPelajaran;
 use App\Models\Nilai;
+use App\Models\NilaiEkstrakurikuler;
 use App\Models\NilaiPembiasaan;
 use App\Models\Pembiasaan;
 use App\Models\Sekolah;
@@ -50,6 +52,12 @@ class NilaiController extends Controller
             ->get()
             ->keyBy('pembiasaan_id');
 
+        $ekskulList = Ekstrakurikuler::aktif()->orderBy('urutan')->get();
+        $nilaiEkskulMap = NilaiEkstrakurikuler::where('kelas_siswa_id', $kelasSiswa->id)
+            ->where('periode', $periode)
+            ->get()
+            ->keyBy('ekstrakurikuler_id');
+
         $kehadiran = Kehadiran::firstOrCreate([
             'kelas_siswa_id' => $kelasSiswa->id,
             'periode' => $periode,
@@ -73,8 +81,10 @@ class NilaiController extends Controller
             'periode',
             'mapels',
             'pembiasaans',
+            'ekskulList',
             'nilaiList',
             'pembiasaanList',
+            'nilaiEkskulMap',
             'kehadiran',
             'hasilPerhitungan',
             'prevId',
@@ -95,8 +105,11 @@ class NilaiController extends Controller
         $predikatData = $request->input('predikat', []);
         $mapels = $kelas->mataPelajaran();
         $pembiasaans = Pembiasaan::aktif()->get();
+        $ekskulInput = $request->input('ekskul', []);
+        $hasEkskulInput = $request->has('ekskul') && is_array($ekskulInput);
+        $ekskulList = $hasEkskulInput ? Ekstrakurikuler::orderBy('urutan')->get() : collect();
 
-        DB::transaction(function () use ($mapels, $sumatifData, $formatifData, $kelasSiswa, $periode, $predikatData, $pembiasaans, $request) {
+        DB::transaction(function () use ($mapels, $sumatifData, $formatifData, $kelasSiswa, $periode, $predikatData, $pembiasaans, $hasEkskulInput, $ekskulInput, $ekskulList, $request) {
             // 1. Simpan Nilai Mapel
             foreach ($mapels as $mapel) {
                 $sumatif = isset($sumatifData[$mapel->id]) && $sumatifData[$mapel->id] !== '' ? (float) $sumatifData[$mapel->id] : null;
@@ -141,6 +154,35 @@ class NilaiController extends Controller
                 'izin' => (int) $request->input('izin', 0),
                 'alpa' => (int) $request->input('alpa', 0),
             ]);
+
+            // 4. Simpan Ekstrakurikuler (opsional, hapus jika - Tidak Ikut -)
+            if ($hasEkskulInput) {
+                foreach ($ekskulList as $eks) {
+                    $row = $ekskulInput[$eks->id] ?? null;
+                    if (! is_array($row)) {
+                        continue;
+                    }
+
+                    $predikat = trim((string) ($row['predikat'] ?? ''));
+                    $keterangan = trim((string) ($row['keterangan'] ?? ''));
+
+                    if (in_array($predikat, NilaiEkstrakurikuler::PREDIKAT_LIST, true)) {
+                        NilaiEkstrakurikuler::updateOrCreate([
+                            'kelas_siswa_id' => $kelasSiswa->id,
+                            'ekstrakurikuler_id' => $eks->id,
+                            'periode' => $periode,
+                        ], [
+                            'predikat' => $predikat,
+                            'keterangan' => $keterangan !== '' ? $keterangan : null,
+                        ]);
+                    } else {
+                        NilaiEkstrakurikuler::where('kelas_siswa_id', $kelasSiswa->id)
+                            ->where('ekstrakurikuler_id', $eks->id)
+                            ->where('periode', $periode)
+                            ->delete();
+                    }
+                }
+            }
         });
 
         $nextSiswaId = $request->input('next_siswa_id');

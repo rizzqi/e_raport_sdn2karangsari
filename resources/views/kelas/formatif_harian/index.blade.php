@@ -3,22 +3,79 @@
 @section('title', 'Penilaian Harian Formatif - ' . $mapel->nama . ' - ' . $kelas->nama)
 
 @section('content')
-<div class="space-y-5" x-data="{
-    modalTambah: false,
-    modalEdit: false,
-    editData: { id: '', nama: '', tanggal: '', lingkup_materi: '', jenis: 'teori', bobot: '1.0' },
-    bukaModalEdit(p) {
-        this.editData = {
-            id: p.id,
-            nama: p.nama,
-            tanggal: p.tanggal ? p.tanggal.substr(0, 10) : '',
-            lingkup_materi: p.lingkup_materi || '',
-            jenis: p.jenis || 'teori',
-            bobot: p.bobot || '1.0'
+@php
+    $defaultNamaInput = $defaultNamaKolom ?? ('Harian '.($penilaianList->count() + 1));
+    $isValidationErrorTambah = $errors->any() && old('form_mode') === 'tambah';
+    $isValidationErrorEdit = $errors->any() && old('form_mode') === 'edit';
+    $initialModalTambah = (bool) session('open_modal_tambah', false) || $isValidationErrorTambah;
+    $initialModalEdit = $isValidationErrorEdit && filled(old('edit_penilaian_id'));
+    $initialEditData = [
+        'id' => old('edit_penilaian_id', ''),
+        'nama' => old('nama', ''),
+        'tanggal' => old('tanggal', ''),
+        'lingkup_materi' => old('lingkup_materi', ''),
+        'jenis' => old('jenis', 'teori'),
+        'bobot' => old('bobot', '1.0'),
+    ];
+    $editActionTemplate = route('kelas.mapel.formatif-harian.update-penilaian', [
+        'kelas' => $kelas->id,
+        'mapel' => $mapel->id,
+        'penilaian' => '__ID__',
+    ], false);
+    $hapusActionTemplate = route('kelas.mapel.formatif-harian.hapus-penilaian', [
+        'kelas' => $kelas->id,
+        'mapel' => $mapel->id,
+        'penilaian' => '__ID__',
+    ], false);
+    $modalConfig = [
+        'modalTambah' => $initialModalTambah,
+        'modalEdit' => $initialModalEdit,
+        'editActionTemplate' => $editActionTemplate,
+        'editData' => $initialEditData,
+    ];
+@endphp
+<script>
+    function formatifHarianModalState() {
+        const cfg = {!! json_encode($modalConfig, JSON_HEX_TAG) !!};
+
+        return {
+            modalTambah: Boolean(cfg.modalTambah),
+            modalEdit: Boolean(cfg.modalEdit),
+            editActionTemplate: cfg.editActionTemplate,
+            editData: cfg.editData,
+            bukaModalTambah() {
+                this.modalTambah = true;
+                this.$nextTick(() => {
+                    if (this.$refs.inputTambahNama) {
+                        this.$refs.inputTambahNama.focus();
+                        this.$refs.inputTambahNama.select();
+                    }
+                });
+            },
+            bukaModalEdit(p, focusField = 'nama') {
+                if (!p || !p.id) {
+                    return;
+                }
+                this.editData = {
+                    id: p.id,
+                    nama: p.nama || '',
+                    tanggal: p.tanggal || '',
+                    lingkup_materi: p.lingkup_materi || '',
+                    jenis: p.jenis || 'teori',
+                    bobot: p.bobot || '1.0',
+                };
+                this.modalEdit = true;
+                this.$nextTick(() => {
+                    const target = focusField === 'materi' ? this.$refs.inputEditMateri : this.$refs.inputEditNama;
+                    if (target) {
+                        target.focus();
+                    }
+                });
+            },
         };
-        this.modalEdit = true;
     }
-}">
+</script>
+<div class="space-y-5" x-data="formatifHarianModalState()" @keydown.escape.window="modalTambah = false; modalEdit = false">
 
     <!-- 1. Header & Navigasi Terpadu -->
     <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -93,10 +150,10 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2">
             <!-- Tombol Tambah Penilaian Harian -->
-            <button type="button" @click="modalTambah = true"
-                    class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center gap-2">
+            <button type="button" @click="bukaModalTambah()"
+                    class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-plus-circle text-amber-300"></i>
-                <span>Tambah Penilaian Harian</span>
+                <span>Tambah Kolom Penilaian</span>
             </button>
 
             <!-- Tombol Cetak Dokumen Nilai Harian -->
@@ -341,8 +398,8 @@
                     <p class="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4 leading-relaxed">
                         Di bulan <strong>{{ $namaBulan }} {{ $tahun }}</strong> belum ada kolom penilaian harian untuk mata pelajaran <strong>{{ $mapel->nama }}</strong>. Klik tombol di bawah untuk menambahkan penilaian pertama (misal: Harian 1, Tugas 1, atau TP 1).
                     </p>
-                    <button type="button" @click="modalTambah = true"
-                            class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition">
+                    <button type="button" @click="bukaModalTambah()"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition cursor-pointer">
                         <i class="fa-solid fa-plus-circle"></i>
                         <span>Tambah Penilaian Harian Pertama</span>
                     </button>
@@ -352,42 +409,98 @@
                     <table class="w-full text-left text-xs border-collapse">
                         <thead>
                             <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
-                                <th class="py-3.5 px-3 w-10 text-center border-r border-slate-200">No</th>
-                                <th class="py-3.5 px-4 min-w-[200px] border-r border-slate-200 sticky left-0 bg-slate-50 z-10 shadow-[1px_0_0_0_#e2e8f0]">
+                                <th rowspan="2" class="py-3 px-3 w-10 text-center border-r border-slate-200 align-middle">No</th>
+                                <th rowspan="2" class="py-3 px-4 min-w-[200px] border-r border-slate-200 sticky left-0 bg-slate-50 z-10 shadow-[1px_0_0_0_#e2e8f0] align-middle">
                                     Nama Peserta Didik
                                 </th>
 
+                                <th colspan="{{ $penilaianList->count() }}" class="py-2 px-3 border-r border-slate-200 bg-blue-50/70">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <span class="text-[11px] font-extrabold text-slate-700 normal-case tracking-normal flex items-center gap-1.5">
+                                            <i class="fa-solid fa-table-columns text-blue-600"></i>
+                                            <span>Rincian Penilaian Harian ({{ $penilaianList->count() }} kolom)</span>
+                                        </span>
+                                        <button type="button" @click="bukaModalTambah()"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold normal-case tracking-normal shadow-2xs transition cursor-pointer">
+                                            <i class="fa-solid fa-plus"></i>
+                                            <span>Tambah Kolom</span>
+                                        </button>
+                                    </div>
+                                </th>
+
+                                <th rowspan="2" class="py-3 px-3 text-center border-r border-emerald-200 bg-emerald-50 text-emerald-950 font-black w-28 align-middle">
+                                    Rata-rata {{ substr($namaBulan, 0, 3) }}
+                                    <span class="block text-[9px] font-normal text-emerald-800 font-sans">Otomatis Terhitung</span>
+                                </th>
+
+                                <th rowspan="2" class="py-3 px-3 text-center bg-slate-100 text-slate-700 font-bold w-28 align-middle" title="Nilai yang saat ini tersimpan di lembar bulanan utama">
+                                    Nilai Tersimpan
+                                    <span class="block text-[9px] font-normal text-slate-500 font-sans">Di Lembar Bulanan</span>
+                                </th>
+                            </tr>
+
+                            <tr class="bg-slate-50 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-200">
                                 @foreach($penilaianList as $p)
-                                    <th class="py-3 px-3 text-center border-r border-slate-200 min-w-[130px] max-w-[170px] align-top {{ $p->jenis === 'praktik' ? 'bg-cyan-50/70' : 'bg-blue-50/40' }}">
+                                    @php
+                                        $pPayload = [
+                                            'id' => $p->id,
+                                            'nama' => $p->nama,
+                                            'tanggal' => $p->tanggal?->format('Y-m-d') ?? '',
+                                            'lingkup_materi' => $p->lingkup_materi ?? '',
+                                            'jenis' => $p->jenis ?? 'teori',
+                                            'bobot' => (string) ($p->bobot ?? '1.0'),
+                                        ];
+                                    @endphp
+                                    <th class="py-2.5 px-3 text-center border-r border-slate-200 min-w-[140px] max-w-[190px] align-top {{ $p->jenis === 'praktik' ? 'bg-cyan-50/70' : 'bg-blue-50/40' }}">
                                         <div class="flex items-center justify-between gap-1 mb-1">
-                                            <span class="font-extrabold text-slate-900 truncate" title="{{ $p->nama }}">
+                                            <span class="font-extrabold text-slate-900 truncate normal-case tracking-normal" title="{{ $p->nama }}">
                                                 {{ $p->nama }}
                                             </span>
                                             <div class="flex items-center gap-1 shrink-0">
-                                                <button type="button" @click="bukaModalEdit({{ json_encode($p) }})"
-                                                        class="w-5 h-5 rounded hover:bg-slate-200 text-slate-500 hover:text-blue-600 flex items-center justify-center text-[10px]"
-                                                        title="Edit penilaian ini">
+                                                <button type="button"
+                                                        data-penilaian="{{ json_encode($pPayload) }}"
+                                                        @click="bukaModalEdit(JSON.parse($el.dataset.penilaian), 'nama')"
+                                                        class="w-5 h-5 rounded hover:bg-slate-200 text-slate-500 hover:text-blue-600 flex items-center justify-center text-[10px] cursor-pointer"
+                                                        title="Edit nama, tanggal, atau materi kolom ini">
                                                     <i class="fa-solid fa-pen"></i>
                                                 </button>
-                                                <button type="button" onclick="konfirmasiHapusPenilaian({{ $p->id }}, '{{ $p->nama }}')"
-                                                        class="w-5 h-5 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 flex items-center justify-center text-[10px]"
+                                                <button type="button"
+                                                        data-id="{{ $p->id }}"
+                                                        data-nama="{{ $p->nama }}"
+                                                        onclick="konfirmasiHapusPenilaian(this.dataset.id, this.dataset.nama)"
+                                                        class="w-5 h-5 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 flex items-center justify-center text-[10px] cursor-pointer"
                                                         title="Hapus kolom penilaian ini">
                                                     <i class="fa-solid fa-trash-can"></i>
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <div class="text-[10px] text-slate-500 font-normal space-y-0.5">
+                                        <div class="text-[10px] text-slate-500 font-normal normal-case tracking-normal space-y-1">
                                             @if($p->tanggal)
                                                 <div class="flex items-center justify-center gap-1 font-mono text-[9px] text-slate-600">
                                                     <i class="fa-regular fa-calendar-days text-[9px]"></i> {{ $p->tanggal_format }}
                                                 </div>
                                             @endif
+
                                             @if($p->lingkup_materi)
-                                                <div class="truncate text-[9px] text-slate-600 bg-white/80 px-1.5 py-0.5 rounded border border-slate-200" title="{{ $p->lingkup_materi }}">
+                                                <button type="button"
+                                                        data-penilaian="{{ json_encode($pPayload) }}"
+                                                        @click="bukaModalEdit(JSON.parse($el.dataset.penilaian), 'materi')"
+                                                        class="w-full truncate text-[9px] text-slate-700 hover:text-blue-700 bg-white/90 hover:bg-blue-50 px-1.5 py-0.5 rounded border border-slate-200 hover:border-blue-300 transition cursor-pointer"
+                                                        title="Klik untuk ubah materi/TP: {{ $p->lingkup_materi }}">
                                                     {{ $p->lingkup_materi }}
-                                                </div>
+                                                </button>
+                                            @else
+                                                <button type="button"
+                                                        data-penilaian="{{ json_encode($pPayload) }}"
+                                                        @click="bukaModalEdit(JSON.parse($el.dataset.penilaian), 'materi')"
+                                                        class="inline-flex items-center justify-center gap-1 text-[9px] text-slate-400 hover:text-blue-600 px-1.5 py-0.5 rounded border border-dashed border-slate-300 hover:border-blue-300 transition cursor-pointer"
+                                                        title="Klik untuk mengisi lingkup materi / TP">
+                                                    <i class="fa-solid fa-tag text-[8px]"></i>
+                                                    <span>Isi Materi / TP</span>
+                                                </button>
                                             @endif
+
                                             @if($p->jenis === 'praktik')
                                                 <span class="inline-block px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-cyan-100 text-cyan-800">
                                                     Praktik
@@ -396,16 +509,6 @@
                                         </div>
                                     </th>
                                 @endforeach
-
-                                <th class="py-3.5 px-3 text-center border-r border-emerald-200 bg-emerald-50 text-emerald-950 font-black w-28 align-middle">
-                                    Rata-rata {{ substr($namaBulan, 0, 3) }}
-                                    <span class="block text-[9px] font-normal text-emerald-800 font-sans">Otomatis Terhitung</span>
-                                </th>
-
-                                <th class="py-3.5 px-3 text-center bg-slate-100 text-slate-700 font-bold w-28 align-middle" title="Nilai yang saat ini tersimpan di lembar bulanan utama">
-                                    Nilai Tersimpan
-                                    <span class="block text-[9px] font-normal text-slate-500 font-sans">Di Lembar Bulanan</span>
-                                </th>
                             </tr>
                         </thead>
 
@@ -504,64 +607,102 @@
                         <i class="fa-solid fa-plus"></i>
                     </div>
                     <div>
-                        <h3 class="font-black text-slate-900 text-sm">Tambah Penilaian Harian</h3>
+                        <h3 class="font-black text-slate-900 text-sm">Tambah Kolom Penilaian Harian</h3>
                         <p class="text-[11px] text-slate-500">{{ $mapel->nama }} &bull; Bulan {{ $namaBulan }}</p>
                     </div>
                 </div>
-                <button type="button" @click="modalTambah = false" class="text-slate-400 hover:text-slate-600 p-1">
+                <button type="button" @click="modalTambah = false" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
                     <i class="fa-solid fa-xmark text-base"></i>
                 </button>
             </div>
 
             <form action="{{ route('kelas.mapel.formatif-harian.tambah-penilaian', ['kelas' => $kelas->id, 'mapel' => $mapel->id]) }}" method="POST" class="space-y-3.5">
                 @csrf
+                <input type="hidden" name="form_mode" value="tambah">
                 <input type="hidden" name="tahun" value="{{ $tahun }}">
                 <input type="hidden" name="bulan" value="{{ $bulan }}">
+
+                @if($isValidationErrorTambah)
+                    <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 text-rose-800 text-[11px] space-y-1">
+                        <div class="font-bold flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>Periksa kembali isian kolom:</span>
+                        </div>
+                        <ul class="list-disc pl-4 space-y-0.5">
+                            @foreach($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">
                         Nama Penilaian <span class="text-rose-500">*</span>
                     </label>
-                    <input type="text" name="nama" required
+                    <input type="text" name="nama" x-ref="inputTambahNama" required maxlength="150"
                            placeholder="Contoh: Harian 1, Tugas 1, TP 1, dsb."
-                           value="Harian {{ $penilaianList->count() + 1 }}"
+                           value="{{ $isValidationErrorTambah ? old('nama', $defaultNamaInput) : $defaultNamaInput }}"
                            class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-xs">
-                    <p class="text-[10px] text-slate-400 mt-1">Nama ini akan tampil sebagai judul kolom penilaian.</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Tampil sebagai judul kolom (maks. 150 karakter).</p>
                 </div>
 
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Tanggal Pelaksanaan</label>
-                    <input type="date" name="tanggal"
-                           value="{{ now()->format('Y-m-d') }}"
-                           class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Tanggal Pelaksanaan</label>
+                        <input type="date" name="tanggal"
+                               value="{{ $isValidationErrorTambah ? old('tanggal', '') : now()->format('Y-m-d') }}"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-xs">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Tambah Sekaligus</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="jumlah_kolom" min="1" max="10"
+                                   value="{{ $isValidationErrorTambah ? old('jumlah_kolom', 1) : 1 }}"
+                                   class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-xs text-center">
+                            <span class="text-[11px] font-semibold text-slate-500 shrink-0">kolom</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">Isi &gt;1 untuk membuat nomor urut otomatis.</p>
+                    </div>
                 </div>
 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Lingkup Materi / Tujuan Pembelajaran (TP)</label>
-                    <input type="text" name="lingkup_materi"
-                           placeholder="Contoh: Menyimak Teks Narasi / Bilangan Cacah"
-                           class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-xs">
+                    <textarea name="lingkup_materi" rows="2" maxlength="500"
+                              placeholder="Contoh: Menyimak Teks Narasi / Bilangan Cacah sampai 1.000"
+                              class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-xs">{{ $isValidationErrorTambah ? old('lingkup_materi', '') : '' }}</textarea>
+                    <p class="text-[10px] text-slate-400 mt-1">Opsional, maks. 500 karakter.</p>
                 </div>
 
                 @if($isPjok)
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Jenis Penilaian (Khusus PJOK)</label>
+                        @php
+                            $selectedJenisTambah = $isValidationErrorTambah ? old('jenis', 'teori') : 'teori';
+                        @endphp
                         <select name="jenis" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-xs">
-                            <option value="teori">Formatif Teori (Fmt)</option>
-                            <option value="praktik">Praktik Jasmani (Prak)</option>
+                            <option value="teori" @selected($selectedJenisTambah === 'teori')>Formatif Teori (Fmt)</option>
+                            <option value="praktik" @selected($selectedJenisTambah === 'praktik')>Praktik Jasmani (Prak)</option>
                         </select>
                     </div>
                 @else
                     <input type="hidden" name="jenis" value="teori">
                 @endif
 
-                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
                     <button type="button" @click="modalTambah = false"
-                            class="px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition">
+                            class="px-3.5 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer">
                         Batal
                     </button>
+                    <button type="submit" name="lanjut_tambah" value="1"
+                            class="px-3.5 py-2 rounded-xl font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition flex items-center gap-1.5 cursor-pointer"
+                            title="Simpan lalu langsung buka form untuk kolom berikutnya">
+                        <i class="fa-solid fa-forward-step"></i>
+                        <span>Simpan & Tambah Lagi</span>
+                    </button>
                     <button type="submit"
-                            class="px-4 py-2 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5">
+                            class="px-4 py-2 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                         <i class="fa-solid fa-plus"></i>
                         <span>Tambahkan Kolom</span>
                     </button>
@@ -584,23 +725,41 @@
                     </div>
                     <div>
                         <h3 class="font-black text-slate-900 text-sm">Edit Penilaian Harian</h3>
-                        <p class="text-[11px] text-slate-500">Ubah nama, tanggal, atau materi penilaian</p>
+                        <p class="text-[11px] text-slate-500">Ubah nama kolom, tanggal, atau lingkup materi / TP</p>
                     </div>
                 </div>
-                <button type="button" @click="modalEdit = false" class="text-slate-400 hover:text-slate-600 p-1">
+                <button type="button" @click="modalEdit = false" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
                     <i class="fa-solid fa-xmark text-base"></i>
                 </button>
             </div>
 
-            <form :action="'{{ url('kelas/' . $kelas->id . '/mapel/' . $mapel->id . '/formatif-harian/penilaian') }}/' + editData.id" method="POST" class="space-y-3.5">
+            <form :action="editActionTemplate.replace('__ID__', editData.id)"
+                  @submit="if (!editData.id) { $event.preventDefault(); }"
+                  method="POST" class="space-y-3.5">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="form_mode" value="edit">
+                <input type="hidden" name="edit_penilaian_id" :value="editData.id">
+
+                @if($isValidationErrorEdit)
+                    <div class="rounded-xl bg-rose-50 border border-rose-200 p-3 text-rose-800 text-[11px] space-y-1">
+                        <div class="font-bold flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>Periksa kembali perubahan kolom:</span>
+                        </div>
+                        <ul class="list-disc pl-4 space-y-0.5">
+                            @foreach($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">
                         Nama Penilaian <span class="text-rose-500">*</span>
                     </label>
-                    <input type="text" name="nama" x-model="editData.nama" required
+                    <input type="text" name="nama" x-ref="inputEditNama" x-model="editData.nama" required maxlength="150"
                            class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-semibold text-xs">
                 </div>
 
@@ -611,9 +770,11 @@
                 </div>
 
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Lingkup Materi / TP</label>
-                    <input type="text" name="lingkup_materi" x-model="editData.lingkup_materi"
-                           class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-semibold text-xs">
+                    <label class="block font-bold text-slate-700 mb-1">Lingkup Materi / Tujuan Pembelajaran (TP)</label>
+                    <textarea name="lingkup_materi" rows="2" maxlength="500" x-ref="inputEditMateri" x-model="editData.lingkup_materi"
+                              placeholder="Tuliskan materi atau Tujuan Pembelajaran (TP)..."
+                              class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-semibold text-xs"></textarea>
+                    <p class="text-[10px] text-slate-400 mt-1">Opsional, maks. 500 karakter.</p>
                 </div>
 
                 @if($isPjok)
@@ -624,15 +785,17 @@
                             <option value="praktik">Praktik Jasmani (Prak)</option>
                         </select>
                     </div>
+                @else
+                    <input type="hidden" name="jenis" :value="editData.jenis || 'teori'">
                 @endif
 
                 <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                     <button type="button" @click="modalEdit = false"
-                            class="px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition">
+                            class="px-4 py-2 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer">
                         Batal
                     </button>
                     <button type="submit"
-                            class="px-4 py-2 rounded-xl font-black text-white bg-blue-600 hover:bg-blue-700 transition shadow-sm flex items-center gap-1.5">
+                            class="px-4 py-2 rounded-xl font-black text-white bg-blue-600 hover:bg-blue-700 transition shadow-sm flex items-center gap-1.5 cursor-pointer">
                         <i class="fa-solid fa-check"></i>
                         <span>Simpan Perubahan</span>
                     </button>
@@ -677,10 +840,15 @@
         }
     }
 
+    const hapusPenilaianActionTemplate = {!! json_encode($hapusActionTemplate, JSON_HEX_TAG) !!};
+
     function konfirmasiHapusPenilaian(id, nama) {
+        if (!id) {
+            return;
+        }
         if (confirm("Apakah Anda yakin ingin menghapus kolom penilaian '" + nama + "'? Semua nilai siswa pada kolom ini akan terhapus dan rata-rata bulanan akan disesuaikan.")) {
             const form = document.getElementById('formHapusPenilaian');
-            form.action = "{{ url('kelas/' . $kelas->id . '/mapel/' . $mapel->id . '/formatif-harian/penilaian') }}/" + id;
+            form.action = hapusPenilaianActionTemplate.replace('__ID__', id);
             form.submit();
         }
     }

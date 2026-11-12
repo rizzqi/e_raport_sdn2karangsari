@@ -62,6 +62,10 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
@@ -189,7 +193,7 @@
                                             <i class="fa-solid fa-book text-xs"></i>
                                         </div>
                                         <div>
-                                            <span class="block font-bold">Mapel & Pembiasaan</span>
+                                            <span class="block font-bold">Mapel, Pembiasaan &amp; Ekskul</span>
                                             <span class="text-[10px] text-slate-400 font-normal">Kurikulum & profil pelajar</span>
                                         </div>
                                     </a>
@@ -311,7 +315,7 @@
                         <i class="fa-solid fa-calendar w-6 text-center mr-2 text-blue-400"></i> Tahun Ajaran
                     </a>
                     <a href="{{ route('mapel.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
-                        <i class="fa-solid fa-book w-6 text-center mr-2 text-amber-400"></i> Mapel & Pembiasaan
+                        <i class="fa-solid fa-book w-6 text-center mr-2 text-amber-400"></i> Mapel, Pembiasaan &amp; Ekskul
                     </a>
                     <a href="{{ route('users.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
                         <i class="fa-solid fa-users w-6 text-center mr-2 text-purple-400"></i> Kelola Pengguna

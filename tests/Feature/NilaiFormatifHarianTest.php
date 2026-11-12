@@ -409,4 +409,174 @@ class NilaiFormatifHarianTest extends TestCase
             ])->assertStatus(404);
         }
     }
+
+    public function test_tambah_dan_edit_penilaian_aman_dari_karakter_khusus_input_kosong_dan_materi_panjang(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $mapel = $kelas->mataPelajaran()->first();
+        $tahun = 2026;
+        $bulan = 8;
+
+        $namaKhusus = "UH Al-Qur'an \"Surat Al-Ma'un\"";
+        $materiPanjang = "Peserta didik mampu memahami makna dan pesan pokok Q.S. Al-Ma'un tentang kepedulian terhadap anak yatim serta perilaku terpuji dalam kehidupan sehari-hari. "
+            .str_repeat('Capaian pembelajaran Kurikulum Merdeka Fase B. ', 5);
+        $materiPanjang = mb_substr(trim($materiPanjang), 0, 380);
+
+        $response = $this->actingAs($admin)->post(route('kelas.mapel.formatif-harian.tambah-penilaian', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'nama' => $namaKhusus,
+            'tanggal' => '2026-08-18',
+            'lingkup_materi' => $materiPanjang,
+            'jenis' => '',
+            'bobot' => '',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+
+        $penilaian = PenilaianFormatifHarian::where('kelas_id', $kelas->id)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->where('bulan', $bulan)
+            ->first();
+
+        $this->assertNotNull($penilaian);
+        $this->assertSame($namaKhusus, $penilaian->nama);
+        $this->assertSame($materiPanjang, $penilaian->lingkup_materi);
+        $this->assertSame('teori', $penilaian->jenis);
+        $this->assertSame(1.0, (float) $penilaian->bobot);
+
+        $page = $this->actingAs($admin)->get(route('kelas.mapel.formatif-harian', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+        ]));
+        $page->assertStatus(200);
+        $page->assertSee('Tambah Kolom');
+        $page->assertSee('UH Al-Qur&#039;an', false);
+
+        $materiEdit = str_repeat('Materi TP Kurikulum Merdeka dengan tanda petik jum\'at. ', 8);
+        $materiEdit = mb_substr(trim($materiEdit), 0, 460);
+
+        $updateResponse = $this->actingAs($admin)->put(route('kelas.mapel.formatif-harian.update-penilaian', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+            'penilaian' => $penilaian->id,
+        ]), [
+            'nama' => "UH Al-Qur'an Revisi",
+            'tanggal' => '2026-08-19',
+            'lingkup_materi' => $materiEdit,
+            'jenis' => '',
+            'bobot' => '',
+        ]);
+
+        $updateResponse->assertRedirect();
+        $updateResponse->assertSessionHasNoErrors();
+
+        $penilaian->refresh();
+        $this->assertSame("UH Al-Qur'an Revisi", $penilaian->nama);
+        $this->assertSame($materiEdit, $penilaian->lingkup_materi);
+        $this->assertSame('teori', $penilaian->jenis);
+    }
+
+    public function test_tambah_banyak_kolom_sekaligus_dan_urutan_tidak_bentrok_setelah_hapus(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $mapel = $kelas->mataPelajaran()->first();
+        $tahun = 2026;
+        $bulan = 9;
+
+        $response = $this->actingAs($admin)->post(route('kelas.mapel.formatif-harian.tambah-penilaian', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'nama' => 'Harian 1',
+            'lingkup_materi' => 'Operasi Hitung Bilangan Cacah',
+            'jumlah_kolom' => 3,
+            'lanjut_tambah' => '1',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('open_modal_tambah', true);
+
+        $list = PenilaianFormatifHarian::where('kelas_id', $kelas->id)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->where('bulan', $bulan)
+            ->orderBy('urutan')
+            ->get();
+
+        $this->assertCount(3, $list);
+        $this->assertSame(['Harian 1', 'Harian 2', 'Harian 3'], $list->pluck('nama')->all());
+        $this->assertSame([1, 2, 3], $list->pluck('urutan')->all());
+
+        // Hapus kolom tengah agar menguji bahwa urutan berikutnya tetap memakai max(urutan) + 1
+        $this->actingAs($admin)->delete(route('kelas.mapel.formatif-harian.hapus-penilaian', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+            'penilaian' => $list[1]->id,
+        ]))->assertRedirect();
+
+        $this->actingAs($admin)->post(route('kelas.mapel.formatif-harian.tambah-penilaian', [
+            'kelas' => $kelas->id,
+            'mapel' => $mapel->id,
+        ]), [
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'nama' => 'Tugas',
+            'jumlah_kolom' => 2,
+        ])->assertRedirect();
+
+        $updatedList = PenilaianFormatifHarian::where('kelas_id', $kelas->id)
+            ->where('mapel_id', $mapel->id)
+            ->where('tahun', $tahun)
+            ->where('bulan', $bulan)
+            ->orderBy('urutan')
+            ->get();
+
+        $this->assertSame(['Harian 1', 'Harian 3', 'Tugas 1', 'Tugas 2'], $updatedList->pluck('nama')->all());
+        $this->assertSame([1, 3, 4, 5], $updatedList->pluck('urutan')->all());
+    }
+
+    public function test_validasi_penilaian_menampilkan_pesan_indonesia(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $kelas = Kelas::first();
+        $mapel = $kelas->mataPelajaran()->first();
+
+        $response = $this->actingAs($admin)
+            ->from(route('kelas.mapel.formatif-harian', [
+                'kelas' => $kelas->id,
+                'mapel' => $mapel->id,
+                'tahun' => 2026,
+                'bulan' => 8,
+            ]))
+            ->post(route('kelas.mapel.formatif-harian.tambah-penilaian', [
+                'kelas' => $kelas->id,
+                'mapel' => $mapel->id,
+            ]), [
+                'form_mode' => 'tambah',
+                'tahun' => 2026,
+                'bulan' => 8,
+                'nama' => '',
+                'lingkup_materi' => str_repeat('x', 501),
+                'jumlah_kolom' => 15,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors([
+            'nama' => 'Nama kolom penilaian wajib diisi.',
+            'lingkup_materi' => 'Lingkup materi / TP maksimal 500 karakter.',
+            'jumlah_kolom' => 'Jumlah kolom sekaligus maksimal 10 kolom.',
+        ]);
+    }
 }

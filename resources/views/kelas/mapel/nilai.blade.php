@@ -234,8 +234,18 @@
             @endforeach
         </div>
 
-        <!-- TAB PEMBIASAAN & KEHADIRAN (SIA) BERADA DI HALAMAN YANG SAMA -->
-        <div class="pl-2 border-l border-slate-200 shrink-0">
+        <!-- TAB EKSTRAKURIKULER & PEMBIASAAN BERADA DI HALAMAN YANG SAMA -->
+        <div class="pl-2 border-l border-slate-200 shrink-0 flex items-center gap-2">
+            <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id ?? null, 'tab' => 'ekstrakurikuler', 'tahun' => $tahun]) }}"
+               class="px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shrink-0 {{ $tab === 'ekstrakurikuler' ? 'bg-teal-600 text-white shadow-sm' : 'bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-300' }}">
+                <i class="fa-solid fa-campground"></i>
+                <span>Ekstrakurikuler</span>
+                @if(isset($countEkskulSiswa) && $kelasSiswaList->count() > 0)
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold {{ $tab === 'ekstrakurikuler' ? 'bg-white/25 text-white' : 'bg-teal-200/70 text-teal-900' }}">
+                        {{ $countEkskulSiswa }}/{{ $kelasSiswaList->count() }}
+                    </span>
+                @endif
+            </a>
             <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id ?? null, 'tab' => 'pembiasaan', 'tahun' => $tahun]) }}"
                class="px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 shrink-0 {{ $tab === 'pembiasaan' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300' }}">
                 <i class="fa-solid fa-star-half-stroke text-sm {{ $tab === 'pembiasaan' ? 'text-slate-950' : 'text-amber-600' }}"></i>
@@ -565,6 +575,10 @@
 
     @if($tab === 'rapor')
         @include('kelas.mapel.partials.form_catatan_rapor')
+    @endif
+
+    @if($tab === 'ekstrakurikuler')
+        @include('kelas.mapel.partials.form_ekstrakurikuler')
     @endif
 
     <!-- ========================================================================================= -->

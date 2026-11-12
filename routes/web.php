@@ -134,6 +134,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/mapel/{mapel}/nilai/simpan-catatan-ajax', [NilaiMapelController::class, 'simpanCatatanAjax'])->name('kelas.mapel.nilai.simpan-catatan-ajax');
         Route::post('/mapel/{mapel}/nilai/autosave-komponen', [NilaiMapelController::class, 'autosaveKomponen'])->name('kelas.mapel.nilai.autosave-komponen');
         Route::post('/nilai/autosave-pembiasaan', [NilaiMapelController::class, 'autosavePembiasaan'])->name('kelas.mapel.nilai.autosave-pembiasaan');
+        Route::get('/ekstrakurikuler', [NilaiMapelController::class, 'ekstrakurikuler'])->name('kelas.ekstrakurikuler.index');
+        Route::post('/ekstrakurikuler', [NilaiMapelController::class, 'simpanEkstrakurikuler'])->name('kelas.ekstrakurikuler.simpan');
+        Route::post('/nilai/autosave-ekstrakurikuler', [NilaiMapelController::class, 'autosaveEkstrakurikuler'])->name('kelas.mapel.nilai.autosave-ekstrakurikuler');
         Route::post('/mapel/{mapel}/nilai/formatif', [NilaiMapelController::class, 'simpanFormatif'])->name('kelas.mapel.nilai.formatif');
         Route::post('/mapel/{mapel}/nilai/uts', [NilaiMapelController::class, 'simpanUts'])->name('kelas.mapel.nilai.uts');
         Route::post('/mapel/{mapel}/nilai/uas', [NilaiMapelController::class, 'simpanUas'])->name('kelas.mapel.nilai.uas');
@@ -206,6 +209,11 @@ Route::middleware('auth')->group(function () {
         Route::put('/pembiasaan/{pembiasaan}', [MataPelajaranController::class, 'updatePembiasaan'])->name('pembiasaan.update');
         Route::post('/pembiasaan/{pembiasaan}/toggle-status', [MataPelajaranController::class, 'toggleStatusPembiasaan'])->name('pembiasaan.toggle-status');
         Route::delete('/pembiasaan/{pembiasaan}', [MataPelajaranController::class, 'destroyPembiasaan'])->name('pembiasaan.destroy');
+
+        Route::post('/ekstrakurikuler', [MataPelajaranController::class, 'storeEkstrakurikuler'])->name('ekstrakurikuler.store');
+        Route::put('/ekstrakurikuler/{ekstrakurikuler}', [MataPelajaranController::class, 'updateEkstrakurikuler'])->name('ekstrakurikuler.update');
+        Route::post('/ekstrakurikuler/{ekstrakurikuler}/toggle-status', [MataPelajaranController::class, 'toggleStatusEkstrakurikuler'])->name('ekstrakurikuler.toggle-status');
+        Route::delete('/ekstrakurikuler/{ekstrakurikuler}', [MataPelajaranController::class, 'destroyEkstrakurikuler'])->name('ekstrakurikuler.destroy');
 
         // Manajemen Pengguna
         Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);

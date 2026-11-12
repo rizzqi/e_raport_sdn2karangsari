@@ -155,6 +155,7 @@
                 $totalNilai = $item['totalNilai'];
                 $rataNilai = $item['rataNilai'];
                 $nilaiPemList = $item['nilaiPemList'];
+                $ekskulListSiswa = $item['ekskulListSiswa'] ?? [];
                 $kehadiran = $item['kehadiran'];
             @endphp
 
@@ -287,6 +288,8 @@
                     @endforeach
                 </tbody>
             </table>
+
+            @include('raport.partials.ekstrakurikuler_pdf', ['ekskulListSiswa' => $ekskulListSiswa])
 
             <!-- TANDA TANGAN 3 PIHAK -->
             <table class="ttd">

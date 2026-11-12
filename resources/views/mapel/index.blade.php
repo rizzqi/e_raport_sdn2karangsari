@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Mata Pelajaran & Pembiasaan')
+@section('title', 'Mata Pelajaran, Pembiasaan & Ekstrakurikuler')
 
 @section('content')
 <div class="space-y-6">
@@ -8,9 +8,9 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-xl font-bold text-slate-900 flex items-center">
-                <i class="fa-solid fa-book-open text-emerald-600 mr-2"></i> Mata Pelajaran & Aspek Pembiasaan
+                <i class="fa-solid fa-book-open text-emerald-600 mr-2"></i> Mata Pelajaran, Pembiasaan &amp; Ekstrakurikuler
             </h1>
-            <p class="text-xs text-slate-500">Atur mata pelajaran, aspek pembiasaan karakter, dan urutan kemunculan baris di raport</p>
+            <p class="text-xs text-slate-500">Atur mata pelajaran, aspek pembiasaan karakter, kegiatan ekstrakurikuler, dan urutan kemunculan baris di raport</p>
         </div>
     </div>
 
@@ -182,6 +182,78 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- KELOLA EKSTRAKURIKULER -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+            <div>
+                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
+                    <i class="fa-solid fa-campground text-teal-600 mr-2"></i> Kegiatan Ekstrakurikuler
+                </h2>
+                <span class="text-xs text-slate-400">Hanya kegiatan yang diberi predikat pada siswa yang tampil pada raport siswa tersebut</span>
+            </div>
+
+            <button type="button" onclick="document.getElementById('modalTambahEkskul').classList.remove('hidden')"
+                class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs transition">
+                <i class="fa-solid fa-plus mr-1"></i> Tambah Ekstrakurikuler
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:gap-4 p-4 bg-slate-50/30">
+            @forelse($ekskulList as $eks)
+                <div class="p-3.5 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:border-teal-300 transition {{ !$eks->aktif ? 'bg-slate-50/80 opacity-75' : '' }}">
+                    <div class="flex items-center space-x-3 min-w-0">
+                        <span class="w-6 h-6 rounded-lg {{ $eks->aktif ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-200 text-slate-400' }} font-bold text-xs flex items-center justify-center shrink-0">
+                            {{ $eks->urutan }}
+                        </span>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <p class="font-bold text-sm truncate {{ $eks->aktif ? 'text-slate-800' : 'text-slate-500 line-through' }}">{{ $eks->nama }}</p>
+                                @if($eks->aktif)
+                                    <span class="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-bold">Aktif</span>
+                                @else
+                                    <span class="px-1.5 py-0.5 bg-slate-200 text-slate-600 border border-slate-300 rounded text-[9px] font-bold">Nonaktif</span>
+                                @endif
+                            </div>
+                            <p class="text-[10px] text-slate-400">Urutan ke-{{ $eks->urutan }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-1.5 shrink-0 ml-2">
+                        <form action="{{ route('ekstrakurikuler.toggle-status', $eks->id) }}" method="POST" class="inline">
+                            @csrf
+                            @if($eks->aktif)
+                                <button type="submit" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition" title="Nonaktifkan ekstrakurikuler ini">
+                                    <i class="fa-solid fa-power-off mr-0.5 text-amber-600"></i> Nonaktifkan
+                                </button>
+                            @else
+                                <button type="submit" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition" title="Aktifkan ekstrakurikuler ini">
+                                    <i class="fa-solid fa-check mr-0.5 text-emerald-600"></i> Aktifkan
+                                </button>
+                            @endif
+                        </form>
+                        <button type="button"
+                            onclick="editEkskul(this)"
+                            data-id="{{ $eks->id }}"
+                            data-nama="{{ $eks->nama }}"
+                            data-urutan="{{ $eks->urutan }}"
+                            class="p-1.5 text-slate-400 hover:text-teal-600 transition" title="Ubah">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <form action="{{ route('ekstrakurikuler.destroy', $eks->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kegiatan ekstrakurikuler ini beserta seluruh data nilainya?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Hapus">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            @empty
+                <div class="col-span-full p-6 text-center text-slate-400 text-xs">Belum ada kegiatan ekstrakurikuler.</div>
+            @endforelse
+        </div>
     </div>
 
     <!-- Modal Tambah Mapel -->
@@ -360,6 +432,51 @@
         </div>
     </div>
 
+    <!-- Modal Tambah Ekstrakurikuler -->
+    <div id="modalTambahEkskul" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-100">
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Tambah Kegiatan Ekstrakurikuler</h3>
+            <form action="{{ route('ekstrakurikuler.store') }}" method="POST" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-700 mb-1">Nama Kegiatan Ekstrakurikuler *</label>
+                    <input type="text" name="nama" required maxlength="150" placeholder="Misal: Pramuka, Futsal, Tari" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-700 mb-1">Urutan Baris *</label>
+                    <input type="number" name="urutan" value="{{ $ekskulList->count() + 1 }}" min="0" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div class="flex justify-end space-x-2 pt-3">
+                    <button type="button" onclick="document.getElementById('modalTambahEkskul').classList.add('hidden')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Edit Ekstrakurikuler -->
+    <div id="modalEditEkskul" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-100">
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Ubah Kegiatan Ekstrakurikuler</h3>
+            <form id="formEditEkskul" method="POST" class="space-y-4">
+                @csrf
+                @method('PUT')
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-700 mb-1">Nama Kegiatan Ekstrakurikuler *</label>
+                    <input type="text" name="nama" id="edit_ekskul_nama" required maxlength="150" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-700 mb-1">Urutan Baris *</label>
+                    <input type="number" name="urutan" id="edit_ekskul_urutan" min="0" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div class="flex justify-end space-x-2 pt-3">
+                    <button type="button" onclick="document.getElementById('modalEditEkskul').classList.add('hidden')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </div>
 
 @push('scripts')
@@ -401,6 +518,13 @@
         document.getElementById('edit_pem_urutan').value = pem.urutan;
         document.getElementById('edit_pem_aktif').checked = Boolean(pem.aktif);
         document.getElementById('modalEditPembiasaan').classList.remove('hidden');
+    }
+
+    function editEkskul(buttonEl) {
+        document.getElementById('formEditEkskul').action = '/ekstrakurikuler/' + buttonEl.dataset.id;
+        document.getElementById('edit_ekskul_nama').value = buttonEl.dataset.nama || '';
+        document.getElementById('edit_ekskul_urutan').value = buttonEl.dataset.urutan || 0;
+        document.getElementById('modalEditEkskul').classList.remove('hidden');
     }
 </script>
 @endpush

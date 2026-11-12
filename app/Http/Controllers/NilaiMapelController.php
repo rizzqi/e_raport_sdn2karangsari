@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ekstrakurikuler;
 use App\Models\Kehadiran;
 use App\Models\Kelas;
 use App\Models\KelasSiswa;
 use App\Models\MataPelajaran;
 use App\Models\Nilai;
+use App\Models\NilaiEkstrakurikuler;
 use App\Models\NilaiFormatifBulanan;
 use App\Models\NilaiPembiasaan;
 use App\Models\NilaiRaporMapel;
@@ -105,7 +107,7 @@ class NilaiMapelController extends Controller
         } elseif ($tab === 'uas') {
             $tab = 'sas';
         }
-        if (! in_array($tab, ['mapel', 'pembiasaan', 'formatif', 'sts', 'sas', 'rapor'], true)) {
+        if (! in_array($tab, ['mapel', 'pembiasaan', 'ekstrakurikuler', 'formatif', 'sts', 'sas', 'rapor'], true)) {
             $tab = 'mapel';
         }
         $focusKsId = $request->integer('focus_ks') ?: null;
@@ -476,6 +478,21 @@ class NilaiMapelController extends Controller
             ->distinct('kelas_siswa_id')
             ->count('kelas_siswa_id');
 
+        // Data Tab Ekstrakurikuler
+        $requestedPeriodeEkskul = strtolower((string) $request->input('periode', ''));
+        $periodeEkskul = in_array($requestedPeriodeEkskul, ['sts', 'sas'], true)
+            ? $requestedPeriodeEkskul
+            : $periodeSia;
+        $ekskulList = Ekstrakurikuler::aktif()->orderBy('urutan')->get();
+        $nilaiEkskulMap = NilaiEkstrakurikuler::whereIn('kelas_siswa_id', $ksIds)
+            ->where('periode', $periodeEkskul)
+            ->get()
+            ->keyBy(fn (NilaiEkstrakurikuler $item): string => $item->kelas_siswa_id.'_'.$item->ekstrakurikuler_id);
+        $countEkskulSiswa = NilaiEkstrakurikuler::whereIn('kelas_siswa_id', $ksIds)
+            ->where('periode', $periodeEkskul)
+            ->distinct('kelas_siswa_id')
+            ->count('kelas_siswa_id');
+
         // Hitung kelengkapan nilai siswa pada mapel aktif
         $countLengkap = 0;
         $countBelumLengkap = 0;
@@ -543,6 +560,10 @@ class NilaiMapelController extends Controller
             'kehadiranList',
             'nilaiPemGroup',
             'countPembiasaan',
+            'ekskulList',
+            'periodeEkskul',
+            'nilaiEkskulMap',
+            'countEkskulSiswa',
             'countLengkap',
             'countBelumLengkap'
         ));
@@ -921,6 +942,164 @@ class NilaiMapelController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Tersimpan otomatis',
+            'saved_at' => now()->format('H:i:s'),
+        ]);
+    }
+
+    /**
+     * Pintasan URL terpadu untuk membuka Tab Ekstrakurikuler secara langsung.
+     */
+    public function ekstrakurikuler(Request $request, Kelas $kelas): View|RedirectResponse
+    {
+        $this->authorizeAkses($kelas);
+
+        $defaultMapel = MataPelajaran::forKelas($kelas)->first()
+            ?? MataPelajaran::aktif()->first();
+
+        if (! $defaultMapel) {
+            return redirect()
+                ->route('kelas.show', $kelas->id)
+                ->with('error', 'Silakan aktifkan minimal satu mata pelajaran terlebih dahulu sebelum mengelola nilai.');
+        }
+
+        $request->merge(['tab' => 'ekstrakurikuler']);
+
+        return $this->index($kelas, $defaultMapel, $request);
+    }
+
+    /**
+     * Simpan Nilai Ekstrakurikuler sekelas untuk satu periode (STS / SAS).
+     */
+    public function simpanEkstrakurikuler(Request $request, Kelas $kelas): RedirectResponse
+    {
+        $this->authorizeAkses($kelas);
+
+        $validated = $request->validate([
+            'periode' => ['required', 'in:sts,sas'],
+            'tahun' => ['nullable', 'integer'],
+            'ekskul' => ['nullable', 'array'],
+            'ekskul.*.*' => ['nullable', 'array'],
+            'ekskul.*.*.predikat' => ['nullable', 'string', 'in:Sangat Baik,Baik,Cukup,Perlu Bimbingan'],
+            'ekskul.*.*.keterangan' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $periode = (string) $validated['periode'];
+        $tahun = (int) ($validated['tahun'] ?? now()->year);
+        $validKsIds = KelasSiswa::where('kelas_id', $kelas->id)->pluck('id')->all();
+        $validEkskulIds = Ekstrakurikuler::pluck('id')->all();
+        $ekskulInput = $request->input('ekskul', []);
+
+        DB::transaction(function () use ($ekskulInput, $validKsIds, $validEkskulIds, $periode): void {
+            foreach ($ekskulInput as $ksId => $items) {
+                $ksId = (int) $ksId;
+                if (! in_array($ksId, $validKsIds, true) || ! is_array($items)) {
+                    continue;
+                }
+
+                foreach ($items as $ekskulId => $row) {
+                    $ekskulId = (int) $ekskulId;
+                    if (! in_array($ekskulId, $validEkskulIds, true) || ! is_array($row)) {
+                        continue;
+                    }
+
+                    $predikat = trim((string) ($row['predikat'] ?? ''));
+                    $keterangan = trim((string) ($row['keterangan'] ?? ''));
+
+                    if (in_array($predikat, NilaiEkstrakurikuler::PREDIKAT_LIST, true)) {
+                        NilaiEkstrakurikuler::updateOrCreate([
+                            'kelas_siswa_id' => $ksId,
+                            'ekstrakurikuler_id' => $ekskulId,
+                            'periode' => $periode,
+                        ], [
+                            'predikat' => $predikat,
+                            'keterangan' => $keterangan !== '' ? $keterangan : null,
+                        ]);
+                    } else {
+                        NilaiEkstrakurikuler::where('kelas_siswa_id', $ksId)
+                            ->where('ekstrakurikuler_id', $ekskulId)
+                            ->where('periode', $periode)
+                            ->delete();
+                    }
+                }
+            }
+        });
+
+        return redirect()
+            ->route('kelas.ekstrakurikuler.index', [
+                'kelas' => $kelas->id,
+                'periode' => $periode,
+                'tahun' => $tahun,
+            ])
+            ->with('success', 'Data nilai ekstrakurikuler ('.strtoupper($periode).') berhasil disimpan.');
+    }
+
+    /**
+     * Autosave real-time satu sel predikat & keterangan ekstrakurikuler siswa.
+     */
+    public function autosaveEkstrakurikuler(
+        Request $request,
+        Kelas $kelas,
+        HitungNilaiService $hitungNilaiService
+    ): JsonResponse {
+        $this->authorizeAkses($kelas);
+
+        $validated = $request->validate([
+            'kelas_siswa_id' => ['required', 'integer'],
+            'ekstrakurikuler_id' => ['required', 'integer', 'exists:ekstrakurikuler,id'],
+            'periode' => ['required', 'in:sts,sas'],
+            'predikat' => ['nullable', 'string', 'in:Sangat Baik,Baik,Cukup,Perlu Bimbingan'],
+            'keterangan' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $ksId = (int) $validated['kelas_siswa_id'];
+        $ekskulId = (int) $validated['ekstrakurikuler_id'];
+        $periode = (string) $validated['periode'];
+
+        $belongsToKelas = KelasSiswa::where('id', $ksId)
+            ->where('kelas_id', $kelas->id)
+            ->exists();
+
+        if (! $belongsToKelas) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Siswa tidak terdaftar di kelas ini.',
+            ], 403);
+        }
+
+        $predikat = trim((string) ($validated['predikat'] ?? ''));
+        $keterangan = trim((string) ($validated['keterangan'] ?? ''));
+
+        if ($predikat === '') {
+            NilaiEkstrakurikuler::where('kelas_siswa_id', $ksId)
+                ->where('ekstrakurikuler_id', $ekskulId)
+                ->where('periode', $periode)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'status' => 'deleted',
+                'message' => 'Kepesertaan ekstrakurikuler dihapus',
+                'generated_keterangan' => null,
+                'saved_at' => now()->format('H:i:s'),
+            ]);
+        }
+
+        $ekskul = Ekstrakurikuler::findOrFail($ekskulId);
+
+        NilaiEkstrakurikuler::updateOrCreate([
+            'kelas_siswa_id' => $ksId,
+            'ekstrakurikuler_id' => $ekskulId,
+            'periode' => $periode,
+        ], [
+            'predikat' => $predikat,
+            'keterangan' => $keterangan !== '' ? $keterangan : null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'saved',
+            'message' => 'Tersimpan otomatis',
+            'generated_keterangan' => $hitungNilaiService->generateDeskripsiEkstrakurikuler($ekskul->nama, $predikat),
             'saved_at' => now()->format('H:i:s'),
         ]);
     }

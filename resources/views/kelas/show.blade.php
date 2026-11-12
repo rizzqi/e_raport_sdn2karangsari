@@ -146,6 +146,10 @@
                            class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
                             <i class="fa-solid fa-heart-pulse w-5 text-rose-500 mr-2 text-center"></i> SIA &amp; Pembiasaan
                         </a>
+                        <a href="{{ route('kelas.ekstrakurikuler.index', $kelas->id) }}"
+                           class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">
+                            <i class="fa-solid fa-campground w-5 text-teal-600 mr-2 text-center"></i> Ekstrakurikuler
+                        </a>
                         @if(auth()->user()->isAdmin())
                             <a href="{{ route('penempatan.index', $kelas->id) }}"
                                class="flex items-center px-4 py-2 text-slate-700 hover:bg-slate-50 font-medium">

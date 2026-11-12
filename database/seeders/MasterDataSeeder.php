@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Ekstrakurikuler;
 use App\Models\Kelas;
 use App\Models\KelasGuru;
 use App\Models\MataPelajaran;
@@ -108,6 +109,21 @@ class MasterDataSeeder extends Seeder
             Pembiasaan::firstOrCreate(
                 ['nama' => $p['nama']],
                 ['urutan' => $p['urutan'], 'aktif' => true]
+            );
+        }
+
+        // 5b. Ekstrakurikuler Standar
+        $ekstrakurikulers = [
+            ['nama' => 'Pramuka', 'urutan' => 1],
+            ['nama' => 'Olahraga / Futsal', 'urutan' => 2],
+            ['nama' => 'Seni Tari & Musik', 'urutan' => 3],
+            ['nama' => "Baca Tulis Al-Qur'an (BTQ)", 'urutan' => 4],
+        ];
+
+        foreach ($ekstrakurikulers as $eks) {
+            Ekstrakurikuler::firstOrCreate(
+                ['nama' => $eks['nama']],
+                ['urutan' => $eks['urutan'], 'aktif' => true]
             );
         }
 

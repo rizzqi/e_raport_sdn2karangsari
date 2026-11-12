@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ekstrakurikuler;
 use App\Models\MataPelajaran;
 use App\Models\Pembiasaan;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class MataPelajaranController extends Controller
@@ -12,8 +14,9 @@ class MataPelajaranController extends Controller
     {
         $mapelList = MataPelajaran::orderBy('urutan', 'asc')->get();
         $pembiasaanList = Pembiasaan::orderBy('urutan', 'asc')->get();
+        $ekskulList = Ekstrakurikuler::orderBy('urutan', 'asc')->get();
 
-        return view('mapel.index', compact('mapelList', 'pembiasaanList'));
+        return view('mapel.index', compact('mapelList', 'pembiasaanList', 'ekskulList'));
     }
 
     public function storeMapel(Request $request)
@@ -150,5 +153,64 @@ class MataPelajaranController extends Controller
         $pembiasaan->delete();
 
         return redirect()->route('mapel.index')->with('success', 'Aspek pembiasaan berhasil dihapus.');
+    }
+
+    /**
+     * Simpan data master kegiatan ekstrakurikuler baru.
+     */
+    public function storeEkstrakurikuler(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'nama' => 'required|string|max:150|unique:ekstrakurikuler,nama',
+            'urutan' => 'required|integer|min:0',
+        ]);
+
+        Ekstrakurikuler::create([
+            'nama' => trim($validated['nama']),
+            'urutan' => (int) $validated['urutan'],
+            'aktif' => true,
+        ]);
+
+        return redirect()->route('mapel.index')->with('success', 'Kegiatan ekstrakurikuler berhasil ditambahkan.');
+    }
+
+    /**
+     * Perbarui data master kegiatan ekstrakurikuler.
+     */
+    public function updateEkstrakurikuler(Request $request, Ekstrakurikuler $ekstrakurikuler): RedirectResponse
+    {
+        $validated = $request->validate([
+            'nama' => 'required|string|max:150|unique:ekstrakurikuler,nama,'.$ekstrakurikuler->id,
+            'urutan' => 'required|integer|min:0',
+        ]);
+
+        $ekstrakurikuler->update([
+            'nama' => trim($validated['nama']),
+            'urutan' => (int) $validated['urutan'],
+        ]);
+
+        return redirect()->route('mapel.index')->with('success', 'Kegiatan ekstrakurikuler berhasil diperbarui.');
+    }
+
+    /**
+     * Ubah status aktif/nonaktif kegiatan ekstrakurikuler.
+     */
+    public function toggleStatusEkstrakurikuler(Ekstrakurikuler $ekstrakurikuler): RedirectResponse
+    {
+        $ekstrakurikuler->update([
+            'aktif' => ! $ekstrakurikuler->aktif,
+        ]);
+
+        return redirect()->route('mapel.index')->with('success', 'Status kegiatan ekstrakurikuler berhasil diubah.');
+    }
+
+    /**
+     * Hapus kegiatan ekstrakurikuler beserta catatan nilainya.
+     */
+    public function destroyEkstrakurikuler(Ekstrakurikuler $ekstrakurikuler): RedirectResponse
+    {
+        $ekstrakurikuler->delete();
+
+        return redirect()->route('mapel.index')->with('success', 'Kegiatan ekstrakurikuler berhasil dihapus.');
     }
 }

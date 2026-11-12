@@ -526,6 +526,8 @@ class CetakService
                 ->get()
                 ->keyBy('kelas_siswa_id');
 
+            $ekskulSiswaMap = $this->hitungService->getEkstrakurikulerSiswaMap($ksIds, $periode);
+
             $laporanSiswa = [];
             foreach ($ksList as $ks) {
                 $laporanSiswa[] = [
@@ -533,6 +535,7 @@ class CetakService
                     'siswa' => $ks->siswa,
                     'hasilNilai' => $this->hitungService->hitungNilaiSiswa($ks, $periode, null, null, null, $filterMapelId),
                     'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
+                    'ekskulListSiswa' => $ekskulSiswaMap->get($ks->id, []),
                     'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
                 ];
             }

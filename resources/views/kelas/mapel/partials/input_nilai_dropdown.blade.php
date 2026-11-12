@@ -77,6 +77,11 @@
                 <i class="fa-solid fa-star text-amber-500 w-4 text-center"></i>
                 <span>Pembiasaan &amp; Kehadiran</span>
             </a>
+            <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel?->id, 'tab' => 'ekstrakurikuler', 'tahun' => $tahun]) }}"
+               class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition {{ ($tab ?? '') === 'ekstrakurikuler' ? 'bg-teal-50 text-teal-800' : 'text-slate-700 hover:bg-slate-50' }}">
+                <i class="fa-solid fa-campground w-4 text-center {{ ($tab ?? '') === 'ekstrakurikuler' ? 'text-teal-600' : 'text-slate-400' }}"></i>
+                <span>Ekstrakurikuler</span>
+            </a>
         </div>
     </div>
 </div>

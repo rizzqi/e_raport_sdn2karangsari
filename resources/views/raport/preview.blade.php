@@ -387,6 +387,8 @@
             </table>
         </div>
 
+        @include('raport.partials.ekstrakurikuler_web', ['ekskulListSiswa' => $ekskulListSiswa ?? []])
+
         <!-- CATATAN WALI KELAS -->
         <div class="mb-6">
             <h4 class="text-xs sm:text-sm font-bold uppercase tracking-wider mb-1.5 text-slate-800">

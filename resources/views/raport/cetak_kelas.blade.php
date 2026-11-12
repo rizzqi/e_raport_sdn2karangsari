@@ -169,6 +169,7 @@
                 $siswa = $item['siswa'];
                 $hasilNilai = $item['hasilNilai'];
                 $nilaiPemList = $item['nilaiPemList'];
+                $ekskulListSiswa = $item['ekskulListSiswa'] ?? [];
                 $kehadiran = $item['kehadiran'];
             @endphp
 
@@ -385,6 +386,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                @include('raport.partials.ekstrakurikuler_web', ['ekskulListSiswa' => $ekskulListSiswa])
 
                 <!-- CATATAN WALI KELAS -->
                 <div class="mb-6">

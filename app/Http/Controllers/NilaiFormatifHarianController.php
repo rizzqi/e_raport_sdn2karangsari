@@ -143,6 +143,8 @@ class NilaiFormatifHarianController extends Controller
             ];
         }
 
+        $defaultNamaKolom = $this->suggestNextDefaultColumnName($penilaianList->pluck('nama')->all());
+
         return view('kelas.formatif_harian.index', compact(
             'kelas',
             'mapel',
@@ -157,59 +159,116 @@ class NilaiFormatifHarianController extends Controller
             'daftarBulanSemester',
             'semester',
             'isPjok',
-            'isAgama'
+            'isAgama',
+            'defaultNamaKolom'
         ));
     }
 
     /**
-     * Tambah Kolom Penilaian Harian Baru
+     * Tambah Kolom Penilaian Harian Baru (mendukung tambah 1 atau beberapa kolom sekaligus).
      */
     public function tambahPenilaian(Kelas $kelas, MataPelajaran $mapel, Request $request): RedirectResponse
     {
         $this->authorizeAkses($kelas);
 
-        $request->validate([
-            'nama' => ['required', 'string', 'max:100'],
-            'tanggal' => ['nullable', 'date'],
-            'lingkup_materi' => ['nullable', 'string', 'max:255'],
-            'jenis' => ['nullable', 'in:teori,praktik'],
-            'bobot' => ['nullable', 'numeric', 'min:0.1', 'max:10'],
-            'bulan' => ['required', 'integer', 'between:1,12'],
-            'tahun' => ['required', 'integer', 'min:2020'],
-        ]);
+        $validated = $request->validate(
+            array_merge($this->penilaianFieldRules(), [
+                'bulan' => ['required', 'integer', 'between:1,12'],
+                'tahun' => ['required', 'integer', 'min:2020'],
+                'jumlah_kolom' => ['nullable', 'integer', 'min:1', 'max:10'],
+                'lanjut_tambah' => ['nullable', 'boolean'],
+            ]),
+            $this->penilaianValidationMessages()
+        );
 
-        $tahun = (int) $request->input('tahun');
-        $bulan = (int) $request->input('bulan');
+        $tahun = (int) $validated['tahun'];
+        $bulan = (int) $validated['bulan'];
+        $jumlahKolom = (int) ($validated['jumlah_kolom'] ?? 1);
+        $baseNama = trim((string) $validated['nama']);
+        $lingkupMateri = filled($validated['lingkup_materi'] ?? null)
+            ? trim((string) $validated['lingkup_materi'])
+            : null;
+        $tanggal = filled($validated['tanggal'] ?? null) ? $validated['tanggal'] : null;
+        $jenis = $validated['jenis'] ?? 'teori';
+        $bobot = isset($validated['bobot']) && $validated['bobot'] !== ''
+            ? (float) $validated['bobot']
+            : 1.0;
+        $lanjutTambah = $request->boolean('lanjut_tambah');
 
-        $count = PenilaianFormatifHarian::where('kelas_id', $kelas->id)
-            ->where('mapel_id', $mapel->id)
-            ->where('tahun', $tahun)
-            ->where('bulan', $bulan)
-            ->count();
+        $created = DB::transaction(function () use (
+            $kelas,
+            $mapel,
+            $tahun,
+            $bulan,
+            $jumlahKolom,
+            $baseNama,
+            $lingkupMateri,
+            $tanggal,
+            $jenis,
+            $bobot
+        ): array {
+            $existing = PenilaianFormatifHarian::where('kelas_id', $kelas->id)
+                ->where('mapel_id', $mapel->id)
+                ->where('tahun', $tahun)
+                ->where('bulan', $bulan)
+                ->orderBy('urutan')
+                ->get(['nama', 'urutan']);
 
-        $penilaian = PenilaianFormatifHarian::create([
-            'kelas_id' => $kelas->id,
-            'mapel_id' => $mapel->id,
-            'tahun' => $tahun,
-            'bulan' => $bulan,
-            'nama' => trim($request->input('nama')),
-            'lingkup_materi' => $request->input('lingkup_materi') ? trim($request->input('lingkup_materi')) : null,
-            'tanggal' => $request->input('tanggal') ?: null,
-            'bobot' => (float) $request->input('bobot', 1.0),
-            'jenis' => $request->input('jenis', 'teori'),
-            'urutan' => $count + 1,
-        ]);
+            $nextUrutan = ((int) $existing->max('urutan')) + 1;
+            $usedNames = $existing->pluck('nama')
+                ->map(static fn (string $name): string => mb_strtolower(trim($name)))
+                ->all();
 
-        return redirect()->route('kelas.mapel.formatif-harian', [
+            $createdColumns = [];
+            for ($i = 0; $i < $jumlahKolom; $i++) {
+                $kolomNama = $jumlahKolom === 1
+                    ? mb_substr($baseNama, 0, 150)
+                    : $this->generateSequentialColumnName($baseNama, $usedNames);
+
+                $usedNames[] = mb_strtolower($kolomNama);
+
+                $createdColumns[] = PenilaianFormatifHarian::create([
+                    'kelas_id' => $kelas->id,
+                    'mapel_id' => $mapel->id,
+                    'tahun' => $tahun,
+                    'bulan' => $bulan,
+                    'nama' => $kolomNama,
+                    'lingkup_materi' => $lingkupMateri,
+                    'tanggal' => $tanggal,
+                    'bobot' => $bobot,
+                    'jenis' => $jenis,
+                    'urutan' => $nextUrutan + $i,
+                ]);
+            }
+
+            return $createdColumns;
+        });
+
+        $namaBulan = NilaiFormatifBulanan::NAMA_BULAN[$bulan] ?? (string) $bulan;
+        if (count($created) === 1) {
+            $message = "Penilaian Harian '{$created[0]->nama}' berhasil ditambahkan ke Bulan {$namaBulan}.";
+        } else {
+            $namaPertama = $created[0]->nama;
+            $namaTerakhir = $created[count($created) - 1]->nama;
+            $message = count($created)." kolom penilaian ({$namaPertama} s.d. {$namaTerakhir}) berhasil ditambahkan ke Bulan {$namaBulan}.";
+        }
+
+        $redirect = redirect()->route('kelas.mapel.formatif-harian', [
             'kelas' => $kelas->id,
             'mapel' => $mapel->id,
             'tahun' => $tahun,
             'bulan' => $bulan,
-        ])->with('success', "Penilaian Harian '{$penilaian->nama}' berhasil ditambahkan ke Bulan ".(NilaiFormatifBulanan::NAMA_BULAN[$bulan] ?? $bulan).'.');
+        ])->with('success', $message);
+
+        if ($lanjutTambah) {
+            $redirect->with('open_modal_tambah', true);
+        }
+
+        return $redirect;
     }
 
     /**
-     * Update Data Penilaian Harian (Nama, Tanggal, Lingkup Materi)
+     * Update Data Penilaian Harian (Nama, Tanggal, Lingkup Materi).
      */
     public function updatePenilaian(Kelas $kelas, MataPelajaran $mapel, PenilaianFormatifHarian $penilaian, Request $request): RedirectResponse
     {
@@ -219,20 +278,21 @@ class NilaiFormatifHarianController extends Controller
             abort(404);
         }
 
-        $request->validate([
-            'nama' => ['required', 'string', 'max:100'],
-            'tanggal' => ['nullable', 'date'],
-            'lingkup_materi' => ['nullable', 'string', 'max:255'],
-            'jenis' => ['nullable', 'in:teori,praktik'],
-            'bobot' => ['nullable', 'numeric', 'min:0.1', 'max:10'],
-        ]);
+        $validated = $request->validate(
+            $this->penilaianFieldRules(),
+            $this->penilaianValidationMessages()
+        );
 
         $penilaian->update([
-            'nama' => trim($request->input('nama')),
-            'tanggal' => $request->input('tanggal') ?: null,
-            'lingkup_materi' => $request->input('lingkup_materi') ? trim($request->input('lingkup_materi')) : null,
-            'jenis' => $request->input('jenis', $penilaian->jenis),
-            'bobot' => (float) $request->input('bobot', $penilaian->bobot),
+            'nama' => trim((string) $validated['nama']),
+            'tanggal' => filled($validated['tanggal'] ?? null) ? $validated['tanggal'] : null,
+            'lingkup_materi' => filled($validated['lingkup_materi'] ?? null)
+                ? trim((string) $validated['lingkup_materi'])
+                : null,
+            'jenis' => $validated['jenis'] ?? ($penilaian->jenis ?: 'teori'),
+            'bobot' => isset($validated['bobot']) && $validated['bobot'] !== ''
+                ? (float) $validated['bobot']
+                : (float) ($penilaian->bobot ?? 1.0),
         ]);
 
         return redirect()->route('kelas.mapel.formatif-harian', [
@@ -241,6 +301,105 @@ class NilaiFormatifHarianController extends Controller
             'tahun' => $penilaian->tahun,
             'bulan' => $penilaian->bulan,
         ])->with('success', "Informasi penilaian '{$penilaian->nama}' berhasil diperbarui.");
+    }
+
+    /**
+     * Aturan validasi bersama untuk pembuatan dan pembaruan kolom penilaian harian.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function penilaianFieldRules(): array
+    {
+        return [
+            'nama' => ['required', 'string', 'max:150'],
+            'tanggal' => ['nullable', 'date'],
+            'lingkup_materi' => ['nullable', 'string', 'max:500'],
+            'jenis' => ['nullable', 'in:teori,praktik'],
+            'bobot' => ['nullable', 'numeric', 'min:0.1', 'max:10'],
+        ];
+    }
+
+    /**
+     * Pesan validasi berbahasa Indonesia agar mudah dipahami guru saat ada kesalahan input.
+     *
+     * @return array<string, string>
+     */
+    private function penilaianValidationMessages(): array
+    {
+        return [
+            'nama.required' => 'Nama kolom penilaian wajib diisi.',
+            'nama.string' => 'Nama kolom penilaian harus berupa teks.',
+            'nama.max' => 'Nama kolom penilaian maksimal :max karakter.',
+            'tanggal.date' => 'Format tanggal penilaian tidak valid.',
+            'lingkup_materi.string' => 'Lingkup materi / TP harus berupa teks.',
+            'lingkup_materi.max' => 'Lingkup materi / TP maksimal :max karakter.',
+            'jenis.in' => 'Jenis penilaian harus berupa Teori atau Praktik.',
+            'bobot.numeric' => 'Bobot penilaian harus berupa angka.',
+            'bobot.min' => 'Bobot penilaian minimal :min.',
+            'bobot.max' => 'Bobot penilaian maksimal :max.',
+            'jumlah_kolom.integer' => 'Jumlah kolom harus berupa angka bulat.',
+            'jumlah_kolom.min' => 'Jumlah kolom minimal :min.',
+            'jumlah_kolom.max' => 'Jumlah kolom sekaligus maksimal :max kolom.',
+            'bulan.required' => 'Bulan penilaian wajib dipilih.',
+            'tahun.required' => 'Tahun penilaian wajib dipilih.',
+        ];
+    }
+
+    /**
+     * Hasilkan nama kolom default berikutnya (mis. Harian 4) yang tidak bentrok setelah penghapusan kolom.
+     *
+     * @param  array<int, string>  $existingNames
+     */
+    private function suggestNextDefaultColumnName(array $existingNames): string
+    {
+        $maxNumber = 0;
+        $usedLower = [];
+
+        foreach ($existingNames as $name) {
+            $trimmed = trim($name);
+            $usedLower[] = mb_strtolower($trimmed);
+            if (preg_match('/^harian\s+(\d+)$/iu', $trimmed, $matches)) {
+                $maxNumber = max($maxNumber, (int) $matches[1]);
+            }
+        }
+
+        $next = max($maxNumber, count($existingNames)) + 1;
+        while (in_array('harian '.$next, $usedLower, true)) {
+            $next++;
+        }
+
+        return 'Harian '.$next;
+    }
+
+    /**
+     * Buat nama kolom berurutan saat menambahkan beberapa kolom sekaligus tanpa bentrok dengan kolom yang ada.
+     *
+     * @param  array<int, string>  $usedNamesLower
+     */
+    private function generateSequentialColumnName(string $baseNama, array $usedNamesLower): string
+    {
+        if (preg_match('/^(.*?)(\d+)$/u', $baseNama, $matches)) {
+            $prefix = $matches[1];
+            $number = (int) $matches[2];
+        } else {
+            $prefix = rtrim($baseNama).' ';
+            $number = 1;
+        }
+
+        while (true) {
+            $suffix = (string) $number;
+            $maxPrefixLength = max(1, 150 - mb_strlen($suffix));
+            $trimmedPrefix = mb_strlen($prefix) > $maxPrefixLength
+                ? mb_substr($prefix, 0, $maxPrefixLength)
+                : $prefix;
+            $candidate = $trimmedPrefix.$suffix;
+
+            if (! in_array(mb_strtolower($candidate), $usedNamesLower, true)) {
+                return $candidate;
+            }
+
+            $number++;
+        }
     }
 
     /**

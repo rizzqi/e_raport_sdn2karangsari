@@ -255,6 +255,8 @@
         </tbody>
     </table>
 
+    @include('raport.partials.ekstrakurikuler_pdf', ['ekskulListSiswa' => $ekskulListSiswa ?? []])
+
     <!-- TANDA TANGAN 3 PIHAK -->
     <table class="ttd">
         <tr>

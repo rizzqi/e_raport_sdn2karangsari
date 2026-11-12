@@ -155,7 +155,7 @@
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-4">
                     <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
                         <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
-                            <i class="fa-solid fa-star text-amber-500 mr-2"></i> Karakter & Pembiasaan
+                            <i class="fa-solid fa-star text-amber-500 mr-2"></i> Karakter &amp; Pembiasaan
                         </h2>
                     </div>
 
@@ -177,6 +177,46 @@
                                 </select>
                             </div>
                         @endforeach
+                    </div>
+                </div>
+
+                <!-- EKSTRAKURIKULER -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-4">
+                    <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-campground text-teal-600 mr-2"></i> Ekstrakurikuler
+                        </h2>
+                        <span class="text-[10px] font-semibold text-slate-400">Opsional</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        @forelse($ekskulList as $eks)
+                            @php
+                                $eksVal = $nilaiEkskulMap->get($eks->id);
+                                $eksPred = $eksVal ? $eksVal->predikat : '';
+                                $eksKet = $eksVal ? ($eksVal->keterangan ?? '') : '';
+                            @endphp
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/60 space-y-2">
+                                <label class="block text-xs font-semibold text-slate-800 leading-snug">
+                                    {{ $eks->nama }}
+                                </label>
+                                <select name="ekskul[{{ $eks->id }}][predikat]"
+                                        class="w-full text-xs font-bold py-1.5 px-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500">
+                                    <option value="">- Tidak Ikut -</option>
+                                    @foreach(\App\Models\NilaiEkstrakurikuler::PREDIKAT_LIST as $pred)
+                                        <option value="{{ $pred }}" @selected($eksPred === $pred)>{{ $pred }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="text"
+                                       name="ekskul[{{ $eks->id }}][keterangan]"
+                                       value="{{ $eksKet }}"
+                                       maxlength="255"
+                                       placeholder="Catatan khusus (opsional)"
+                                       class="w-full text-[11px] py-1.5 px-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500">
+                            </div>
+                        @empty
+                            <p class="text-xs text-slate-400 text-center py-2">Belum ada ekstrakurikuler aktif.</p>
+                        @endforelse
                     </div>
                 </div>
 

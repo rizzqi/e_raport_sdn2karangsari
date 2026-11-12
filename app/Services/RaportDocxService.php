@@ -11,6 +11,7 @@ use App\Models\Sekolah;
 use Carbon\Carbon;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\SimpleType\Jc;
 use PhpOffice\PhpWord\SimpleType\JcTable;
 use PhpOffice\PhpWord\SimpleType\VerticalJc;
@@ -44,16 +45,8 @@ class RaportDocxService
         $this->tulisHalamanRaport($section, $kelasSiswa, $periode, $tanggal);
 
         $filename = 'raport_'.str_replace(' ', '_', strtolower($kelasSiswa->siswa->nama)).'_'.$periode.'.docx';
-        $savePath = storage_path('app/private/raport/'.$filename);
 
-        if (! file_exists(dirname($savePath))) {
-            mkdir(dirname($savePath), 0755, true);
-        }
-
-        $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
-        $objWriter->save($savePath);
-
-        return $savePath;
+        return $this->writeDocxFile($phpWord, storage_path('app/private/raport/'.$filename));
     }
 
     /**
@@ -83,11 +76,21 @@ class RaportDocxService
 
         $namaKelasClean = str_replace(' ', '_', strtolower($kelas->nama));
         $filename = 'raport_kelas_'.$namaKelasClean.'_'.$periode.'.docx';
-        $savePath = storage_path('app/private/raport/'.$filename);
 
-        if (! file_exists(dirname($savePath))) {
-            mkdir(dirname($savePath), 0755, true);
+        return $this->writeDocxFile($phpWord, storage_path('app/private/raport/'.$filename));
+    }
+
+    /**
+     * Tulis objek PhpWord ke disk menggunakan direktori tujuan sebagai temp dir agar izin file konsisten.
+     */
+    protected function writeDocxFile(PhpWord $phpWord, string $savePath): string
+    {
+        $targetDir = dirname($savePath);
+        if (! file_exists($targetDir)) {
+            mkdir($targetDir, 0755, true);
         }
+
+        Settings::setTempDir($targetDir);
 
         $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
         $objWriter->save($savePath);
@@ -291,6 +294,34 @@ class RaportDocxService
                 }
             } else {
                 $rowPem->addCell(1800, ['vMerge' => 'continue']);
+            }
+        }
+
+        $section->addTextBreak(1);
+
+        // EKSTRAKURIKULER
+        $ekskulListSiswa = $this->hitungService->getEkstrakurikulerSiswaMap([$ks->id], $periode)->get($ks->id, []);
+        $section->addText('EKSTRAKURIKULER', 'boldText', ['spaceAfter' => 50]);
+        $ekskulTable = $section->addTable($tableStyle);
+        $ekskulHeader = $ekskulTable->addRow(300);
+        $ekskulHeader->addCell(600, ['bgColor' => 'EAEAEA'])->addText('No', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $ekskulHeader->addCell(2600, ['bgColor' => 'EAEAEA'])->addText('Kegiatan Ekstrakurikuler', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $ekskulHeader->addCell(1400, ['bgColor' => 'EAEAEA'])->addText('Predikat', 'tableHeader', ['alignment' => Jc::CENTER]);
+        $ekskulHeader->addCell(4400, ['bgColor' => 'EAEAEA'])->addText('Keterangan', 'tableHeader', ['alignment' => Jc::CENTER]);
+
+        if (empty($ekskulListSiswa)) {
+            $emptyRow = $ekskulTable->addRow();
+            $emptyRow->addCell(600)->addText('-', 'tableBody', ['alignment' => Jc::CENTER]);
+            $emptyRow->addCell(2600)->addText('Belum ada kegiatan ekstrakurikuler yang diikuti', 'tableBody');
+            $emptyRow->addCell(1400)->addText('-', 'tableBody', ['alignment' => Jc::CENTER]);
+            $emptyRow->addCell(4400)->addText('-', 'tableBody', ['alignment' => Jc::CENTER]);
+        } else {
+            foreach ($ekskulListSiswa as $eksIdx => $eks) {
+                $eksRow = $ekskulTable->addRow();
+                $eksRow->addCell(600)->addText((string) ($eksIdx + 1), 'tableBody', ['alignment' => Jc::CENTER]);
+                $eksRow->addCell(2600)->addText($eks['nama'], 'boldText');
+                $eksRow->addCell(1400)->addText($eks['predikat'], 'tableBody', ['alignment' => Jc::CENTER]);
+                $eksRow->addCell(4400)->addText($eks['keterangan'], 'tableBody');
             }
         }
 

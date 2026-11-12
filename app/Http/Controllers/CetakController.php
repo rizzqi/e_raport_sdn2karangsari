@@ -260,6 +260,8 @@ class CetakController extends Controller
                 'dibuat_oleh' => auth()->id(),
             ]);
 
+            $ekskulListSiswa = $this->hitungService->getEkstrakurikulerSiswaMap([$ks->id], $periode)->get($ks->id, []);
+
             $pdf = Pdf::loadView('raport.pdf', [
                 'kelasSiswa' => $ks,
                 'kelas' => $kelas,
@@ -271,6 +273,7 @@ class CetakController extends Controller
                 'tanggalObj' => $tanggalObj,
                 'hasilNilai' => $hasilNilai,
                 'pembiasaanList' => $pembiasaanList,
+                'ekskulListSiswa' => $ekskulListSiswa,
                 'nilaiPemList' => $nilaiPemList,
                 'kehadiran' => $kehadiran,
                 'printConfig' => $printConfig,
@@ -398,6 +401,7 @@ class CetakController extends Controller
                 ->where('periode', $periode)
                 ->get()
                 ->keyBy('kelas_siswa_id');
+            $ekskulSiswaMap = $this->hitungService->getEkstrakurikulerSiswaMap($ksIds, $periode);
 
             $laporanSiswa = [];
             foreach ($ksList as $ks) {
@@ -422,6 +426,7 @@ class CetakController extends Controller
                     'totalNilai' => $totalNilai,
                     'rataNilai' => $rataNilai,
                     'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
+                    'ekskulListSiswa' => $ekskulSiswaMap->get($ks->id, []),
                     'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
                 ];
             }

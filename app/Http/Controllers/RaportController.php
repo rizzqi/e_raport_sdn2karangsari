@@ -147,6 +147,8 @@ class RaportController extends Controller
             'alpa' => 0,
         ]);
 
+        $ekskulListSiswa = $this->hitungService->getEkstrakurikulerSiswaMap([$kelasSiswa->id], $periode)->get($kelasSiswa->id, []);
+
         return view('raport.preview', compact(
             'kelasSiswa',
             'kelas',
@@ -158,6 +160,7 @@ class RaportController extends Controller
             'tanggalObj',
             'hasilNilai',
             'pembiasaanList',
+            'ekskulListSiswa',
             'nilaiPemList',
             'kehadiran',
             'printConfig',
@@ -256,6 +259,7 @@ class RaportController extends Controller
             ->keyBy('kelas_siswa_id');
 
         $pembiasaanList = Pembiasaan::aktif()->get();
+        $ekskulSiswaMap = $this->hitungService->getEkstrakurikulerSiswaMap($kelasSiswaIds, $periode);
 
         $laporanSiswa = [];
         foreach ($kelasSiswaList as $ks) {
@@ -264,6 +268,7 @@ class RaportController extends Controller
                 'siswa' => $ks->siswa,
                 'hasilNilai' => $this->hitungService->hitungNilaiSiswa($ks, $periode, null, null, null, $filterMapelId),
                 'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
+                'ekskulListSiswa' => $ekskulSiswaMap->get($ks->id, []),
                 'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
             ];
         }
@@ -316,6 +321,7 @@ class RaportController extends Controller
             ->keyBy('kelas_siswa_id');
 
         $pembiasaanList = Pembiasaan::aktif()->get();
+        $ekskulSiswaMap = $this->hitungService->getEkstrakurikulerSiswaMap($kelasSiswaIds, $periode);
 
         $laporanSiswa = [];
         foreach ($kelasSiswaList as $ks) {
@@ -324,6 +330,7 @@ class RaportController extends Controller
                 'siswa' => $ks->siswa,
                 'hasilNilai' => $this->hitungService->hitungNilaiSiswa($ks, $periode, null, null, null, $filterMapelId),
                 'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
+                'ekskulListSiswa' => $ekskulSiswaMap->get($ks->id, []),
                 'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
             ];
 
@@ -393,6 +400,8 @@ class RaportController extends Controller
             'dibuat_oleh' => auth()->id(),
         ]);
 
+        $ekskulListSiswa = $this->hitungService->getEkstrakurikulerSiswaMap([$kelasSiswa->id], $periode)->get($kelasSiswa->id, []);
+
         $pdf = Pdf::loadView('raport.pdf', compact(
             'kelasSiswa',
             'kelas',
@@ -404,6 +413,7 @@ class RaportController extends Controller
             'tanggalObj',
             'hasilNilai',
             'pembiasaanList',
+            'ekskulListSiswa',
             'nilaiPemList',
             'kehadiran',
             'printConfig',
@@ -563,6 +573,8 @@ class RaportController extends Controller
         }
         $rataNilai = $countNilai > 0 ? round($totalNilai / $countNilai, 0) : 0;
 
+        $ekskulListSiswa = $this->hitungService->getEkstrakurikulerSiswaMap([$kelasSiswa->id], $periode)->get($kelasSiswa->id, []);
+
         $laporanSiswa = [
             [
                 'kelasSiswa' => $kelasSiswa,
@@ -571,6 +583,7 @@ class RaportController extends Controller
                 'totalNilai' => $totalNilai,
                 'rataNilai' => $rataNilai,
                 'nilaiPemList' => $nilaiPemList,
+                'ekskulListSiswa' => $ekskulListSiswa,
                 'kehadiran' => $kehadiran,
             ],
         ];
@@ -647,6 +660,8 @@ class RaportController extends Controller
         }
         $rataNilai = $countNilai > 0 ? round($totalNilai / $countNilai, 0) : 0;
 
+        $ekskulListSiswa = $this->hitungService->getEkstrakurikulerSiswaMap([$kelasSiswa->id], $periode)->get($kelasSiswa->id, []);
+
         $pdf = Pdf::loadView('raport.lembar_sts_sas_pdf', compact(
             'kelasSiswa',
             'kelas',
@@ -657,6 +672,7 @@ class RaportController extends Controller
             'tanggal',
             'tanggalObj',
             'hasilNilai',
+            'ekskulListSiswa',
             'totalNilai',
             'rataNilai',
             'pembiasaanList',
@@ -705,6 +721,7 @@ class RaportController extends Controller
             ->keyBy('kelas_siswa_id');
 
         $pembiasaanList = Pembiasaan::aktif()->orderBy('urutan')->get();
+        $ekskulSiswaMap = $this->hitungService->getEkstrakurikulerSiswaMap($kelasSiswaIds, $periode);
 
         $laporanSiswa = [];
         foreach ($kelasSiswaList as $ks) {
@@ -731,6 +748,7 @@ class RaportController extends Controller
                 'totalNilai' => $totalNilai,
                 'rataNilai' => $rataNilai,
                 'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
+                'ekskulListSiswa' => $ekskulSiswaMap->get($ks->id, []),
                 'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
             ];
         }
@@ -787,6 +805,7 @@ class RaportController extends Controller
             ->keyBy('kelas_siswa_id');
 
         $pembiasaanList = Pembiasaan::aktif()->orderBy('urutan')->get();
+        $ekskulSiswaMap = $this->hitungService->getEkstrakurikulerSiswaMap($kelasSiswaIds, $periode);
 
         $laporanSiswa = [];
         foreach ($kelasSiswaList as $ks) {
@@ -813,6 +832,7 @@ class RaportController extends Controller
                 'totalNilai' => $totalNilai,
                 'rataNilai' => $rataNilai,
                 'nilaiPemList' => isset($allNilaiPem[$ks->id]) ? $allNilaiPem[$ks->id]->keyBy('pembiasaan_id') : collect(),
+                'ekskulListSiswa' => $ekskulSiswaMap->get($ks->id, []),
                 'kehadiran' => $allKehadiran->get($ks->id) ?? (object) ['sakit' => 0, 'izin' => 0, 'alpa' => 0],
             ];
         }

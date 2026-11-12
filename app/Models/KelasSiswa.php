@@ -38,6 +38,11 @@ class KelasSiswa extends Model
         return $this->hasMany(NilaiPembiasaan::class);
     }
 
+    public function nilaiEkstrakurikuler(): HasMany
+    {
+        return $this->hasMany(NilaiEkstrakurikuler::class);
+    }
+
     public function kehadiran(): HasMany
     {
         return $this->hasMany(Kehadiran::class);

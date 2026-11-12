@@ -8,6 +8,7 @@ use App\Models\KehadiranBulanan;
 use App\Models\KelasSiswa;
 use App\Models\MataPelajaran;
 use App\Models\Nilai;
+use App\Models\NilaiEkstrakurikuler;
 use App\Models\NilaiFormatifBulanan;
 use App\Models\NilaiPembiasaan;
 use App\Models\NilaiRaporMapel;
@@ -1738,6 +1739,63 @@ class HitungNilaiService
             default:
                 return "Pelaksanaan {$namaPembiasaan} menunjukkan perkembangan sesuai tahap usianya.";
         }
+    }
+
+    /**
+     * Hasilkan deskripsi kegiatan ekstrakurikuler berdasarkan nama kegiatan dan predikatnya.
+     */
+    public function generateDeskripsiEkstrakurikuler(string $namaEkskul, string $predikat): string
+    {
+        return match ($predikat) {
+            'Sangat Baik' => "Sangat aktif, disiplin, dan berprestasi dalam mengikuti kegiatan ekstrakurikuler {$namaEkskul}.",
+            'Baik' => "Aktif dan mengikuti kegiatan ekstrakurikuler {$namaEkskul} dengan baik serta penuh tanggung jawab.",
+            'Cukup' => "Mengikuti kegiatan ekstrakurikuler {$namaEkskul} dengan cukup baik dan masih perlu ditingkatkan keaktifannya.",
+            'Perlu Bimbingan' => "Memerlukan bimbingan dan motivasi lebih lanjut agar lebih aktif mengikuti kegiatan ekstrakurikuler {$namaEkskul}.",
+            default => "Mengikuti kegiatan ekstrakurikuler {$namaEkskul}.",
+        };
+    }
+
+    /**
+     * Ambil daftar nilai ekstrakurikuler terformat yang diikuti siswa dalam satu periode, dikelompokkan per kelas_siswa_id.
+     *
+     * @param  Collection<int, int>|array<int, int>  $kelasSiswaIds
+     * @return Collection<int, array<int, array{ekstrakurikuler_id: int, nama: string, predikat: string, keterangan: string}>>
+     */
+    public function getEkstrakurikulerSiswaMap(Collection|array $kelasSiswaIds, string $periode): Collection
+    {
+        $ids = collect($kelasSiswaIds)->filter()->unique()->values();
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return NilaiEkstrakurikuler::query()
+            ->with('ekstrakurikuler')
+            ->whereIn('kelas_siswa_id', $ids)
+            ->where('periode', $periode)
+            ->get()
+            ->filter(fn (NilaiEkstrakurikuler $item): bool => $item->ekstrakurikuler !== null)
+            ->sortBy(fn (NilaiEkstrakurikuler $item): string => sprintf(
+                '%05d-%010d',
+                (int) $item->ekstrakurikuler->urutan,
+                (int) $item->ekstrakurikuler_id
+            ))
+            ->groupBy('kelas_siswa_id')
+            ->map(function (Collection $items): array {
+                return $items->map(function (NilaiEkstrakurikuler $item): array {
+                    $nama = (string) $item->ekstrakurikuler->nama;
+                    $predikat = (string) $item->predikat;
+                    $customKeterangan = trim((string) ($item->keterangan ?? ''));
+
+                    return [
+                        'ekstrakurikuler_id' => (int) $item->ekstrakurikuler_id,
+                        'nama' => $nama,
+                        'predikat' => $predikat,
+                        'keterangan' => $customKeterangan !== ''
+                            ? $customKeterangan
+                            : $this->generateDeskripsiEkstrakurikuler($nama, $predikat),
+                    ];
+                })->values()->all();
+            });
     }
 
     /**
