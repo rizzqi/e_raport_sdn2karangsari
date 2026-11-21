@@ -6,7 +6,7 @@
 <div class="space-y-6 pb-20">
 
     <!-- 1. HEADER KELAS & MAPEL (CLEAN & COMPACT) -->
-    <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col gap-4">
+    <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col gap-4 relative z-20">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div class="flex items-start sm:items-center space-x-3.5">
                 <a href="{{ route('kelas.show', $kelas->id) }}" class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition shrink-0" title="Kembali ke Kelas">
@@ -78,7 +78,7 @@
             </div>
 
             <!-- Toolbar Kanan: Tombol Cetak & Menu "⋯ Lainnya" -->
-            <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <div class="flex flex-wrap items-center gap-2 shrink-0 relative z-30">
                 <!-- DROPDOWN CETAK UTAMA (4 GRUP BERSIH, KOLEKTIF SEMUA MAPEL, CAKUPAN TERPADU) -->
                 @include('partials.dropdown_cetak_menu', [
                     'label' => 'Cetak',
@@ -86,15 +86,63 @@
                 ])
 
                 <!-- DROPDOWN "⋯ LAINNYA" (PUSAT ALAT BANTU PENILAIAN LENGKAP) -->
-                <div class="relative inline-block text-left" x-data="{ open: false }">
-                    <button type="button" @click="open = !open" @click.outside="open = false"
+                <div class="dropdown relative inline-block text-left" 
+                     :class="{ 'z-50': open, 'z-10': !open }"
+                     x-data="{ 
+                         open: false,
+                         id: 'dropdown_alat_bantu',
+                         toggle() {
+                             this.open = !this.open;
+                             if (this.open) {
+                                 window.dispatchEvent(new CustomEvent('close-dropdowns', { detail: { except: this.id } }));
+                             }
+                         }
+                     }"
+                     @close-dropdowns.window="if ($event.detail.except !== id) open = false"
+                     @keydown.escape.window="open = false"
+                     @click.outside="open = false">
+                    <button type="button" @click="toggle()"
                             class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
                         <i class="fa-solid fa-ellipsis"></i>
                         <span>Menu &amp; Alat Bantu</span>
-                        <i class="fa-solid fa-chevron-down text-[9px] opacity-70 ml-0.5" :class="{ 'rotate-180': open }"></i>
+                        <i class="fa-solid fa-chevron-down text-[9px] opacity-70 ml-0.5 transition-transform" :class="{ 'rotate-180': open }"></i>
                     </button>
-                    <div x-show="open" x-transition
-                         class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 divide-y divide-slate-100" style="display: none;">
+
+                    <!-- Backdrop Gelap di Layar HP (<= 640px) -->
+                    <div x-show="open" 
+                         x-transition:enter="transition-opacity ease-out duration-200"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition-opacity ease-in duration-150"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         @click="open = false"
+                         class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 sm:hidden"
+                         style="display: none;"></div>
+
+                    <div x-show="open" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="translate-y-full sm:translate-y-0 sm:opacity-0 sm:scale-95"
+                         x-transition:enter-end="translate-y-0 sm:opacity-100 sm:scale-100"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="translate-y-0 sm:opacity-100 sm:scale-100"
+                         x-transition:leave-end="translate-y-full sm:translate-y-0 sm:opacity-0 sm:scale-95"
+                         class="dropdown-menu absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 divide-y divide-slate-100 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto scrollbar-thin"
+                         style="display: none;">
+
+                        <!-- Mobile Header & Drag Handle (Khusus HP <=640px) -->
+                        <div class="sm:hidden px-4 pt-2.5 pb-2 border-b border-slate-100 bg-slate-50/80">
+                            <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-2"></div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-ellipsis text-slate-600"></i>
+                                    <span>Menu &amp; Alat Bantu</span>
+                                </span>
+                                <button type="button" @click="open = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                                    <i class="fa-solid fa-xmark text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
                         
                         <!-- Grup 1: Impor & Template Excel/PDF -->
                         <div class="py-1">
@@ -102,22 +150,22 @@
                                 Impor &amp; Template Excel
                             </div>
                             <button type="button" @click="open = false; document.getElementById('modalImportNilai').classList.remove('hidden')"
-                                    class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 transition cursor-pointer">
+                                    class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50 transition cursor-pointer">
                                 <i class="fa-solid fa-file-arrow-up text-emerald-600 w-4 text-center"></i>
                                 <span>Impor Nilai (Excel / PDF)</span>
                             </button>
                             <a href="{{ route('nilai.template.excel', ['kelas' => $kelas->id, 'mode' => 'mapel', 'mapel_id' => $mapel ? $mapel->id : null, 'periode' => ($semester === 'genap' ? 'sas' : 'sts')]) }}"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition">
+                               class="flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition">
                                 <i class="fa-solid fa-file-excel text-emerald-600 w-4 text-center"></i>
                                 <span>Unduh Template Mapel Ini (.xlsx)</span>
                             </a>
                             <a href="{{ route('nilai.template.excel', ['kelas' => $kelas->id, 'mode' => 'semua', 'periode' => ($semester === 'genap' ? 'sas' : 'sts')]) }}"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition">
+                               class="flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition">
                                 <i class="fa-solid fa-table-list text-slate-500 w-4 text-center"></i>
                                 <span>Unduh Template Semua Mapel</span>
                             </a>
                             <a href="{{ route('kelas.sia-pembiasaan.template', ['kelas' => $kelas->id, 'format' => 'xlsx', 'periode' => $periodeSia]) }}"
-                               class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-amber-700 transition">
+                               class="flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-amber-700 transition">
                                 <i class="fa-solid fa-star text-amber-500 w-4 text-center"></i>
                                 <span>Unduh Template Pembiasaan (SIA)</span>
                             </a>
@@ -130,12 +178,12 @@
                             </div>
                             @if($mapel)
                                 <a href="{{ route('kelas.mapel.nilai', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tab' => 'formatif', 'tahun' => $tahun]) }}"
-                                   class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                                   class="flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
                                     <i class="fa-solid fa-calendar-days text-blue-500 w-4 text-center"></i>
                                     <span>Input Nilai Bulanan (JUL-DES)</span>
                                 </a>
                                 <a href="{{ route('kelas.mapel.formatif-harian', ['kelas' => $kelas->id, 'mapel' => $mapel->id, 'tahun' => $tahun]) }}"
-                                   class="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                                   class="flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
                                     <i class="fa-solid fa-list-check text-blue-500 w-4 text-center"></i>
                                     <span>Penilaian Formatif Harian (TP)</span>
                                 </a>
@@ -149,17 +197,17 @@
                                     Pengaturan &amp; Reset
                                 </div>
                                 <button type="button" @click="open = false; document.getElementById('modalEditWaliKelas').classList.remove('hidden')"
-                                        class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-50 transition cursor-pointer">
+                                        class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-amber-800 hover:bg-amber-50 transition cursor-pointer">
                                     <i class="fa-solid fa-user-pen text-amber-600 w-4 text-center"></i>
                                     <span>Edit Wali Kelas &amp; NIP</span>
                                 </button>
                                 <button type="button" @click="open = false; document.getElementById('modalEditKkmKelas').classList.remove('hidden')"
-                                        class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-purple-800 hover:bg-purple-50 transition cursor-pointer">
+                                        class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-purple-800 hover:bg-purple-50 transition cursor-pointer">
                                     <i class="fa-solid fa-sliders text-purple-600 w-4 text-center"></i>
                                     <span>Atur KKM Mandiri Rombel</span>
                                 </button>
                                 <button type="button" @click="open = false; document.getElementById('modalKosongkanNilai').classList.remove('hidden')"
-                                        class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 transition cursor-pointer">
+                                        class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 transition cursor-pointer">
                                     <i class="fa-solid fa-trash-can text-rose-600 w-4 text-center"></i>
                                     <span>Kosongkan / Reset Nilai</span>
                                 </button>
@@ -174,7 +222,7 @@
                                         @csrf
                                         <input type="hidden" name="tahun" value="{{ $tahun }}">
                                         <input type="hidden" name="semester" value="{{ $semester }}">
-                                        <button type="submit" class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition">
+                                        <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition">
                                             <i class="fa-solid fa-lock-open text-amber-500 w-4 text-center"></i>
                                             <span>Buka Kunci Nilai Rapor</span>
                                         </button>
@@ -185,7 +233,7 @@
                                     @csrf
                                     <input type="hidden" name="tahun" value="{{ $tahun }}">
                                     <input type="hidden" name="semester" value="{{ $semester }}">
-                                    <button type="submit" class="w-full text-left flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                    <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
                                         <i class="fa-solid fa-lock text-slate-500 w-4 text-center"></i>
                                         <span>Kunci Nilai Rapor</span>
                                     </button>

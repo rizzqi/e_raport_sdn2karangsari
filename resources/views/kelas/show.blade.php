@@ -69,7 +69,7 @@
         </div>
 
         <!-- Toolbar Aksi Utama Rombel (Diringkas Menjadi 4 Kontrol Bersih & Ergonomis) -->
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 relative z-20">
             <!-- 1. Tombol Utama: Input Nilai (Paling Sering Digunakan) -->
             <a href="{{ route('kelas.input-nilai', $kelas->id) }}"
                class="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-950/20 hover:shadow-lg transition-all flex items-center gap-1.5">
@@ -92,15 +92,62 @@
             ])
 
             <!-- 4. Menu Administrasi & Pengaturan Rombel -->
-            <div class="relative" x-data="{ openAlatMenu: false }">
-                <button @click="openAlatMenu = !openAlatMenu" type="button"
+            <div class="dropdown relative inline-block text-left" 
+                 :class="{ 'z-50': openAlatMenu, 'z-10': !openAlatMenu }"
+                 x-data="{ 
+                     openAlatMenu: false,
+                     id: 'dropdown_kelola_kelas',
+                     toggle() {
+                         this.openAlatMenu = !this.openAlatMenu;
+                         if (this.openAlatMenu) {
+                             window.dispatchEvent(new CustomEvent('close-dropdowns', { detail: { except: this.id } }));
+                         }
+                     }
+                 }"
+                 @close-dropdowns.window="if ($event.detail.except !== id) openAlatMenu = false"
+                 @keydown.escape.window="openAlatMenu = false"
+                 @click.outside="openAlatMenu = false">
+                <button @click="toggle()" type="button"
                     class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
                     <i class="fa-solid fa-sliders text-slate-500"></i>
                     <span>Kelola Kelas</span>
-                    <i class="fa-solid fa-chevron-down text-[10px] opacity-75 ml-0.5"></i>
+                    <i class="fa-solid fa-chevron-down text-[10px] opacity-75 ml-0.5 transition-transform" :class="{ 'rotate-180': openAlatMenu }"></i>
                 </button>
-                <div x-show="openAlatMenu" @click.outside="openAlatMenu = false"
-                     class="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 text-xs divide-y divide-slate-100 max-h-[85vh] overflow-y-auto" style="display: none;">
+
+                <!-- Backdrop Gelap di Layar HP (<= 640px) -->
+                <div x-show="openAlatMenu" 
+                     x-transition:enter="transition-opacity ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition-opacity ease-in duration-150"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     @click="openAlatMenu = false"
+                     class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 sm:hidden"
+                     style="display: none;"></div>
+
+                <div x-show="openAlatMenu" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="translate-y-full sm:translate-y-0 sm:opacity-0 sm:scale-95"
+                     x-transition:enter-end="translate-y-0 sm:opacity-100 sm:scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="translate-y-0 sm:opacity-100 sm:scale-100"
+                     x-transition:leave-end="translate-y-full sm:translate-y-0 sm:opacity-0 sm:scale-95"
+                     class="dropdown-menu absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 py-2 text-xs divide-y divide-slate-100 max-h-[70vh] sm:max-h-[85vh] overflow-y-auto scrollbar-thin" style="display: none;">
+
+                    <!-- Mobile Header & Drag Handle (Khusus HP <=640px) -->
+                    <div class="sm:hidden px-4 pt-2.5 pb-2 border-b border-slate-100 bg-slate-50/80">
+                        <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-2"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-slate-600"></i>
+                                <span>Kelola Kelas</span>
+                            </span>
+                            <button type="button" @click="openAlatMenu = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                                <i class="fa-solid fa-xmark text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
                     
                     <!-- Pengaturan Guru & Tanggal -->
                     <div class="py-1">
