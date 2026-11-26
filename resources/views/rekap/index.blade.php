@@ -83,7 +83,7 @@
 }
 </style>
 
-<div class="space-y-6 rekap-print-box">
+<div class="space-y-4 rekap-print-box">
 
     <!-- Kop / Header Khusus Cetak 1 Lembar -->
     <div class="print-only text-center mb-1 border-b border-black pb-1">
@@ -102,107 +102,235 @@
         </p>
     </div>
 
-    <!-- Header Web Rekap -->
-    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4 no-print">
-        <div>
-            <div class="flex items-center space-x-2 text-xs text-slate-500 mb-1">
-                <a href="{{ route('kelas.index') }}" class="hover:underline">Kelas</a>
-                <span>&bull;</span>
-                <a href="{{ route('kelas.show', $kelas->id) }}" class="hover:underline">{{ $kelas->nama }}</a>
-                <span>&bull;</span>
-                <span class="text-slate-800 font-bold">Rekapitulasi Nilai</span>
+    <!-- Header Web Rekap (Ringkas, Bersih, Modern) -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200/70 shadow-2xs no-print space-y-3">
+        <!-- Baris 1: Judul Ringkas & Info Kelas -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+                <div class="flex items-center gap-1.5 text-[11px] text-slate-400 mb-0.5">
+                    <a href="{{ route('kelas.index') }}" class="hover:text-slate-600 transition">Kelas</a>
+                    <span>/</span>
+                    <a href="{{ route('kelas.show', $kelas->id) }}" class="hover:text-slate-600 transition">{{ $kelas->nama }}</a>
+                    <span>/</span>
+                    <span class="text-slate-600 font-semibold">Rekapitulasi</span>
+                </div>
+                <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                    Rekapitulasi Nilai {{ $kelas->nama }}
+                </h1>
             </div>
-            <h1 class="text-xl font-black text-slate-900 flex items-center">
-                <i class="fa-solid fa-chart-line text-blue-600 mr-2"></i> Rekapitulasi Nilai: {{ $kelas->nama }}
-            </h1>
-            <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500">
-                <span>Tahun Ajaran: {{ $kelas->tahunAjaran->nama_lengkap ?? '-' }} &bull; Semester: <strong class="capitalize">{{ $kelas->tahunAjaran->semester ?? 'Ganjil' }}</strong> &bull; Wali Kelas: <strong class="text-slate-800">{{ $kelas->nama_wali }}</strong>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                <span>TP <strong class="text-slate-700">{{ $kelas->tahunAjaran->nama_lengkap ?? '-' }}</strong></span>
+                <span class="text-slate-300">&bull;</span>
+                <span>Semester <strong class="text-slate-700 capitalize">{{ $kelas->tahunAjaran->semester ?? 'Ganjil' }}</strong></span>
+                <span class="text-slate-300">&bull;</span>
+                <span class="inline-flex items-center gap-1.5">
+                    <span>Wali: <strong class="text-slate-800">{{ $kelas->nama_wali }}</strong></span>
                     @if($kelas->nip_wali !== '-')
-                        <span class="font-mono text-slate-400">(NIP: {{ $kelas->nip_wali }})</span>
+                        <span class="text-slate-400 font-mono text-[11px]">({{ $kelas->nip_wali }})</span>
+                    @endif
+                    @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
+                        <button type="button" onclick="document.getElementById('modalEditWaliKelas').classList.remove('hidden')"
+                            class="text-slate-400 hover:text-blue-600 transition p-0.5"
+                            title="Ubah Nama atau NIP Wali Kelas">
+                            <i class="fa-solid fa-pen text-[10px]"></i>
+                        </button>
                     @endif
                 </span>
-                @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
-                    <button type="button" onclick="document.getElementById('modalEditWaliKelas').classList.remove('hidden')"
-                        class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition shadow-sm"
-                        title="Ubah Nama atau NIP Wali Kelas">
-                        <i class="fa-solid fa-user-pen mr-1 text-amber-600"></i> Edit Wali & NIP
-                    </button>
-                @endif
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-            @if(isset($kelasList) && $kelasList->count() > 1)
-                <!-- Pilihan Kelas Cepat -->
-                <div class="bg-slate-100 p-1 rounded-xl flex items-center space-x-1 text-xs font-bold shadow-2xs">
-                    <span class="text-[10px] uppercase font-bold text-slate-500 px-2 flex items-center gap-1">
-                        <i class="fa-solid fa-chalkboard text-slate-400"></i>
-                        <span>Kelas:</span>
-                    </span>
-                    @foreach($kelasList as $kOpt)
-                        <a href="{{ route('rekap.kelas', ['kelas' => $kOpt->id, 'periode' => $periode, 'sort' => $sortBy, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
-                           class="px-2.5 py-1.5 rounded-lg transition {{ $kOpt->id === $kelas->id ? 'bg-blue-600 text-white shadow-2xs font-black' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200' }}"
-                           title="Buka rekapitulasi & grafik {{ $kOpt->nama }}">
-                            {{ $kOpt->nama }}
-                        </a>
-                    @endforeach
-                </div>
-            @endif
+        <!-- Baris 2: Filter Compact (Kelas, STS/SAS, Tanggal) + Tombol Aksi Utama (Simpan, Cetak Rapor, Lainnya) -->
+        <div class="pt-2.5 border-t border-slate-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5">
+            <!-- Filter Bar Compact -->
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                @if(isset($kelasList) && $kelasList->count() > 1)
+                    <!-- Pilihan Kelas -->
+                    <select aria-label="Pilih Kelas"
+                            onchange="if(this.value) window.location.href = this.value"
+                            class="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                        @foreach($kelasList as $kOpt)
+                            <option value="{{ route('rekap.kelas', ['kelas' => $kOpt->id, 'periode' => $periode, 'sort' => $sortBy, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
+                                    {{ $kOpt->id === $kelas->id ? 'selected' : '' }}>
+                                {{ $kOpt->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                @endif
 
-            <!-- Pilihan Periode STS / SAS -->
-            <div class="bg-slate-100 p-1 rounded-xl flex items-center space-x-1 text-xs font-bold">
-                <a href="{{ route('rekap.kelas', ['kelas' => $kelas->id, 'periode' => 'sts', 'sort' => $sortBy]) }}"
-                   class="px-3 py-1.5 rounded-lg transition {{ $periode === 'sts' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">
-                   STS
-                </a>
-                <a href="{{ route('rekap.kelas', ['kelas' => $kelas->id, 'periode' => 'sas', 'sort' => $sortBy]) }}"
-                   class="px-3 py-1.5 rounded-lg transition {{ $periode === 'sas' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">
-                   SAS
-                </a>
+                <!-- Pilihan Periode STS / SAS -->
+                <div class="inline-flex bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
+                    <a href="{{ route('rekap.kelas', ['kelas' => $kelas->id, 'periode' => 'sts', 'sort' => $sortBy]) }}"
+                       class="px-3 py-1 rounded-md transition {{ $periode === 'sts' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800' }}">
+                       STS
+                    </a>
+                    <a href="{{ route('rekap.kelas', ['kelas' => $kelas->id, 'periode' => 'sas', 'sort' => $sortBy]) }}"
+                       class="px-3 py-1 rounded-md transition {{ $periode === 'sas' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800' }}">
+                       SAS
+                    </a>
+                </div>
+
+                <!-- Tanggal Rekap / Rapor -->
+                <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+                    <label for="inputTanggalRekap" class="text-slate-500 font-semibold whitespace-nowrap">Tgl:</label>
+                    <input type="date" id="inputTanggalRekap" value="{{ $tanggalObj->format('Y-m-d') }}"
+                           class="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none">
+                    <span id="badgeStatusTanggalRekap" class="hidden text-[10px] font-bold text-emerald-600"></span>
+                </div>
             </div>
 
-            <!-- Ganti Tanggal Rekap / Raport (No-Print) -->
-            <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl text-xs shadow-2xs">
-                <i class="fa-regular fa-calendar-days text-slate-500"></i>
-                <label for="inputTanggalRekap" class="font-bold text-slate-700 whitespace-nowrap">Tgl:</label>
-                <input type="date" id="inputTanggalRekap" value="{{ $tanggalObj->format('Y-m-d') }}"
-                       class="bg-white border border-slate-300 rounded-lg px-2 py-0.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs">
+            <!-- Tombol Aksi Utama (Simpan, Cetak Rapor, Lainnya) -->
+            <div class="flex flex-wrap items-center gap-2 relative z-20">
                 @if(auth()->user()->isAdmin() || (auth()->user()->isWali() && auth()->user()->id === $kelas->wali_id))
                     <button type="button" onclick="simpanTanggalRekap()"
-                            class="px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold transition flex items-center shadow-2xs"
-                            title="Simpan tanggal ini ke sistem agar sewaktu print berikutnya tanggalnya tetap sama">
-                        <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan
+                            class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                            title="Simpan tanggal rekap ini ke sistem">
+                        <i class="fa-solid fa-floppy-disk text-blue-600"></i>
+                        <span>Simpan</span>
                     </button>
                 @endif
-                <span id="badgeStatusTanggalRekap" class="hidden text-[10px] font-bold text-emerald-600 ml-1"></span>
-            </div>
 
-            <a href="#section-grafik" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs border border-blue-200 shadow-2xs transition flex items-center" title="Lihat Visualisasi Grafik Nilai">
-                <i class="fa-solid fa-chart-pie mr-1.5 text-blue-600"></i> Grafik Nilai
-            </a>
-            <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
-               class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
-               title="Buka Lembar Laporan Hasil Belajar {{ strtoupper($periode) }} Siswa Sekelas (Format 1 Lembar Tanpa Deskripsi)">
-                <i class="fa-solid fa-file-invoice mr-1.5 text-white"></i> Lembar {{ strtoupper($periode) }} Siswa
-            </a>
-            <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
-               class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center"
-               title="Buka Lembar Leger Rekap Nilai Resmi Siap Cetak (A4/F4)">
-                <i class="fa-solid fa-print mr-1.5 text-amber-300"></i> Buku Leger
-            </a>
-            <button onclick="window.print()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center" title="Cetak Rekap Pas 1 Lembar Landscape">
-                <i class="fa-solid fa-file-invoice mr-1.5"></i> Cetak Layar Ini
-            </button>
-            <a id="btnCetakRaportSekelas" href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center" title="Cetak Raport Seluruh Siswa Sekelas">
-                <i class="fa-solid fa-file-lines mr-1.5"></i> Cetak Raport Sekelas
-            </a>
-            <a id="btnPdfSekelas" href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center" title="Unduh PDF Raport Sekelas">
-                <i class="fa-solid fa-file-pdf mr-1.5"></i> PDF Sekelas
-            </a>
-            @include('partials.dropdown_cetak_menu', [
-                'label' => 'Dialog Cetak A4/F4',
-                'buttonClass' => 'px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer',
-            ])
+                <a id="btnCetakRaportSekelas" href="{{ route('raport.cetak.kelas', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
+                   class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition flex items-center gap-1.5 shadow-2xs"
+                   title="Cetak Raport Seluruh Siswa Sekelas">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Cetak Rapor</span>
+                </a>
+
+                <!-- Dropdown Lainnya (Semua Cetak Tambahan & Alat Bantu) -->
+                <div class="dropdown relative inline-block text-left"
+                     :class="{ 'z-50': openLainnya, 'z-10': !openLainnya }"
+                     x-data="{
+                         openLainnya: false,
+                         id: 'dropdown_rekap_lainnya',
+                         toggle() {
+                             this.openLainnya = !this.openLainnya;
+                             if (this.openLainnya) {
+                                 window.dispatchEvent(new CustomEvent('close-dropdowns', { detail: { except: this.id } }));
+                             }
+                         }
+                     }"
+                     @close-dropdowns.window="if ($event.detail.except !== id) openLainnya = false"
+                     @keydown.escape.window="openLainnya = false"
+                     @click.outside="openLainnya = false">
+
+                    <button type="button" @click="toggle()"
+                            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs transition flex items-center gap-1.5 cursor-pointer">
+                        <span>Lainnya</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] opacity-80 transition-transform" :class="{ 'rotate-180': openLainnya }"></i>
+                    </button>
+
+                    <!-- Backdrop Gelap di Layar HP (<= 640px) -->
+                    <div x-show="openLainnya"
+                         x-transition:enter="transition-opacity ease-out duration-200"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition-opacity ease-in duration-150"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         @click="openLainnya = false"
+                         class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 sm:hidden"
+                         style="display: none;"></div>
+
+                    <!-- Menu Dropdown (Desktop: Popover, Mobile: Bottom Sheet) -->
+                    <div x-show="openLainnya"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="translate-y-full sm:translate-y-0 sm:opacity-0 sm:scale-95"
+                         x-transition:enter-end="translate-y-0 sm:opacity-100 sm:scale-100"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="translate-y-0 sm:opacity-100 sm:scale-100"
+                         x-transition:leave-end="translate-y-full sm:translate-y-0 sm:opacity-0 sm:scale-95"
+                         class="dropdown-menu absolute right-0 mt-2 w-64 bg-white rounded-xl border border-slate-200 py-1.5 divide-y divide-slate-100 shadow-xl z-50 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto scrollbar-thin"
+                         style="display: none;">
+
+                        <!-- Mobile Header -->
+                        <div class="sm:hidden px-4 pt-2 pb-2 border-b border-slate-100 bg-slate-50/80">
+                            <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-2"></div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-800">Menu Cetak &amp; Lainnya</span>
+                                <button type="button" @click="openLainnya = false" class="text-slate-400 hover:text-slate-600 p-1">
+                                    <i class="fa-solid fa-xmark text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Cetak Langsung & PDF -->
+                        <div class="py-1">
+                            <div class="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Cetak &amp; Unduh
+                            </div>
+                            <a id="btnPdfSekelas" href="{{ route('raport.download.kelas.pdf', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
+                               @click="openLainnya = false"
+                               class="flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                <i class="fa-solid fa-file-pdf text-rose-600 w-4 text-center"></i>
+                                <span>Unduh PDF Sekelas</span>
+                            </a>
+                            <a href="{{ route('rekap.kelas.cetak', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
+                               @click="openLainnya = false"
+                               class="flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                <i class="fa-solid fa-book-open text-blue-600 w-4 text-center"></i>
+                                <span>Buku Leger Resmi (A4/F4)</span>
+                            </a>
+                            <a href="{{ route('kelas.lembar-sts-sas.cetak', ['kelas' => $kelas->id, 'periode' => $periode, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}"
+                               @click="openLainnya = false"
+                               class="flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                <i class="fa-solid fa-file-invoice text-amber-600 w-4 text-center"></i>
+                                <span>Lembar {{ strtoupper($periode) }} Siswa</span>
+                            </a>
+                            <button type="button" onclick="window.print()" @click="openLainnya = false"
+                                    class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <i class="fa-solid fa-desktop text-slate-600 w-4 text-center"></i>
+                                <span>Cetak Layar Ini (1 Lembar)</span>
+                            </button>
+                        </div>
+
+                        <!-- Dialog Cetak A4/F4 Terstruktur -->
+                        <div class="py-1">
+                            <div class="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Dialog Cetak A4/F4
+                            </div>
+                            <button type="button" @click="openLainnya = false; window.openModalCetakUniversal({ jenis: 'formatif_bulanan', cakupan: 'kelas' })"
+                                    class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <i class="fa-solid fa-calendar-day text-purple-600 w-4 text-center"></i>
+                                <span>Formatif Per Bulan</span>
+                            </button>
+                            <button type="button" @click="openLainnya = false; window.openModalCetakUniversal({ jenis: 'formatif_semester', cakupan: 'kelas' })"
+                                    class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <i class="fa-solid fa-calendar-days text-purple-600 w-4 text-center"></i>
+                                <span>Formatif 1 Semester</span>
+                            </button>
+                            <button type="button" @click="openLainnya = false; window.openModalCetakUniversal({ jenis: 'sts_daftar', cakupan: 'kelas' })"
+                                    class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <i class="fa-solid fa-table-list text-amber-600 w-4 text-center"></i>
+                                <span>Daftar Nilai STS</span>
+                            </button>
+                            <button type="button" @click="openLainnya = false; window.openModalCetakUniversal({ jenis: 'sas_daftar', cakupan: 'kelas' })"
+                                    class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <i class="fa-solid fa-table-list text-blue-600 w-4 text-center"></i>
+                                <span>Daftar Nilai SAS</span>
+                            </button>
+                            <button type="button" @click="openLainnya = false; window.openModalCetakUniversal({ jenis: 'rapor_siswa', cakupan: 'siswa' })"
+                                    class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <i class="fa-solid fa-user-graduate text-emerald-600 w-4 text-center"></i>
+                                <span>Rapor Per Siswa</span>
+                            </button>
+                            <button type="button" @click="openLainnya = false; window.openModalCetakUniversal({ jenis: 'rapor_predikat_catatan', cakupan: 'kelas' })"
+                                    class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <i class="fa-solid fa-clipboard-check text-emerald-600 w-4 text-center"></i>
+                                <span>Rekap Predikat &amp; Catatan</span>
+                            </button>
+                        </div>
+
+                        <!-- Navigasi -->
+                        <div class="py-1">
+                            <a href="#section-grafik" @click="openLainnya = false"
+                               class="flex items-center gap-2.5 px-4 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 sm:px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                                <i class="fa-solid fa-chart-pie text-blue-600 w-4 text-center"></i>
+                                <span>Lihat Grafik Nilai</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -210,327 +338,252 @@
         $juara1 = collect($rekapData['siswa_list'])->firstWhere('peringkat', 1);
     @endphp
 
-    <!-- Statistik Ringkas Rekap -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md transition flex items-center justify-between h-full group">
-            <div class="flex-1 pr-3">
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Rata-rata Kelas</p>
-                <p class="text-2xl sm:text-3xl font-black text-blue-700 mt-1 tracking-tight">{{ $rekapData['rata_rata_kelas_format'] }}</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">Nilai sumatif gabungan</p>
+    <!-- Statistik Ringkas Rekap (Compact & Bersih) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 no-print">
+        <div class="bg-white px-3.5 py-2.5 rounded-xl border border-slate-200/70 shadow-2xs flex items-center justify-between gap-2">
+            <div class="min-w-0">
+                <p class="text-[11px] font-semibold text-slate-400">Rata-rata Kelas</p>
+                <p class="text-lg sm:text-xl font-black text-blue-700 leading-tight mt-0.5">{{ $rekapData['rata_rata_kelas_format'] }}</p>
             </div>
-            <div class="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform duration-200">
-                <i class="fa-solid fa-calculator"></i>
-            </div>
+            <span class="text-[11px] text-slate-400 shrink-0 hidden sm:inline">Sumatif</span>
         </div>
 
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/80 bg-linear-to-br from-white to-amber-50/40 shadow-2xs hover:shadow-md transition flex items-center justify-between h-full group">
-            <div class="flex-1 pr-3">
-                <p class="text-xs font-bold uppercase tracking-wider text-amber-700 flex items-center">
-                    <i class="fa-solid fa-crown text-amber-500 mr-1.5"></i> Ranking 1 Kelas
-                </p>
-                <p class="text-base sm:text-lg font-black text-slate-900 mt-1 truncate" title="{{ $juara1['siswa']->nama ?? '-' }}">
+        <div class="bg-white px-3.5 py-2.5 rounded-xl border border-slate-200/70 shadow-2xs flex items-center justify-between gap-2">
+            <div class="min-w-0">
+                <p class="text-[11px] font-semibold text-amber-600">Ranking 1</p>
+                <p class="text-sm sm:text-base font-bold text-slate-900 truncate leading-tight mt-0.5" title="{{ $juara1['siswa']->nama ?? '-' }}">
                     {{ $juara1['siswa']->nama ?? '-' }}
                 </p>
-                <p class="text-[11px] text-amber-800 font-semibold mt-0.5">
-                    @if($juara1 && ($juara1['hasil']['count_sumatif'] ?? 0) > 0)
-                        Total: {{ \App\Services\HitungNilaiService::formatAngka($juara1['hasil']['total_sumatif']) }} (Rata-rata: {{ $juara1['hasil']['rata_sumatif_format'] }})
-                    @else
-                        Belum ada nilai
-                    @endif
-                </p>
             </div>
-            <div class="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform duration-200">
-                <i class="fa-solid fa-trophy"></i>
-            </div>
+            <span class="text-[11px] font-semibold text-amber-700 shrink-0">
+                @if($juara1 && ($juara1['hasil']['count_sumatif'] ?? 0) > 0)
+                    {{ $juara1['hasil']['rata_sumatif_format'] }}
+                @else
+                    -
+                @endif
+            </span>
         </div>
 
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md transition flex items-center justify-between h-full group">
-            <div class="flex-1 pr-3">
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Kelengkapan Input</p>
-                <p class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1 tracking-tight">{{ $rekapData['persen_selesai'] }}%</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">{{ $rekapData['siswa_selesai'] }} dari {{ $rekapData['jumlah_siswa'] }} siswa lengkap</p>
+        <div class="bg-white px-3.5 py-2.5 rounded-xl border border-slate-200/70 shadow-2xs flex items-center justify-between gap-2">
+            <div class="min-w-0">
+                <p class="text-[11px] font-semibold text-slate-400">Kelengkapan Input</p>
+                <p class="text-lg sm:text-xl font-black text-emerald-600 leading-tight mt-0.5">{{ $rekapData['persen_selesai'] }}%</p>
             </div>
-            <div class="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform duration-200">
-                <i class="fa-solid fa-circle-check"></i>
-            </div>
+            <span class="text-[11px] text-slate-500 shrink-0">{{ $rekapData['siswa_selesai'] }}/{{ $rekapData['jumlah_siswa'] }} siswa</span>
         </div>
 
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md transition flex items-center justify-between h-full group">
-            <div class="flex-1 pr-3">
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Mata Pelajaran</p>
-                <p class="text-2xl sm:text-3xl font-black text-slate-900 mt-1 tracking-tight">{{ $rekapData['mapels']->count() }}</p>
-                <p class="text-[11px] text-slate-500 mt-0.5">Mapel aktif dinilai</p>
+        <div class="bg-white px-3.5 py-2.5 rounded-xl border border-slate-200/70 shadow-2xs flex items-center justify-between gap-2">
+            <div class="min-w-0">
+                <p class="text-[11px] font-semibold text-slate-400">Jumlah Mapel</p>
+                <p class="text-lg sm:text-xl font-black text-slate-900 leading-tight mt-0.5">{{ $rekapData['mapels']->count() }}</p>
             </div>
-            <div class="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform duration-200">
-                <i class="fa-solid fa-book-open"></i>
-            </div>
+            <span class="text-[11px] text-slate-400 shrink-0">Mapel aktif</span>
         </div>
     </div>
 
     <!-- Visualisasi & Analisis Grafik Nilai (Khusus Layar / No-Print) -->
-    <div id="section-grafik" class="no-print space-y-4" x-data="{ showGrafik: true, activeTab: 'semua', rankLimit: 10, jenisNilai: '{{ $jenisNilai ?? 'rapor' }}', bulanFormatif: '{{ $bulan ?? '' }}' }">
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <!-- Header Kartu Visualisasi -->
-            <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gradient-to-r from-white via-slate-50/50 to-blue-50/30">
-                <div>
-                    <div class="flex items-center space-x-2">
-                        <span class="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-blue-100 text-blue-700 text-xs font-bold shadow-2xs">
-                            <i class="fa-solid fa-chart-column"></i>
-                        </span>
-                        <h2 class="text-sm sm:text-base font-black text-slate-900 uppercase tracking-wider">
-                            Visualisasi &amp; Analisis Grafik Nilai
-                        </h2>
-                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                            {{ strtoupper($periode) }}
-                        </span>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-1">
-                        Grafik interaktif performa mata pelajaran terhadap KKM, distribusi capaian siswa, perbandingan nilai, kehadiran, dan pembiasaan.
-                    </p>
+    <div id="section-grafik" class="no-print" x-data="{ showGrafik: true, activeTab: 'semua', rankLimit: 10, jenisNilai: '{{ $jenisNilai ?? 'rapor' }}', bulanFormatif: '{{ $bulan ?? '' }}' }">
+        <div class="bg-white rounded-xl border border-slate-200/70 shadow-2xs overflow-hidden">
+            <!-- Header Kartu Visualisasi (Ringkas & Responsif) -->
+            <div class="px-4 py-3 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm font-bold text-slate-900">
+                        Analisis Grafik Nilai
+                    </h2>
+                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                        {{ strtoupper($periode) }}
+                    </span>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2">
-                    <!-- Tab Filter Grafik -->
-                    <div class="inline-flex rounded-xl p-1 bg-slate-100 text-xs font-semibold" x-show="showGrafik">
+                <div class="flex items-center gap-2 justify-between md:justify-end">
+                    <!-- Tab Utama (Dapat digeser di HP) -->
+                    <div class="inline-flex items-center rounded-lg p-0.5 bg-slate-100 text-xs font-semibold overflow-x-auto max-w-full whitespace-nowrap" x-show="showGrafik">
                         <button type="button" @click="activeTab = 'semua'; window.switchRekapTab && window.switchRekapTab('semua')"
                                 :class="activeTab === 'semua' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
-                                class="px-2.5 py-1 rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-table-cells-large text-[11px]"></i>
-                            <span>Semua</span>
+                                class="px-2.5 py-1 rounded-md transition shrink-0 cursor-pointer">
+                            Semua
                         </button>
                         <button type="button" @click="activeTab = 'mapel'; window.switchRekapTab && window.switchRekapTab('mapel')"
                                 :class="activeTab === 'mapel' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
-                                class="px-2.5 py-1 rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-chart-column text-[11px]"></i>
-                            <span>Mapel vs KKM</span>
+                                class="px-2.5 py-1 rounded-md transition shrink-0 cursor-pointer">
+                            Mapel vs KKM
                         </button>
                         <button type="button" @click="activeTab = 'distribusi'; window.switchRekapTab && window.switchRekapTab('distribusi')"
                                 :class="activeTab === 'distribusi' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
-                                class="px-2.5 py-1 rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-chart-pie text-[11px]"></i>
-                            <span>Distribusi</span>
+                                class="px-2.5 py-1 rounded-md transition shrink-0 cursor-pointer">
+                            Distribusi
                         </button>
                         <button type="button" @click="activeTab = 'ranking'; window.switchRekapTab && window.switchRekapTab('ranking')"
                                 :class="activeTab === 'ranking' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
-                                class="px-2.5 py-1 rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-chart-simple text-[11px] text-blue-600"></i>
-                            <span>Rentang Nilai</span>
-                        </button>
-                        <button type="button" @click="activeTab = 'perbandingan'; window.switchRekapTab && window.switchRekapTab('perbandingan')"
-                                :class="activeTab === 'perbandingan' ? 'bg-white text-indigo-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
-                                class="px-2.5 py-1 rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-code-compare text-[11px] text-indigo-600"></i>
-                            <span>Perbandingan Nilai</span>
-                        </button>
-                        <button type="button" @click="activeTab = 'kehadiran'; window.switchRekapTab && window.switchRekapTab('kehadiran')"
-                                :class="activeTab === 'kehadiran' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
-                                class="px-2.5 py-1 rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-clipboard-user text-[11px] text-sky-600"></i>
-                            <span>Kehadiran (SIA)</span>
-                        </button>
-                        <button type="button" @click="activeTab = 'pembiasaan'; window.switchRekapTab && window.switchRekapTab('pembiasaan')"
-                                :class="activeTab === 'pembiasaan' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
-                                class="px-2.5 py-1 rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-hands-praying text-[11px] text-emerald-600"></i>
-                            <span>Pembiasaan</span>
+                                class="px-2.5 py-1 rounded-md transition shrink-0 cursor-pointer">
+                            Rentang Nilai
                         </button>
                     </div>
 
-                    @if($rekapData['chart_data']['has_data'] ?? false)
-                        <!-- Tombol Unduh Seluruh Grafik dalam Satu Infografik -->
-                        <button type="button" onclick="downloadAllChartsInfographic('Infografik_Lengkap_{{ Str::slug($kelas->nama) }}_{{ $periode }}')"
-                                x-show="showGrafik && activeTab === 'semua'"
-                                class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-2xs transition flex items-center gap-1.5"
-                                title="Unduh seluruh grafik & analisis lengkap dalam 1 gambar infografik">
-                            <i class="fa-solid fa-file-image text-indigo-600"></i>
-                            <span>Infografik Lengkap</span>
+                    <!-- Dropdown Tab Analisis Lainnya & Alat -->
+                    <div class="relative shrink-0" x-data="{ openGrafikMenu: false }" @click.outside="openGrafikMenu = false" @keydown.escape.window="openGrafikMenu = false">
+                        <button type="button" @click="openGrafikMenu = !openGrafikMenu"
+                                class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                            <span x-text="['perbandingan', 'kehadiran', 'pembiasaan'].includes(activeTab) ? (activeTab === 'perbandingan' ? 'Perbandingan' : (activeTab === 'kehadiran' ? 'Kehadiran' : 'Pembiasaan')) : 'Lainnya'">Lainnya</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] opacity-75 transition-transform" :class="{ 'rotate-180': openGrafikMenu }"></i>
                         </button>
-                    @endif
 
-                    <!-- Tombol Ciutkan / Buka Grafik -->
-                    <button type="button" @click="showGrafik = !showGrafik; if(showGrafik && window.switchRekapTab) window.switchRekapTab(activeTab);"
-                            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 shadow-2xs"
-                            :title="showGrafik ? 'Sembunyikan panel grafik' : 'Tampilkan panel grafik'">
-                        <i class="fa-solid" :class="showGrafik ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                        <span x-text="showGrafik ? 'Sembunyikan' : 'Tampilkan Grafik'"></span>
-                    </button>
+                        <div x-show="openGrafikMenu"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 mt-1.5 w-52 bg-white rounded-xl border border-slate-200 shadow-xl py-1 z-30 text-xs divide-y divide-slate-100"
+                             style="display: none;">
+                            <div class="py-1" x-show="showGrafik">
+                                <div class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Analisis Tambahan</div>
+                                <button type="button" @click="activeTab = 'perbandingan'; openGrafikMenu = false; window.switchRekapTab && window.switchRekapTab('perbandingan')"
+                                        :class="activeTab === 'perbandingan' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+                                        class="w-full text-left px-3 py-2 transition flex items-center gap-2 cursor-pointer">
+                                    <i class="fa-solid fa-code-compare text-indigo-500 w-4 text-center"></i>
+                                    <span>Perbandingan Nilai</span>
+                                </button>
+                                <button type="button" @click="activeTab = 'kehadiran'; openGrafikMenu = false; window.switchRekapTab && window.switchRekapTab('kehadiran')"
+                                        :class="activeTab === 'kehadiran' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+                                        class="w-full text-left px-3 py-2 transition flex items-center gap-2 cursor-pointer">
+                                    <i class="fa-solid fa-clipboard-user text-sky-500 w-4 text-center"></i>
+                                    <span>Kehadiran (SIA)</span>
+                                </button>
+                                <button type="button" @click="activeTab = 'pembiasaan'; openGrafikMenu = false; window.switchRekapTab && window.switchRekapTab('pembiasaan')"
+                                        :class="activeTab === 'pembiasaan' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+                                        class="w-full text-left px-3 py-2 transition flex items-center gap-2 cursor-pointer">
+                                    <i class="fa-solid fa-hands-praying text-emerald-500 w-4 text-center"></i>
+                                    <span>Pembiasaan</span>
+                                </button>
+                            </div>
+                            <div class="py-1">
+                                @if($rekapData['chart_data']['has_data'] ?? false)
+                                    <button type="button" onclick="downloadAllChartsInfographic('Infografik_Lengkap_{{ Str::slug($kelas->nama) }}_{{ $periode }}')"
+                                            @click="openGrafikMenu = false"
+                                            x-show="showGrafik && activeTab === 'semua'"
+                                            class="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 transition flex items-center gap-2 cursor-pointer">
+                                        <i class="fa-solid fa-file-image text-indigo-500 w-4 text-center"></i>
+                                        <span>Unduh Infografik</span>
+                                    </button>
+                                @endif
+                                <button type="button" @click="showGrafik = !showGrafik; openGrafikMenu = false; if(showGrafik && window.switchRekapTab) window.switchRekapTab(activeTab);"
+                                        class="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 transition flex items-center gap-2 cursor-pointer">
+                                    <i class="fa-solid w-4 text-center text-slate-400" :class="showGrafik ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                    <span x-text="showGrafik ? 'Sembunyikan Grafik' : 'Tampilkan Grafik'"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            @if(isset($kelasList) && $kelasList->count() > 1)
-                <!-- Bar Pilihan Kelas Khusus Grafik -->
-                <div class="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-slate-50 via-blue-50/30 to-indigo-50/20 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 text-xs">
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold shrink-0">
-                            <i class="fa-solid fa-users-viewfinder"></i>
-                        </span>
-                        <div>
-                            <span class="font-extrabold text-slate-900">Pilih Kelas untuk Visualisasi Grafik:</span>
-                            <span class="text-[11px] text-slate-500 ml-1">Grafik saat ini menampilkan data khusus <strong class="text-blue-700 font-bold">{{ $kelas->nama }}</strong></span>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-1.5">
-                        @foreach($kelasList as $kOpt)
-                            <a href="{{ route('rekap.kelas', ['kelas' => $kOpt->id, 'periode' => $periode, 'sort' => $sortBy, 'tanggal' => $tanggalObj->format('Y-m-d')]) }}#section-grafik"
-                               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition text-xs {{ $kOpt->id === $kelas->id ? 'bg-blue-600 text-white shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs' }}"
-                               title="Lihat grafik nilai, SIA & pembiasaan untuk {{ $kOpt->nama }}">
-                                <span>{{ $kOpt->nama }}</span>
-                                @if($kOpt->id === $kelas->id)
-                                    <i class="fa-solid fa-circle-check text-[11px] text-emerald-300"></i>
-                                @endif
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
-
             <!-- Konten Grafik -->
-            <div x-show="showGrafik" class="p-4 sm:p-5 space-y-5">
+            <div x-show="showGrafik" class="p-4 space-y-4">
                 @if($rekapData['chart_data']['has_data'] ?? false)
-                    <!-- Filter Jenis Nilai Akademik (Formatif Bulanan Jul-Des, STS/UTS, Semesteran/UAS, Nilai Rapor) -->
+                    <!-- Filter Jenis Nilai Akademik (Compact) -->
                     <div x-show="activeTab === 'semua' || activeTab === 'mapel' || activeTab === 'distribusi' || activeTab === 'ranking'"
-                         class="p-3 bg-gradient-to-r from-slate-50 via-blue-50/40 to-slate-50 rounded-2xl border border-blue-200/80 shadow-2xs flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-slate-600 font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5 mr-1">
-                                <i class="fa-solid fa-filter text-blue-600"></i> Jenis Nilai:
-                            </span>
+                         class="p-2 bg-slate-50/80 rounded-xl border border-slate-200/60 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-slate-500 font-semibold px-1.5">Jenis Nilai:</span>
 
                             <button type="button" @click="jenisNilai = 'rapor'; bulanFormatif = ''; switchJenisNilai('rapor')"
-                                    :class="jenisNilai === 'rapor' ? 'bg-blue-600 text-white font-black shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
-                                    class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold shadow-2xs">
-                                <i class="fa-solid fa-file-invoice"></i>
-                                <span>Nilai Rapor (Akhir)</span>
+                                    :class="jenisNilai === 'rapor' ? 'bg-blue-600 text-white font-bold' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                    class="px-2.5 py-1 rounded-lg transition text-xs font-semibold cursor-pointer">
+                                Nilai Rapor
                             </button>
 
                             <button type="button" @click="jenisNilai = 'uts'; bulanFormatif = ''; switchJenisNilai('uts')"
-                                    :class="jenisNilai === 'uts' ? 'bg-amber-500 text-white font-black shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
-                                    class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold shadow-2xs">
-                                <i class="fa-solid fa-file-pen"></i>
-                                <span>STS / UTS</span>
+                                    :class="jenisNilai === 'uts' ? 'bg-blue-600 text-white font-bold' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                    class="px-2.5 py-1 rounded-lg transition text-xs font-semibold cursor-pointer">
+                                STS / UTS
                             </button>
 
                             <button type="button" @click="jenisNilai = 'uas'; bulanFormatif = ''; switchJenisNilai('uas')"
-                                    :class="jenisNilai === 'uas' ? 'bg-purple-600 text-white font-black shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
-                                    class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold shadow-2xs">
-                                <i class="fa-solid fa-award"></i>
-                                <span>Semesteran / UAS</span>
+                                    :class="jenisNilai === 'uas' ? 'bg-blue-600 text-white font-bold' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                    class="px-2.5 py-1 rounded-lg transition text-xs font-semibold cursor-pointer">
+                                Semesteran / UAS
                             </button>
 
                             <button type="button" @click="jenisNilai = 'formatif'; if(!bulanFormatif) switchJenisNilai('formatif')"
-                                    :class="jenisNilai === 'formatif' ? 'bg-emerald-600 text-white font-black shadow-xs' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
-                                    class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold shadow-2xs">
-                                <i class="fa-solid fa-calendar-check"></i>
-                                <span>Formatif Bulanan</span>
+                                    :class="jenisNilai === 'formatif' ? 'bg-blue-600 text-white font-bold' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                    class="px-2.5 py-1 rounded-lg transition text-xs font-semibold cursor-pointer">
+                                Formatif Bulanan
                             </button>
 
                             <!-- Sub-Select Bulan Formatif (Jul-Des) -->
-                            <div x-show="jenisNilai === 'formatif'" class="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-emerald-300 shadow-2xs">
-                                <label for="selectBulanFormatif" class="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
-                                    <i class="fa-regular fa-calendar-days text-emerald-600"></i> Bulan:
-                                </label>
+                            <div x-show="jenisNilai === 'formatif'" class="flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-blue-200">
                                 <select id="selectBulanFormatif" x-model="bulanFormatif"
                                         @change="switchJenisNilai('formatif', $event.target.value)"
-                                        class="text-xs font-black text-emerald-900 bg-transparent border-none focus:ring-0 p-0 pr-4 cursor-pointer">
-                                    <option value="">📊 Rata-rata 6 Bulan (JUL - DES)</option>
-                                    <option value="7">📅 Juli (Bulan 7)</option>
-                                    <option value="8">📅 Agustus (Bulan 8)</option>
-                                    <option value="9">📅 September (Bulan 9)</option>
-                                    <option value="10">📅 Oktober (Bulan 10)</option>
-                                    <option value="11">📅 November (Bulan 11)</option>
-                                    <option value="12">📅 Desember (Bulan 12)</option>
+                                        class="text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 p-0 pr-4 cursor-pointer">
+                                    <option value="">Rata-rata (Jul - Des)</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div class="text-[11px] text-slate-500 flex items-center gap-1.5 font-medium">
-                            <i class="fa-solid fa-circle-info text-blue-500"></i>
-                            <span id="active-jenis-label">Menampilkan grafik: <strong>Nilai Rapor Akhir</strong></span>
+                        <div class="text-[11px] text-slate-500 px-1">
+                            <span id="active-jenis-label">Menampilkan: <strong>Nilai Rapor Akhir</strong></span>
                         </div>
                     </div>
 
-                    <!-- Ringkasan Cepat Analisis Nilai -->
+                    <!-- Ringkasan Cepat Analisis Nilai (Bersih & Minimal) -->
                     @php
                         $sum = $rekapData['chart_data']['summary'];
                         $khSummary = $rekapData['chart_data']['kehadiran'] ?? null;
                         $pemSummary = $rekapData['chart_data']['pembiasaan'] ?? null;
                     @endphp
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
-                        <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-arrow-trend-up"></i>
-                            </div>
-                            <div class="min-w-0">
-                                <span class="text-[10px] uppercase font-bold text-emerald-700 block truncate">Mapel Tertinggi</span>
-                                <span class="font-extrabold text-slate-900 truncate block">
-                                    <span id="kpi-mapel-tertinggi-nama">{{ $sum['mapel_tertinggi']['nama_singkat'] ?? '-' }}</span>
-                                    <span class="text-emerald-700 font-mono" id="kpi-mapel-tertinggi-val">({{ $sum['mapel_tertinggi']['rata_rata_format'] ?? '-' }})</span>
-                                </span>
-                            </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
+                        <div class="p-2 rounded-lg bg-slate-50/70 border border-slate-200/60 min-w-0">
+                            <span class="text-[10px] font-semibold text-slate-400 block truncate">Mapel Tertinggi</span>
+                            <span class="font-bold text-slate-800 truncate block mt-0.5">
+                                <span id="kpi-mapel-tertinggi-nama">{{ $sum['mapel_tertinggi']['nama_singkat'] ?? '-' }}</span>
+                                <span class="text-emerald-600 font-mono" id="kpi-mapel-tertinggi-val">({{ $sum['mapel_tertinggi']['rata_rata_format'] ?? '-' }})</span>
+                            </span>
                         </div>
 
-                        <div class="p-2.5 rounded-xl bg-rose-50/70 border border-rose-200/80 flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-arrow-trend-down"></i>
-                            </div>
-                            <div class="min-w-0">
-                                <span class="text-[10px] uppercase font-bold text-rose-700 block truncate">Perlu Perhatian</span>
-                                <span class="font-extrabold text-slate-900 truncate block">
-                                    <span id="kpi-mapel-terendah-nama">{{ $sum['mapel_terendah']['nama_singkat'] ?? '-' }}</span>
-                                    <span class="text-rose-700 font-mono" id="kpi-mapel-terendah-val">({{ $sum['mapel_terendah']['rata_rata_format'] ?? '-' }})</span>
-                                </span>
-                            </div>
+                        <div class="p-2 rounded-lg bg-slate-50/70 border border-slate-200/60 min-w-0">
+                            <span class="text-[10px] font-semibold text-slate-400 block truncate">Perlu Perhatian</span>
+                            <span class="font-bold text-slate-800 truncate block mt-0.5">
+                                <span id="kpi-mapel-terendah-nama">{{ $sum['mapel_terendah']['nama_singkat'] ?? '-' }}</span>
+                                <span class="text-rose-600 font-mono" id="kpi-mapel-terendah-val">({{ $sum['mapel_terendah']['rata_rata_format'] ?? '-' }})</span>
+                            </span>
                         </div>
 
-                        <div class="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-star"></i>
-                            </div>
-                            <div class="min-w-0">
-                                <span class="text-[10px] uppercase font-bold text-amber-800 block truncate">Rata² Tertinggi</span>
-                                <span class="font-extrabold text-slate-900 truncate block" id="kpi-siswa-tertinggi-container" title="{{ $sum['siswa_tertinggi']['nama'] ?? '-' }}">
-                                    <span id="kpi-siswa-tertinggi-nama">{{ $sum['siswa_tertinggi']['nama'] ?? '-' }}</span>
-                                    <span class="text-amber-800 font-mono" id="kpi-siswa-tertinggi-val">({{ $sum['siswa_tertinggi']['nilai_format'] ?? '-' }})</span>
-                                </span>
-                            </div>
+                        <div class="p-2 rounded-lg bg-slate-50/70 border border-slate-200/60 min-w-0">
+                            <span class="text-[10px] font-semibold text-slate-400 block truncate">Rata² Tertinggi</span>
+                            <span class="font-bold text-slate-800 truncate block mt-0.5" id="kpi-siswa-tertinggi-container" title="{{ $sum['siswa_tertinggi']['nama'] ?? '-' }}">
+                                <span id="kpi-siswa-tertinggi-nama">{{ $sum['siswa_tertinggi']['nama'] ?? '-' }}</span>
+                                <span class="text-amber-600 font-mono" id="kpi-siswa-tertinggi-val">({{ $sum['siswa_tertinggi']['nilai_format'] ?? '-' }})</span>
+                            </span>
                         </div>
 
-                        <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/80 flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-bullseye"></i>
-                            </div>
-                            <div class="min-w-0">
-                                <span class="text-[10px] uppercase font-bold text-blue-700 block truncate">Tuntas KKM</span>
-                                <span class="font-extrabold text-slate-900 truncate block">
-                                    <span id="kpi-tuntas-kkm-pct">{{ $sum['persen_tuntas_kkm'] }}</span>% Siswa
-                                    <span class="text-slate-500 font-normal text-[11px]">(~<span id="kpi-kkm-kelas">{{ $sum['rata_kkm_kelas'] }}</span>)</span>
-                                </span>
-                            </div>
+                        <div class="p-2 rounded-lg bg-slate-50/70 border border-slate-200/60 min-w-0">
+                            <span class="text-[10px] font-semibold text-slate-400 block truncate">Tuntas KKM</span>
+                            <span class="font-bold text-slate-800 truncate block mt-0.5">
+                                <span id="kpi-tuntas-kkm-pct">{{ $sum['persen_tuntas_kkm'] }}</span>% Siswa
+                                <span class="text-slate-400 font-normal text-[10px]">(~<span id="kpi-kkm-kelas">{{ $sum['rata_kkm_kelas'] }}</span>)</span>
+                            </span>
                         </div>
 
-                        <div class="p-2.5 rounded-xl bg-sky-50/70 border border-sky-200/80 flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-clipboard-user"></i>
-                            </div>
-                            <div class="min-w-0">
-                                <span class="text-[10px] uppercase font-bold text-sky-700 block truncate">Kehadiran (SIA)</span>
-                                <span class="font-extrabold text-slate-900 truncate block">
-                                    S:{{ $khSummary['total_sakit'] ?? 0 }} I:{{ $khSummary['total_izin'] ?? 0 }} A:{{ $khSummary['total_alpa'] ?? 0 }}
-                                    <span class="text-sky-700 font-normal text-[10px]">({{ $khSummary['siswa_hadir_penuh'] ?? 0 }}/{{ $rekapData['jumlah_siswa'] }} hadir 100%)</span>
-                                </span>
-                            </div>
+                        <div class="p-2 rounded-lg bg-slate-50/70 border border-slate-200/60 min-w-0">
+                            <span class="text-[10px] font-semibold text-slate-400 block truncate">Kehadiran (SIA)</span>
+                            <span class="font-bold text-slate-800 truncate block mt-0.5">
+                                S:{{ $khSummary['total_sakit'] ?? 0 }} I:{{ $khSummary['total_izin'] ?? 0 }} A:{{ $khSummary['total_alpa'] ?? 0 }}
+                            </span>
                         </div>
 
-                        <div class="p-2.5 rounded-xl bg-teal-50/70 border border-teal-200/80 flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-hands-praying"></i>
-                            </div>
-                            <div class="min-w-0">
-                                <span class="text-[10px] uppercase font-bold text-teal-700 block truncate">Pembiasaan</span>
-                                <span class="font-extrabold text-slate-900 truncate block">
-                                    {{ $pemSummary['percentages']['sangat_baik'] ?? 0 }}% Sangat Baik
-                                    <span class="text-teal-700 font-normal text-[10px]">({{ $rekapData['jumlah_siswa'] }} siswa)</span>
-                                </span>
-                            </div>
+                        <div class="p-2 rounded-lg bg-slate-50/70 border border-slate-200/60 min-w-0">
+                            <span class="text-[10px] font-semibold text-slate-400 block truncate">Pembiasaan</span>
+                            <span class="font-bold text-slate-800 truncate block mt-0.5">
+                                {{ $pemSummary['percentages']['sangat_baik'] ?? 0 }}% Sangat Baik
+                            </span>
                         </div>
                     </div>
 

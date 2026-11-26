@@ -146,103 +146,131 @@
 
                 <!-- Desktop Navigation Links -->
                 <nav class="hidden md:flex items-center space-x-1.5 text-xs font-semibold">
+                    <!-- 1. Dashboard -->
                     <a href="{{ route('dashboard') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('dashboard') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
                         <i class="fa-solid fa-house w-4 text-center {{ request()->routeIs('dashboard') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
                         <span>Dashboard</span>
                     </a>
 
-                    <!-- Tombol Cepat: Input Nilai Langsung Sesuai Kelas Wali yang Login -->
+                    <!-- 2. Tombol Cepat: Input Nilai Langsung Sesuai Kelas Wali yang Login -->
                     <a href="{{ route('input-nilai') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('input-nilai') || request()->routeIs('kelas.input-nilai') || (request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-emerald-600 text-white font-black shadow-md border border-emerald-400/40 ring-1 ring-emerald-300/30' : 'text-emerald-300 hover:text-white hover:bg-white/10 font-bold' }}" title="Langsung Buka Lembar Nilai Rapor Kelas Saya">
                         <i class="fa-solid fa-pen-to-square w-4 text-center {{ request()->routeIs('input-nilai') || request()->routeIs('kelas.input-nilai') || (request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'text-white' : 'text-emerald-400' }}"></i>
                         <span>Input Nilai</span>
                     </a>
 
-                    <a href="{{ route('kelas.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        <i class="fa-solid fa-chalkboard-user w-4 text-center {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
-                        <span>Kelas</span>
-                    </a>
-
+                    <!-- 3. Absensi Harian -->
                     <a href="{{ route('absensi-harian.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
                         <i class="fa-solid fa-calendar-check w-4 text-center {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
                         <span>Absensi Harian</span>
                     </a>
 
-                    <a href="{{ route('siswa.index') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('siswa.*') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        <i class="fa-solid fa-user-graduate w-4 text-center {{ request()->routeIs('siswa.*') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
-                        <span>Data Siswa</span>
-                    </a>
-
-                    <a href="{{ route('raport.riwayat') }}" class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 {{ request()->routeIs('raport.riwayat') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
-                        <i class="fa-solid fa-clock-rotate-left w-4 text-center {{ request()->routeIs('raport.riwayat') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
-                        <span>Riwayat Cetak</span>
-                    </a>
-
-                    @if(auth()->user()->isAdmin())
-                        <!-- Dropdown Pengaturan -->
-                        <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
-                            <button @click="open = !open" type="button"
-                                class="px-3.5 py-2 rounded-xl transition-all duration-150 text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-2 focus:outline-none select-none"
-                                :class="{ 'bg-white/15 text-white font-bold shadow-xs border border-white/20': open }">
-                                <i class="fa-solid fa-gear w-4 text-center text-slate-400"></i>
-                                <span>Pengaturan</span>
-                                <i class="fa-solid fa-chevron-down text-[10px] opacity-75 transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
-                            </button>
-                            <div x-show="open"
-                                 x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 translate-y-1 scale-95"
-                                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                                 x-transition:leave="transition ease-in duration-100"
-                                 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-                                 x-transition:leave-end="opacity-0 translate-y-1 scale-95"
-                                 class="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-2xl py-1.5 text-slate-800 text-xs border border-slate-100 z-50 divide-y divide-slate-100"
-                                 style="display: none;">
-                                <div class="py-1">
-                                    <a href="{{ route('sekolah.edit') }}" @click="open = false"
-                                       class="flex items-center px-4 py-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium">
-                                        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center mr-2.5 shrink-0">
-                                            <i class="fa-solid fa-school text-xs"></i>
-                                        </div>
-                                        <div>
-                                            <span class="block font-bold">Identitas Sekolah</span>
-                                            <span class="text-[10px] text-slate-400 font-normal">Profil & informasi resmi</span>
-                                        </div>
-                                    </a>
-                                    <a href="{{ route('tahun-ajaran.index') }}" @click="open = false"
-                                       class="flex items-center px-4 py-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium">
-                                        <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center mr-2.5 shrink-0">
-                                            <i class="fa-solid fa-calendar text-xs"></i>
-                                        </div>
-                                        <div>
-                                            <span class="block font-bold">Tahun Ajaran</span>
-                                            <span class="text-[10px] text-slate-400 font-normal">Semester & kalender</span>
-                                        </div>
-                                    </a>
-                                    <a href="{{ route('mapel.index') }}" @click="open = false"
-                                       class="flex items-center px-4 py-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium">
-                                        <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center mr-2.5 shrink-0">
-                                            <i class="fa-solid fa-book text-xs"></i>
-                                        </div>
-                                        <div>
-                                            <span class="block font-bold">Mapel, Pembiasaan &amp; Ekskul</span>
-                                            <span class="text-[10px] text-slate-400 font-normal">Kurikulum & profil pelajar</span>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="py-1">
-                                    <a href="{{ route('users.index') }}" @click="open = false"
-                                       class="flex items-center px-4 py-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium">
-                                        <div class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center mr-2.5 shrink-0">
-                                            <i class="fa-solid fa-users text-xs"></i>
-                                        </div>
-                                        <div>
-                                            <span class="block font-bold">Kelola Pengguna</span>
-                                            <span class="text-[10px] text-slate-400 font-normal">Akun guru & wali kelas</span>
-                                        </div>
-                                    </a>
-                                </div>
+                    <!-- 4. Dropdown Data Sekolah (Gabungan Kelas & Data Siswa) -->
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
+                        <button @click="open = !open" type="button"
+                            class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 focus:outline-none select-none {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*') || request()->routeIs('siswa.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                            <i class="fa-solid fa-school w-4 text-center {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*') || request()->routeIs('siswa.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
+                            <span>Data Sekolah</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] opacity-75 transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
+                        </button>
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+                             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave-end="opacity-0 translate-y-1 scale-95"
+                             class="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl py-1.5 text-slate-800 text-xs border border-slate-100 z-50 divide-y divide-slate-100"
+                             style="display: none;">
+                            <div class="py-1">
+                                <a href="{{ route('kelas.index') }}" @click="open = false"
+                                   class="flex items-center px-4 py-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-emerald-50/70 text-emerald-800 font-bold' : '' }}">
+                                    <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3 shrink-0 shadow-xs">
+                                        <i class="fa-solid fa-chalkboard-user text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <span class="block font-bold">Rombel (Kelas)</span>
+                                        <span class="text-[10px] text-slate-400 font-normal">Daftar kelas, rombel & wali</span>
+                                    </div>
+                                </a>
+                                <a href="{{ route('siswa.index') }}" @click="open = false"
+                                   class="flex items-center px-4 py-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium {{ request()->routeIs('siswa.*') ? 'bg-emerald-50/70 text-emerald-800 font-bold' : '' }}">
+                                    <div class="w-8 h-8 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center mr-3 shrink-0 shadow-xs">
+                                        <i class="fa-solid fa-user-graduate text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <span class="block font-bold">Data Siswa</span>
+                                        <span class="text-[10px] text-slate-400 font-normal">Buku induk & data mutasi</span>
+                                    </div>
+                                </a>
                             </div>
                         </div>
-                    @endif
+                    </div>
+
+                    <!-- 5. Dropdown Menu Lainnya (Riwayat Cetak & Ringkasan Administrator) -->
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
+                        <button @click="open = !open" type="button"
+                            class="px-3.5 py-2 rounded-xl transition-all duration-150 flex items-center gap-2 focus:outline-none select-none {{ request()->routeIs('raport.riwayat') || request()->routeIs('sekolah.*') || request()->routeIs('tahun-ajaran.*') || request()->routeIs('mapel.*') || request()->routeIs('users.*') ? 'bg-white/15 text-white font-bold shadow-xs border border-white/20 ring-1 ring-white/10' : 'text-slate-300 hover:text-white hover:bg-white/10' }}">
+                            <i class="fa-solid fa-ellipsis w-4 text-center {{ request()->routeIs('raport.riwayat') || request()->routeIs('sekolah.*') || request()->routeIs('tahun-ajaran.*') || request()->routeIs('mapel.*') || request()->routeIs('users.*') ? 'text-emerald-400' : 'text-slate-400' }}"></i>
+                            <span>Lainnya</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] opacity-75 transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
+                        </button>
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+                             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                             x-transition:leave-end="opacity-0 translate-y-1 scale-95"
+                             class="absolute right-0 mt-2 {{ auth()->user()->isAdmin() ? 'w-72' : 'w-64' }} bg-white rounded-2xl shadow-2xl py-2 text-slate-800 text-xs border border-slate-100 z-50 divide-y divide-slate-100"
+                             style="display: none;">
+                            
+                            <!-- Riwayat Cetak -->
+                            <div class="py-1">
+                                <a href="{{ route('raport.riwayat') }}" @click="open = false"
+                                   class="flex items-center px-4 py-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium {{ request()->routeIs('raport.riwayat') ? 'bg-emerald-50/70 text-emerald-800 font-bold' : '' }}">
+                                    <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mr-3 shrink-0 shadow-xs">
+                                        <i class="fa-solid fa-clock-rotate-left text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <span class="block font-bold">Riwayat Cetak</span>
+                                        <span class="text-[10px] text-slate-400 font-normal">Arsip cetak &amp; unduh rapor</span>
+                                    </div>
+                                </a>
+                            </div>
+
+                            @if(auth()->user()->isAdmin())
+                                <!-- Bagian Ringkas Administrator -->
+                                <div class="py-1.5">
+                                    <div class="px-4 py-1 text-[10px] font-black uppercase text-slate-400 bg-slate-50 tracking-wider flex items-center justify-between">
+                                        <span>Administrator</span>
+                                        <span class="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">Sistem</span>
+                                    </div>
+                                    <div class="mt-1 space-y-0.5">
+                                        <a href="{{ route('sekolah.edit') }}" @click="open = false"
+                                           class="flex items-center px-4 py-2 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium {{ request()->routeIs('sekolah.*') ? 'bg-emerald-50/70 text-emerald-800 font-bold' : '' }}">
+                                            <i class="fa-solid fa-school text-emerald-600 w-5 text-center mr-2.5 text-xs"></i>
+                                            <span class="font-semibold">Identitas Sekolah</span>
+                                        </a>
+                                        <a href="{{ route('tahun-ajaran.index') }}" @click="open = false"
+                                           class="flex items-center px-4 py-2 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium {{ request()->routeIs('tahun-ajaran.*') ? 'bg-emerald-50/70 text-emerald-800 font-bold' : '' }}">
+                                            <i class="fa-solid fa-calendar text-blue-600 w-5 text-center mr-2.5 text-xs"></i>
+                                            <span class="font-semibold">Tahun Ajaran</span>
+                                        </a>
+                                        <a href="{{ route('mapel.index') }}" @click="open = false"
+                                           class="flex items-center px-4 py-2 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium {{ request()->routeIs('mapel.*') ? 'bg-emerald-50/70 text-emerald-800 font-bold' : '' }}">
+                                            <i class="fa-solid fa-book text-amber-600 w-5 text-center mr-2.5 text-xs"></i>
+                                            <span class="font-semibold">Mapel, Pembiasaan &amp; Ekskul</span>
+                                        </a>
+                                        <a href="{{ route('users.index') }}" @click="open = false"
+                                           class="flex items-center px-4 py-2 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 transition font-medium {{ request()->routeIs('users.*') ? 'bg-emerald-50/70 text-emerald-800 font-bold' : '' }}">
+                                            <i class="fa-solid fa-users text-purple-600 w-5 text-center mr-2.5 text-xs"></i>
+                                            <span class="font-semibold">Kelola Pengguna</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 </nav>
 
                 <!-- User Profile & Action Buttons -->
@@ -309,49 +337,78 @@
             </div>
 
             <div class="space-y-1">
+                <!-- 1. Dashboard -->
                 <a href="{{ route('dashboard') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('dashboard') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
                     <i class="fa-solid fa-house w-6 text-center mr-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white' : 'text-emerald-400' }}"></i>
                     <span>Dashboard</span>
                 </a>
+
+                <!-- 2. Input Nilai Langsung Sesuai Kelas Wali -->
                 <a href="{{ route('input-nilai') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('input-nilai') || request()->routeIs('kelas.input-nilai') || (request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-emerald-300 hover:bg-white/10 font-bold' }}">
                     <i class="fa-solid fa-pen-to-square w-6 text-center mr-2 text-sm text-emerald-400"></i>
                     <span>Input Nilai (Kelas Saya)</span>
                 </a>
-                <a href="{{ route('kelas.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
-                    <i class="fa-solid fa-chalkboard-user w-6 text-center mr-2 text-sm {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'text-white' : 'text-emerald-400' }}"></i>
-                    <span>Daftar Kelas</span>
-                </a>
+
+                <!-- 3. Absensi Harian -->
                 <a href="{{ route('absensi-harian.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'bg-amber-500 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
                     <i class="fa-solid fa-calendar-check w-6 text-center mr-2 text-sm {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'text-white' : 'text-amber-400' }}"></i>
-                    <span>Absensi Harian (Wali, Agama, PJOK)</span>
+                    <span>Absensi Harian</span>
                 </a>
-                <a href="{{ route('siswa.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('siswa.*') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
-                    <i class="fa-solid fa-user-graduate w-6 text-center mr-2 text-sm {{ request()->routeIs('siswa.*') ? 'text-white' : 'text-emerald-400' }}"></i>
-                    <span>Data Siswa</span>
-                </a>
-                <a href="{{ route('raport.riwayat') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 rounded-xl transition {{ request()->routeIs('raport.riwayat') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
-                    <i class="fa-solid fa-clock-rotate-left w-6 text-center mr-2 text-sm {{ request()->routeIs('raport.riwayat') ? 'text-white' : 'text-emerald-400' }}"></i>
-                    <span>Riwayat Cetak Raport</span>
-                </a>
-            </div>
 
-            @if(auth()->user()->isAdmin())
-                <div class="pt-3 border-t border-white/10 mt-2 space-y-1">
-                    <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Pengaturan Administrator</p>
-                    <a href="{{ route('sekolah.edit') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
-                        <i class="fa-solid fa-school w-6 text-center mr-2 text-emerald-400"></i> Identitas Sekolah
-                    </a>
-                    <a href="{{ route('tahun-ajaran.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
-                        <i class="fa-solid fa-calendar w-6 text-center mr-2 text-blue-400"></i> Tahun Ajaran
-                    </a>
-                    <a href="{{ route('mapel.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
-                        <i class="fa-solid fa-book w-6 text-center mr-2 text-amber-400"></i> Mapel, Pembiasaan &amp; Ekskul
-                    </a>
-                    <a href="{{ route('users.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl hover:bg-white/10 transition text-slate-200">
-                        <i class="fa-solid fa-users w-6 text-center mr-2 text-purple-400"></i> Kelola Pengguna
-                    </a>
+                <!-- 4. Data Sekolah (Gabungan Kelas & Data Siswa) -->
+                <div class="pt-2">
+                    <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-school text-emerald-400 text-xs"></i>
+                        <span>Data Sekolah</span>
+                    </p>
+                    <div class="pl-2 space-y-1 border-l-2 border-emerald-500/30 ml-3">
+                        <a href="{{ route('kelas.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl transition {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
+                            <i class="fa-solid fa-chalkboard-user w-5 text-center mr-2 text-xs text-emerald-400"></i>
+                            <span>Rombel (Kelas)</span>
+                        </a>
+                        <a href="{{ route('siswa.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl transition {{ request()->routeIs('siswa.*') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
+                            <i class="fa-solid fa-user-graduate w-5 text-center mr-2 text-xs text-teal-400"></i>
+                            <span>Data Siswa</span>
+                        </a>
+                    </div>
                 </div>
-            @endif
+
+                <!-- 5. Lainnya (Riwayat Cetak & Administrator) -->
+                <div class="pt-2">
+                    <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-ellipsis text-emerald-400 text-xs"></i>
+                        <span>Lainnya</span>
+                    </p>
+                    <div class="pl-2 space-y-1 border-l-2 border-slate-700 ml-3">
+                        <a href="{{ route('raport.riwayat') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2 rounded-xl transition {{ request()->routeIs('raport.riwayat') ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-200 hover:bg-white/10' }}">
+                            <i class="fa-solid fa-clock-rotate-left w-5 text-center mr-2 text-xs text-blue-400"></i>
+                            <span>Riwayat Cetak Raport</span>
+                        </a>
+
+                        @if(auth()->user()->isAdmin())
+                            <div class="pt-2 mt-1 border-t border-white/5 space-y-1">
+                                <span class="px-3 text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Pengaturan Administrator</span>
+                                <a href="{{ route('sekolah.edit') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-1.5 rounded-xl hover:bg-white/10 transition text-slate-300 {{ request()->routeIs('sekolah.*') ? 'bg-white/10 text-white font-bold' : '' }}">
+                                    <i class="fa-solid fa-school w-5 text-center mr-2 text-xs text-emerald-400"></i>
+                                    <span>Identitas Sekolah</span>
+                                </a>
+                                <a href="{{ route('tahun-ajaran.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-1.5 rounded-xl hover:bg-white/10 transition text-slate-300 {{ request()->routeIs('tahun-ajaran.*') ? 'bg-white/10 text-white font-bold' : '' }}">
+                                    <i class="fa-solid fa-calendar w-5 text-center mr-2 text-xs text-blue-400"></i>
+                                    <span>Tahun Ajaran</span>
+                                </a>
+                                <a href="{{ route('mapel.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-1.5 rounded-xl hover:bg-white/10 transition text-slate-300 {{ request()->routeIs('mapel.*') ? 'bg-white/10 text-white font-bold' : '' }}">
+                                    <i class="fa-solid fa-book w-5 text-center mr-2 text-xs text-amber-400"></i>
+                                    <span>Mapel, Pembiasaan &amp; Ekskul</span>
+                                </a>
+                                <a href="{{ route('users.index') }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-1.5 rounded-xl hover:bg-white/10 transition text-slate-300 {{ request()->routeIs('users.*') ? 'bg-white/10 text-white font-bold' : '' }}">
+                                    <i class="fa-solid fa-users w-5 text-center mr-2 text-xs text-purple-400"></i>
+                                    <span>Kelola Pengguna</span>
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -567,16 +624,16 @@
                 <span class="text-[9.5px] font-extrabold mt-1 {{ request()->routeIs('absensi-harian.*') || request()->routeIs('kelas.absensi-harian.*') ? 'text-amber-400' : 'text-slate-300' }}">Absensi</span>
             </a>
 
-            <!-- 4. Data Siswa -->
-            <a href="{{ route('siswa.index') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ request()->routeIs('siswa.*') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
-                <i class="fa-solid fa-user-graduate text-base {{ request()->routeIs('siswa.*') ? 'scale-110' : '' }}"></i>
-                <span class="text-[9.5px] mt-1 tracking-tight">Siswa</span>
+            <!-- 4. Data Sekolah (Gabungan Kelas & Siswa) -->
+            <a href="{{ route('kelas.index') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*') || request()->routeIs('siswa.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                <i class="fa-solid fa-school text-base {{ (request()->routeIs('kelas.*') || request()->routeIs('nilai.*') || request()->routeIs('siswa.*')) && !request()->routeIs('kelas.absensi-harian.*') && !request()->routeIs('kelas.input-nilai') && !request()->routeIs('input-nilai') && !(request()->routeIs('kelas.mapel.nilai') && request('tab', 'mapel') !== 'formatif') ? 'scale-110 text-emerald-400' : '' }}"></i>
+                <span class="text-[9.5px] mt-1 tracking-tight">Data Sekolah</span>
             </a>
 
-            <!-- 5. Riwayat Raport -->
-            <a href="{{ route('raport.riwayat') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ request()->routeIs('raport.riwayat') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
-                <i class="fa-solid fa-print text-base {{ request()->routeIs('raport.riwayat') ? 'scale-110' : '' }}"></i>
-                <span class="text-[9.5px] mt-1 tracking-tight">Raport</span>
+            <!-- 5. Lainnya (Riwayat Cetak & Pengaturan) -->
+            <a href="{{ route('raport.riwayat') }}" class="flex flex-col items-center justify-center py-1 transition duration-150 {{ request()->routeIs('raport.riwayat') || request()->routeIs('sekolah.*') || request()->routeIs('tahun-ajaran.*') || request()->routeIs('mapel.*') || request()->routeIs('users.*') ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
+                <i class="fa-solid fa-ellipsis text-base {{ request()->routeIs('raport.riwayat') || request()->routeIs('sekolah.*') || request()->routeIs('tahun-ajaran.*') || request()->routeIs('mapel.*') || request()->routeIs('users.*') ? 'scale-110 text-emerald-400' : '' }}"></i>
+                <span class="text-[9.5px] mt-1 tracking-tight">Lainnya</span>
             </a>
         </div>
     </nav>
